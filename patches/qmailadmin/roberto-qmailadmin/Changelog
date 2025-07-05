@@ -1,0 +1,31 @@
+* 2023.08.27
+  Cosmetic fix to alias.c
+
+* 2023.04.26
+  Bug fix in qmailadmin/passwd: it was changing the password also in case of cracklib alert
+  tx Alexandre Fonseca https://notes.sagredo.eu/en/qmail-notes-185/qmailadmin-23.html#comment3079
+
+* 2022.08.08
+  Minor modifications to the "skin patch"
+  -user.c: cosmetics adjustments to the html output
+  -lang/it: minor corrections to the translations
+
+* 2022.04.01
+  -qmailadmin now logs to stderr when qma-auth.log can't be opened in write mode. It was returning a white
+   screen without any error message neither on screen, nor on stderr.
+
+* 2021.03.12
+  -patch cleanup
+
+* 2020.09.02
+  -mod_user.html: cleaned the html as it was printing unneeded strings
+
+* 2020.08.10
+  -mod_user.html: added the "value" attribute to the name/gecos input tag (tx Pablo Murillo)
+
+* 2020.05.22
+  -mod_user.html: removed the "required" attribute on password field, to allow modification
+   with no password change
+
+* 2020.05.05
+  -First release of this patch

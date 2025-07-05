@@ -1,0 +1,53 @@
+v. 2012.07.05
+forcetls patch for netqmail-1.06
+by Roberto Puzzanghera - roberto dot puzzanghera at sagredo dot eu
+http://notes.sagredo.eu/node/8
+====================================================================
+
+= This patch has to be applied over the following:
+* netqmail-1.06 (http://qmail.org). Should work with 1.05 as well.
+* Erwin Hoffmann's qmail-authentication patch v. 0.704, which updates
+  the patches provided by Krysztof Dabrowski and Bjoern Kalkbrenner.
+  It provides cram-md5, login, plain authentication support.
+  (http://www.fehcom.de/qmail/smtpauth.html##PATCHES)
+* Frederik Vermeulen's qmail-tls patch v. 20110119
+  implements SSL or TLS encrypted and authenticated SMTP.
+  (http://inoa.net/qmail-tls/)
+
+By default the authentication will be denied if the client does not provide the STARTTLS command, and does not
+support the CRAM-MD5 auth, since the entire connection is TLS secured.
+If you want to allow connections without TLS, just export FORCETLS=0 in your run file. Values different from 0 or no
+declaration at all will force the TLS before the auth.
+
+= Disclaimer
+This patch comes with the usual warranty: it works for me, it may not work for you,
+use at your own risk etc. etc. :-)
+
+= Comments, suggestions, criticisms are always welcome!
+
+===================================================================
+
+diff -ruN netqmail-1.06-auth-tls/qmail-smtpd.c netqmail-1.06-auth-tls-forcetls/qmail-smtpd.c
+--- netqmail-1.06-auth-tls/qmail-smtpd.c	2012-07-05 20:21:11.821179609 +0200
++++ netqmail-1.06-auth-tls-forcetls/qmail-smtpd.c	2012-07-05 20:10:04.937168473 +0200
+@@ -726,6 +726,21 @@
+ void smtp_auth(arg)
+ char *arg;
+ {
++/* forcetls patch */
++#ifdef TLS
++  char *forcetls=env_get("FORCETLS");
++  if (!forcetls || (forcetls && strcmp(forcetls, "0")!=0))
++  {
++    if (!ssl)
++    {
++      out("538 auth not available without TLS (#5.3.3)\r\n");
++      flush();
++      die_read();
++    }
++  }
++#endif
++/* END forcetls patch */
++
+   int i;
+   char *cmd = arg;

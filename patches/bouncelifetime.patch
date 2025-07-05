@@ -1,0 +1,74 @@
+bouncelifetime patch
+Mark Belnap Thu, 03 Jun 2004 09:08:49 -0700
+
+Quite a while ago, I posted an idea to the list and I finally got around to actually implementing it myself. Here are the results, please feel free to incorporate them into the main qmail-ldap patch if desired. Of course feedback is welcome.
+
+DESCRIPTION:
+Recent increases in spam with forged undeliverable return addresses had resulted in large queue size and delayed email delivery. I did not want to decrease the queuelifetime parameter because of customer impact, but I did desire a way to limit how much time was spent re-trying bounce messages. So a new parameter was introduced that works the same way that queuelifetime does, but only applies to bounce messages. It is set in the ~/control/bouncelifetime file. This gives mail administrators one additional tuning knob to use to manage the mail system.
+
+enjoy,
+
+Mark.
+
+diff -upN qmail-1.03.vanilla+QLDAP_20040301a/qmail-send.c 
+qmail-1.03.vanilla+QLDAP_20040301a+bouncelifetime/qmail-send.c
+--- qmail-1.03.vanilla+QLDAP_20040301a/qmail-send.c     Wed Mar 10 16:17:37 2004
++++ qmail-1.03.vanilla+QLDAP_20040301a+bouncelifetime/qmail-send.c      Thu Jun  3 
+07:56:48 2004
+@@ -45,6 +45,9 @@
+ #define OSSIFIED 129600 /* 36 hours; _must_ exceed q-q's DEATH (24 hours) */
+ 
+ int lifetime = 604800;
++#ifdef BOUNCELIFETIME
++int bouncelifetime = 604800;
++#endif
+ 
+ stralloc percenthack = {0};
+ struct constmap mappercenthack;
+@@ -1168,6 +1171,9 @@ int c;
+    pass[c].j = job_open(pe.id,c);
+    jo[pass[c].j].retry = nextretry(birth,c);
+    jo[pass[c].j].flagdying = (recent > birth + lifetime);
++#ifdef BOUNCELIFETIME
++   if (!(*line.s)) jo[pass[c].j].flagdying = (recent > birth + bouncelifetime);
++#endif
+    while (!stralloc_copy(&jo[pass[c].j].sender,&line)) nomem();
+   }
+ 
+@@ -1708,6 +1714,10 @@ int getcontrols()
+ 
+  if (control_init() == -1) return 0;
+  if (control_readint(&lifetime,"control/queuelifetime") == -1) return 0;
++#ifdef BOUNCELIFETIME
++ if (control_readint(&bouncelifetime,"control/bouncelifetime") == -1) return 0;
++ if (bouncelifetime > lifetime) bouncelifetime = lifetime;
++#endif
+  if (control_readint(&concurrency[0],"control/concurrencylocal") == -1) return 0;
+  if (control_readint(&concurrency[1],"control/concurrencyremote") == -1) return 0;
+  if (control_rldef(&envnoathost,"control/envnoathost",1,"envnoathost") != 1) return 0;
+diff -upN qmail-1.03.vanilla+QLDAP_20040301a/qmail-showctl.c 
+qmail-1.03.vanilla+QLDAP_20040301a+bouncelifetime/qmail-showctl.c
+--- qmail-1.03.vanilla+QLDAP_20040301a/qmail-showctl.c  Wed Mar 10 16:17:37 2004
++++ qmail-1.03.vanilla+QLDAP_20040301a+bouncelifetime/qmail-showctl.c   Thu Jun  3 
+07:56:04 2004
+@@ -300,6 +300,9 @@ int main()
+   do_str("qmqpcip",0,"0.0.0.0","Bind qmail-qmqpc to ");
+   do_lst("qmqpservers","No QMQP servers.","QMQP server: ",".");
+   do_int("queuelifetime","604800","Message lifetime in the queue is "," seconds");
++#ifdef BOUNCELIFETIME
++  do_int("bouncelifetime","604800","Bounce message lifetime in the queue is "," 
+seconds (or max of queuelifetime)");
++#endif
+   do_lst("quotawarning","No quotawarning.","","");
+   do_lst("rbllist","No RBL listed.","RBL to check: ",".");
+ 
+@@ -411,6 +414,9 @@ int main()
+     if (str_equal(d->d_name,"qmqpcip")) continue;
+     if (str_equal(d->d_name,"qmqpservers")) continue;
+     if (str_equal(d->d_name,"queuelifetime")) continue;
++#ifdef BOUNCELIFETIME
++    if (str_equal(d->d_name,"bouncelifetime")) continue;
++#endif
+     if (str_equal(d->d_name,"quotawarning")) continue;
+     if (str_equal(d->d_name,"rbllist")) continue;
+     if (str_equal(d->d_name,"rcpthosts")) continue;

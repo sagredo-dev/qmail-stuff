@@ -1,0 +1,50 @@
+I modified extra.h to record the Message-ID in the qmail-send log as explained here http://cr.yp.to/qmail/faq/admin.html.
+An alias ~alias/.qmail-log had to be added as well to store the awk command with the regex which retrieves the Message-ID.
+Thanks to Simone for the hint.
+
+Be aware that you must have a valid MX record for your FQDN (look at /var/qmail/control/me).
+
+The qmail-send log now appears as follows:
+
+2014-11-05 12:00:47.930384500 status: local 1/10 remote 1/20
+2014-11-05 12:00:47.952694500 delivery 11: success: Received:_(qmail_17359_invoked_by_uid_89);_5_Nov_2014_12:00:47_+0100/Received:_(qmail_17359_invoked_by_uid_89);_5_Nov_2014_12:00:47_+0100/Received:_from_unknown_(HELO_mx.test.net)_(1.2.3.4)/Received:_from_unknown_(HELO_mx.test.net)_(1.2.3.4)/__by_0_with_ESMTPS_(DHE-RSA-AES256-GCM-SHA384_encrypted);_5_Nov_2014_12:00:47_+0100/Received:_(qmail_17349_invoked_by_uid_89);_5_Nov_2014_12:00:47_+0100/Received:_(qmail_17349_invoked_by_uid_89);_5_Nov_2014_12:00:47_+0100/Received:_from_unknown_(HELO_mail-wg0-f47.google.com)_(74.125.82.47)/Received:_from_unknown_(HELO_mail-wg0-f47.google.com)_(74.125.82.47)/__by_0_with_ESMTPS_(RC4-SHA_encrypted);_5_Nov_2014_12:00:46_+0100/Received:_by_mail-wg0-f47.google.com_with_SMTP_id_a1so597995wgh.6/Received:_by_mail-wg0-f47.google.com_with_SMTP_id_a1so597995wgh.6/Received:_by_mail-wg0-f47.google.com_with_SMTP_id_a1so597995wgh.6/________for_<info@test.net>;_Wed,_05_Nov_2014_03:00:48_-0800_(PST)/X-Received:_by_10.180.23.98_with_SMTP_id_l2mr4797959wif.51.1415185247978;_Wed,/X-Received:_by_10.180.23.98_with_SMTP_id_l2mr4797959wif.51.1415185247978;_Wed,/Received:_by_10.27.203.139_with_HTTP;_Wed,_5_Nov_2014_03:00:47_-0800_(PST)/Received:_by_10.27.203.139_with_HTTP;_Wed,_5_Nov_2014_03:00:47_-0800_(PST)/Date:_Wed,_5_Nov_2014_12:00:47_+0100/Message-ID:_<CAD=Xf-WdCFwED9DiMqRj=bUR5RsRA9mPah1OXgA-tB1ffk-3sw@mail.gmail.com>/Message-ID:_<CAD=Xf-WdCFwED9DiMqRj=bUR5RsRA9mPah1OXgA-tB1ffk-3sw@mail.gmail.com>/Subject:_dasda/From:_xxx_<someone@@gmail.com>/From:_xxx_<someone@gmail.com>/To:_info@test.net/---/did_0+0+2/
+2014-11-05 12:00:47.952726500 status: local 0/10 remote 1/20
+2014-11-05 12:00:48.326103500 delivery 12: success: 1.2.3.4_accepted_message./Remote_host_said:_250_ok_1415185248_qp_17366/
+
+Roberto Puzzanghera - http://notes.sagredo.eu/node/82
+
+===================================================
+
+diff -ruN netqmail-1.06/.qmail-log netqmail-1.06-extra/.qmail-log
+--- netqmail-1.06/.qmail-log	1970-01-01 01:00:00.000000000 +0100
++++ netqmail-1.06-extra/.qmail-log	2014-11-15 15:22:30.008066804 +0100
+@@ -0,0 +1,2 @@
++| awk '/^$/ { exit } /^[mM][eE][sS][sS][aA][gG][eE]/ { print } /^[rR][eE][cC][eE][iI][vV][eE][dD]:/ { print; } /^[fF][rR][oO][mM]:/ { print } /^[tT][oO]:/ { print } /^[sS][uU][bB][jJ][eE][cC][tT]:/ { print } /^[xX]-[mM][aA][iI][lL][eE][rR]/ { print } /[hH][eE][lL][oO]/{ print } /^[rR][eE][pP][lL][yY]-[tT][oO]/{ print } /^[rR][eE][tT][uU][rR][nN]-[pP][aA][tT][hH]/{ print } /^[cC][cC]:/{ print } /^[dD][eE][lL][iI][vV][eE][rR][eE][dD]-[tT][oO]/{ print } /^[dD][aA][tT][eE]:/{ print } / by /{ print } / id /{ print } /<.*>/{ print }'
++| echo "---"
+
+diff -ruN netqmail-1.06/extra.h netqmail-1.06-extra/extra.h
+--- netqmail-1.06/extra.h	1998-06-15 12:53:16.000000000 +0200
++++ netqmail-1.06-extra/extra.h	2014-11-29 12:31:47.472655216 +0100
+@@ -1,7 +1,7 @@
+ #ifndef EXTRA_H
+ #define EXTRA_H
+ 
+-#define QUEUE_EXTRA ""
+-#define QUEUE_EXTRALEN 0
++#define QUEUE_EXTRA "Tlog\0"
++#define QUEUE_EXTRALEN 5
+ 
+ #endif
+
+diff -ruN netqmail-1.06/hier.c netqmail-1.06-extra/hier.c
+--- netqmail-1.06/hier.c	1998-06-15 12:53:16.000000000 +0200
++++ netqmail-1.06-extra/hier.c	2014-11-29 12:37:59.682510178 +0100
+@@ -99,6 +99,8 @@
+   c(auto_qmail,"doc","PIC.relaygood",auto_uido,auto_gidq,0644);
+   c(auto_qmail,"doc","PIC.rem2local",auto_uido,auto_gidq,0644);
+ 
++  c(auto_qmail,"alias",".qmail-log",auto_uido,auto_gidq,0644);
++
+   c(auto_qmail,"bin","qmail-queue",auto_uidq,auto_gidq,04711);
+   c(auto_qmail,"bin","qmail-lspawn",auto_uido,auto_gidq,0700);
+   c(auto_qmail,"bin","qmail-start",auto_uido,auto_gidq,0700);

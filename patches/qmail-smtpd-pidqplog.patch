@@ -1,0 +1,46 @@
+--- ../qmail-1.03-orig/qmail-smtpd.c	Fri Sep  8 14:41:49 2000
++++ qmail-smtpd.c	Fri Sep  8 16:16:02 2000
+@@ -42,7 +42,9 @@
+ }
+ 
+ char ssoutbuf[512];
++char sslogbuf[512];
+ substdio ssout = SUBSTDIO_FDBUF(safewrite,1,ssoutbuf,sizeof ssoutbuf);
++substdio sslog = SUBSTDIO_FDBUF(safewrite,2,sslogbuf,sizeof sslogbuf);
+ 
+ void flush() { substdio_flush(&ssout); }
+ void out(s) char *s; { substdio_puts(&ssout,s); }
+@@ -273,7 +275,6 @@
+   out("250 ok\r\n");
+ }
+ 
+-
+ int saferead(fd,buf,len) int fd; char *buf; int len;
+ {
+   int r;
+@@ -361,9 +362,11 @@
+ }
+ 
+ char accept_buf[FMT_ULONG];
++char strnum[FMT_ULONG];
+ void acceptmessage(qp) unsigned long qp;
+ {
+   datetime_sec when;
++  strnum[fmt_uint(strnum,(unsigned int) getpid())] = 0;
+   when = now();
+   out("250 ok ");
+   accept_buf[fmt_ulong(accept_buf,(unsigned long) when)] = 0;
+@@ -372,6 +375,13 @@
+   accept_buf[fmt_ulong(accept_buf,qp)] = 0;
+   out(accept_buf);
+   out("\r\n");
++  substdio_puts(&sslog, "mail recv: pid ");
++  substdio_puts(&sslog, strnum);
++  substdio_puts(&sslog, " from <");
++  substdio_puts(&sslog, mailfrom.s);
++  substdio_puts(&sslog, "> qp ");
++  substdio_puts(&sslog, accept_buf);
++  substdio_putsflush(&sslog, "\r\n");
+ }
+ 
+ void smtp_data() {

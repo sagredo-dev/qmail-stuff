@@ -1,0 +1,234 @@
+#! /usr/bin/php
+#
+# more info here http://www.marcogoncalves.com/qmailvpopmail-renaming-a-domain/
+#
+<?php
+
+/*
+ * Config
+ */
+$many_domains     = false; // true if compiled --enable-many-domains
+$mysql_limits 	  = false; // true if compiled --enable-mysql-limts
+$valias		  = false; // true if compiled --enable-valias
+$vpopmail_bin     = '/home/vpopmail/bin/';
+$vpopmail_etc     = '/home/vpopmail/etc/';
+$vpopmail_domains = '/home/vpopmail/domains/';
+$qmail_bin        = '/var/qmail/bin/';
+$qmail_control    = '/var/qmail/control/';
+$qmail_users      = '/var/qmail/users/';
+$qmailctl_bin     = '/usr/local/bin/qmailctl';       // path or false
+$dovecotctl_bin     = '/usr/local/bin/dovecotctl';       // path or false
+$roundcube_config = '/var/www/roundcube/config/config.inc.php'; // path or false
+
+if ($qmailctl_bin) exec($qmailctl_bin.' stop');
+if ($dovecotctl_bin) exec($dovecotctl_bin.' stop');
+
+/*
+ * Functions
+ */
+function validateDomainSyntax($domain) {
+	return preg_match('/^[A-Za-z0-9-]+(\\.[A-Za-z0-9-]+)*(\\.[A-Za-z]{2,})$/', $domain);
+}
+
+function runCommand($cmd) {
+	try {
+		system($cmd.' > /dev/null 2>&1', $return);
+		if ($return > 0) die("Error in cmd: ".$cmd."\n");
+	} catch (Exception $e) {
+		die($e->getMessage()."\n");
+	}
+
+	return true;
+}
+
+function replaceInFile($filePath, $search, $replace) {
+        if (! file_exists($filePath) || filesize($filePath) == 0) {return true;}
+
+	$fileContent = file_get_contents($filePath);
+        $fileContent = str_replace($search, $replace, $fileContent);
+
+        if(file_put_contents($filePath, $fileContent) == 0) die("Failure in ".$filePath."\n");
+}
+
+
+/*
+ * Script
+ */
+if (! isset($argv[2])) die("Usage ./rename_domain old_domain new_domain\n");
+
+$old_domain = strtolower(trim($argv[1]));
+$new_domain = strtolower(trim($argv[2]));
+
+if ($old_domain == $new_domain) die("New_domain is equal to old_domain\n");
+
+// validate old_domain
+if (! validateDomainSyntax($old_domain)) die("Invalid old_domain (check syntax)\n");
+
+exec($vpopmail_bin.'vdominfo '.$old_domain, $output);
+
+if (! isset($output[0])) die("Invalid old_domain\n");
+
+if ($output[0] == 'Invalid domain name')
+die("Invalid old_domain\n");
+
+foreach ($output as $line) if ($line == 'alias: '.$old_domain) die("Invalid old_domain (is an alias domain)\n");
+
+if ($output[0] != 'domain: '.$old_domain) die("Invalid old_domain\n");
+
+// validate new_domain
+if (! validateDomainSyntax($new_domain)) die("Invalid new_domain (check syntax)\n");
+
+$output = array();
+exec($vpopmail_bin.'vdominfo '.$new_domain, $output);
+
+if (! isset($output[0]))
+die("Invalid new_domain\n");
+
+if ($output[0] != 'Invalid domain name') {
+	if ($output[0] == 'domain: '.$new_domain) die("Invalid new_domain (domain exists)\n");
+
+	foreach ($output as $line) if ($line == 'alias: '.$new_domain) die("Invalid new_domain (is an alias domain)\n");
+	die("Invalid new_domain\n");
+}
+
+
+// filesystem changes
+runCommand('/bin/mv '.$vpopmail_domains.$old_domain.' '.$vpopmail_domains.$new_domain);
+
+replaceInFile($qmail_control.'rcpthosts', $old_domain, $new_domain);
+replaceInFile($qmail_control.'me', $old_domain, $new_domain);
+replaceInFile($qmail_control.'doublebouncehost', $old_domain, $new_domain);
+replaceInFile($qmail_control.'locals', $old_domain, $new_domain);
+replaceInFile($qmail_control.'bouncefrom', $old_domain, $new_domain);
+replaceInFile($qmail_control.'virtualdomains', $old_domain, $new_domain);
+replaceInFile($qmail_control.'srs_domain', $old_domain, $new_domain);
+replaceInFile($qmail_control.'morercpthosts', $old_domain, $new_domain);
+runCommand($qmail_bin.'qmail-newmrh');
+
+replaceInFile($qmail_users.'assign', $old_domain, $new_domain);
+runCommand($qmail_bin.'qmail-newu');
+
+replaceInFile($vpopmail_domains.$new_domain.'/.qmail-default', $old_domain, $new_domain);
+
+$d = dir($vpopmail_domains.$new_domain.'/');
+while (false !== ($entry = $d->read())) {
+        if ($entry != '..' && $entry != '.' && is_dir($vpopmail_domains.$new_domain.'/'.$entry))
+                replaceInFile($vpopmail_domains.$new_domain.'/'.$entry.'/.qmail',
+                    $old_domain,
+                    $new_domain);
+}
+$d->close();
+
+
+// database changes
+$mysql_configuration = file($vpopmail_etc.'vpopmail.mysql', FILE_SKIP_EMPTY_LINES);
+foreach ($mysql_configuration as $line) {
+	$line = trim($line);
+	if ($line[0] != '#') {
+		$parts = explode('|', $line);
+		if (count($parts) == 5) {
+			$mysql_host = $parts[0];
+			$mysql_port = $parts[1];
+			$mysql_user = $parts[2];
+			$mysql_pass = $parts[3];
+			$mysql_db   = $parts[4];
+		}
+	}
+}
+
+if (! isset($mysql_db)) die("Can't get mysql configuration values in ".$vpopmail_etc."vpopmail.mysql\n");
+
+$link = mysqli_connect($mysql_host,
+                       $mysql_user,
+                       $mysql_pass,
+                       $mysql_db,
+                       ($mysql_port ? $mysql_port : null));
+if (!$link) die("Connect Error (".mysqli_connect_errno().") ".mysqli_connect_error()."\n");
+
+if ($many_domains)
+{
+	$old_domain_table = preg_replace('/[^a-zA-Z\d\s:]/', '_', $old_domain);
+	$new_domain_table = preg_replace('/[^a-zA-Z\d\s:]/', '_', $new_domain);
+	if (mysqli_query($link, "RENAME TABLE $old_domain_table TO $new_domain_table") !== true)
+		die("Error (".mysqli_error($link)."\n");
+}
+else {
+	$new_domain_table = 'vpopmail';
+        if (mysqli_query($link, "UPDATE ".$new_domain_table." ".
+				 "SET pw_domain = REPLACE(pw_domain, ".
+                                              "'".$old_domain."', ".
+                                              "'".$new_domain."')") !== true)
+                die("Error (".mysqli_error($link)."\n");
+}
+
+if (mysqli_query($link, "UPDATE ".$new_domain_table." ".
+                        "SET pw_dir = REPLACE(pw_dir, ".
+                                              "'".$old_domain."', ".
+                                              "'".$new_domain."')") !== true)
+	die("Error (".mysqli_error($link)."\n");
+
+if (mysqli_query($link, "UPDATE dir_control ".
+                        "SET domain = '".$new_domain."' ".
+                        "WHERE domain = '".$old_domain."'") !== true)
+	die("Error (".mysqli_error($link)."\n");
+
+if ($mysql_limits) {
+	if (mysqli_query($link, "UPDATE limits ".
+        	                "SET domain = '".$new_domain."' ".
+                	        "WHERE domain = '".$old_domain."'") !== true)
+		die("Error (".mysqli_error($link)."\n");
+}
+
+if ($valias) {
+	if (mysqli_query($link, "UPDATE valias ".
+        	                "SET domain = '".$new_domain."' ".
+                	        "WHERE domain = '".$old_domain."'") !== true)
+		die("Error (".mysqli_error($link)."\n");
+
+	if (mysqli_query($link, "UPDATE valias ".
+        	                "SET valias_line = REPLACE(valias_line, ".
+                                                   "'".$old_domain."', ".
+                                                   "'".$new_domain."')") !== true)
+		die("Error (".mysqli_error($link)."\n");
+}
+
+mysqli_close($link);
+
+// roundcube (optional)
+if ($roundcube_config) {
+	include($roundcube_config);
+
+	if (! isset($config['db_dsnw'])) die("Unable to load Roundcube configuration\n");
+
+	$tmp = explode('://', $config['db_dsnw']);
+
+	if (! (isset($tmp[0]) && (strtolower($tmp[0]) == 'mysql') || strtolower($tmp[0]) == 'mysqli')) die("Roundcube database is not mysql nore mariadb");
+
+	$tmp = preg_replace('/[^a-zA-Z0-9_.]/', ' ', $tmp[1]);
+	$rc_config = explode(' ', $tmp);
+        $rc_config = array_filter($rc_config);
+
+	$link = mysqli_connect($rc_config[2], $rc_config[0], $rc_config[1], $rc_config[3]);
+	if (!$link) die("Connect Error (".mysqli_connect_errno().") ".mysqli_connect_error()."\n");
+
+	if (mysqli_query($link, "UPDATE users "." ".
+				"SET username = REPLACE(username, ".
+                                                        "'".$old_domain."', ".
+                                                        "'".$new_domain."')") !== true)
+		die("Error (".mysqli_error($link)."\n");
+
+	if (mysqli_query($link, "UPDATE identities"." ".
+                                "SET email = REPLACE(email, ".
+                                                     "'".$old_domain."', ".
+                                                     "'".$new_domain."')") !== true)
+		die("Error (".mysqli_error($link)."\n");
+
+	if (mysqli_query($link, "UPDATE identities"." ".
+                                "SET `reply-to` = REPLACE(`reply-to`, ".
+                                                          "'".$old_domain."', ".
+                                                          "'".$new_domain."')") !== true)
+		die("Error (".mysqli_error($link)."\n");
+}
+
+if ($qmailctl_bin) exec($qmailctl_bin.' start');
+if ($dovecotctl_bin) exec($dovecotctl_bin.' start');

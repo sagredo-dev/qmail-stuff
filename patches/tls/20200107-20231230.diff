@@ -1,0 +1,635 @@
+--- netqmail-1.06-tls-20200107.patch	2020-01-07 11:27:46.000000000 +0100
++++ notqmail-1.08-tls-20231230.patch	2023-12-30 21:06:22.000000000 +0100
+@@ -1,4 +1,4 @@
+-Frederik Vermeulen <qmail-tls akrul inoa.net> 20200107
++Frederik Vermeulen <qmail-tls akrul inoa.net> 20231230
+ http://inoa.net/qmail-tls/
+ 
+ This patch implements RFC 3207 in qmail. 
+@@ -7,9 +7,8 @@
+ The code is considered experimental (but has worked for
+ many since its first release on 1999-03-21).
+ 
+-Usage: - install OpenSSL-1.1.0 http://www.openssl.org/ or later
+-         (any version since 0.9.8 is presumed to work)
+-       - apply patch to netqmail-1.06 http://www.usenix.org.uk/mirrors/qmail/netqmail
++Usage: - install OpenSSL-3.0.11 http://www.openssl.org/ or later
++       - apply patch to notqmail-1.08 (https://notqmail.org)
+          The patches to qmail-remote.c and qmail-smtpd.c can be applied 
+          separately.
+        - provide a server certificate in /var/qmail/control/servercert.pem.
+@@ -27,12 +26,6 @@
+             /var/qmail/control/clientcert.pem. By preference this is
+             the same as servercert.pem, where nsCertType should be 
+             == server,client or be a generic certificate (no usage specified). 
+-          - when a 2048 bit RSA key is provided in /var/qmail/control/rsa2048.pem,
+-            this key will be used instead of (slow) on-the-fly generation by
+-            qmail-smtpd. Idem for 2048 DH param in control/dh2048.pem.
+-            `make tmprsadh` does this.
+-            Periodical replacement can be done by crontab:
+-            01 01 * * * /var/qmail/bin/update_tmprsadh > /dev/null 2>&1
+           - server authentication:
+             qmail-remote requires authentication from servers for which
+             /var/qmail/control/tlshosts/host.dom.ain.pem exists.
+@@ -72,8 +65,6 @@
+            recompilation when the shared openssl libs are upgraded.
+          - this patch could conflict with other patches (notably those
+            replacing \n with \r\n, which is a bad idea on encrypted links).
+-         - needs working /dev/urandom (or EGD for openssl versions >0.9.7)
+-           for seeding random number generator.
+          - packagers should make sure that installing without a valid 
+            servercert is impossible
+          - when applied in combination with AUTH patch, AUTH patch
+@@ -81,9 +72,6 @@
+            will fail. This error can be ignored. Packagers should
+            cut the first 12 lines of this patch to make a happy
+            patch
+-         - `make tmprsadh` is recommended (or should I say required), 
+-           otherwise DH generation can be unpredictably slow
+-         - some need "-I/usr/kerberos/include" to be added in conf-cc
+ 
+ Copyright: GPL
+            Links with OpenSSL
+@@ -224,8 +212,8 @@
+ +#ifdef TLS
+ +  if (!ssl) out("\r\n250-STARTTLS");
+ +#endif
+---- netqmail-1.06-orig/qmail-smtpd.c	2020-01-07 10:27:08.927951519 +0000
+-+++ netqmail-1.06/qmail-smtpd.c	2019-05-17 12:38:07.450322978 +0000
++--- notqmail-1.08-orig/qmail-smtpd.c	2023-12-30 20:01:57.430244334 +0000
+++++ notqmail-1.08/qmail-smtpd.c	2023-12-30 18:50:44.678346329 +0000
+ @@ -28,9 +28,27 @@
+  unsigned int databytes = 0;
+  int timeout = 1200;
+@@ -255,7 +243,7 @@
+    if (r <= 0) _exit(1);
+    return r;
+ @@ -50,7 +68,16 @@ void die_ipme() { out("421 unable to fig
+- void straynewline() { out("451 See http://pobox.com/~djb/docs/smtplf.html.\r\n"); flush(); _exit(1); }
++ void straynewline() { out("451 See https://cr.yp.to/docs/smtplf.html.\r\n"); flush(); _exit(1); }
+  
+  void err_bmf() { out("553 sorry, your envelope sender is in my badmailfrom list (#5.7.1)\r\n"); }
+ +#ifndef TLS
+@@ -339,7 +327,7 @@
+    blast(&hops);
+    hops = (hops >= MAXHOPS);
+    if (hops) qmail_fail(&qqt);
+-@@ -399,6 +446,271 @@ void smtp_data(arg) char *arg; {
++@@ -399,6 +446,220 @@ void smtp_data(arg) char *arg; {
+    out("\r\n");
+  }
+  
+@@ -355,53 +343,6 @@
+ +  else tls_init();
+ +}
+ +
+-+RSA *tmp_rsa_cb(SSL *ssl, int export, int keylen)
+-+{
+-+  RSA *rsa;
+-+
+-+  if (!export) keylen = 2048;
+-+  if (keylen == 2048) {
+-+    FILE *in = fopen("control/rsa2048.pem", "r");
+-+    if (in) {
+-+      rsa = PEM_read_RSAPrivateKey(in, NULL, NULL, NULL);
+-+      fclose(in);
+-+      if (rsa) return rsa;
+-+    }
+-+  }
+-+#if OPENSSL_VERSION_NUMBER >= 0x10100000L
+-+  BIGNUM *e; /*exponent */
+-+  e = BN_new(); 
+-+  BN_set_word(e, RSA_F4);
+-+  if (RSA_generate_key_ex(rsa, keylen, e, NULL) == 1)
+-+    return rsa;
+-+  return NULL;
+-+#else
+-+  return RSA_generate_key(keylen, RSA_F4, NULL, NULL);
+-+#endif
+-+}
+-+
+-+DH *tmp_dh_cb(SSL *ssl, int export, int keylen)
+-+{
+-+  DH *dh;
+-+
+-+  if (!export) keylen = 2048;
+-+  if (keylen == 2048) {
+-+    FILE *in = fopen("control/dh2048.pem", "r");
+-+    if (in) {
+-+      dh = PEM_read_DHparams(in, NULL, NULL, NULL);
+-+      fclose(in);
+-+      if (dh) return dh;
+-+    }
+-+  }
+-+#if OPENSSL_VERSION_NUMBER >= 0x10100000L
+-+  if((dh = DH_new()) && (DH_generate_parameters_ex(dh, keylen, DH_GENERATOR_2, NULL) == 1))
+-+    return dh;
+-+  return NULL;
+-+#else
+-+  return DH_generate_parameters(keylen, DH_GENERATOR_2, NULL, NULL);
+-+#endif
+-+} 
+-+
+ +/* don't want to fail handshake if cert isn't verifiable */
+ +int verify_cb(int preverify_ok, X509_STORE_CTX *x509_ctx) { return 1; }
+ +
+@@ -515,15 +456,12 @@
+ +  X509_LOOKUP *lookup;
+ +  int session_id_context = 1; /* anything will do */
+ +
+-+  SSL_library_init();
+++  OPENSSL_init_ssl(OPENSSL_INIT_LOAD_SSL_STRINGS, NULL);
+ +
+ +  /* a new SSL context with the bare minimum of options */
+-+  ctx = SSL_CTX_new(SSLv23_server_method());
+++  ctx = SSL_CTX_new(TLS_server_method());
+ +  if (!ctx) { tls_err("unable to initialize ctx"); return; }
+ +
+-+  /* POODLE vulnerability */
+-+  SSL_CTX_set_options(ctx, SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3);
+-+
+ +  /* renegotiation should include certificate request */
+ +  SSL_CTX_set_options(ctx, SSL_OP_NO_SESSION_RESUMPTION_ON_RENEGOTIATION);
+ +
+@@ -547,13 +485,10 @@
+ +    X509_STORE_set_flags(store, X509_V_FLAG_CRL_CHECK |
+ +                                X509_V_FLAG_CRL_CHECK_ALL);
+ +  
+-+#if OPENSSL_VERSION_NUMBER >= 0x10100000L
+-+  /* support ECDH */
+-+  SSL_CTX_set_ecdh_auto(ctx,1);
+-+#endif
+-+
+ +  SSL_CTX_set_verify(ctx, SSL_VERIFY_NONE, NULL);
+ +
+++  SSL_CTX_set_dh_auto(ctx, 1);
+++
+ +  /* a new SSL object, with the rest added to it directly to avoid copying */
+ +  myssl = SSL_new(ctx);
+ +  SSL_CTX_free(ctx);
+@@ -575,11 +510,13 @@
+ +    }
+ +  }
+ +  if (!ciphers || !*ciphers) ciphers = "DEFAULT";
+++  /* TLSv1.2 and lower*/
+ +  SSL_set_cipher_list(myssl, ciphers);
+++  /* TLSv1.3 and above*/
+++  SSL_set_ciphersuites(myssl, ciphers);
+ +  alloc_free(saciphers.s);
+ +
+-+  SSL_set_tmp_rsa_callback(myssl, tmp_rsa_cb);
+-+  SSL_set_tmp_dh_callback(myssl, tmp_dh_cb);
+++
+ +  SSL_set_rfd(myssl, ssl_rfd = substdio_fileno(&ssin));
+ +  SSL_set_wfd(myssl, ssl_wfd = substdio_fileno(&ssout));
+ +
+@@ -611,7 +548,7 @@
+  struct commands smtpcommands[] = {
+    { "rcpt", smtp_rcpt, 0 }
+  , { "mail", smtp_mail, 0 }
+-@@ -408,6 +720,9 @@ struct commands smtpcommands[] = {
++@@ -408,6 +669,9 @@ struct commands smtpcommands[] = {
+  , { "ehlo", smtp_ehlo, flush }
+  , { "rset", smtp_rset, 0 }
+  , { "help", smtp_help, flush }
+@@ -621,9 +558,9 @@
+  , { "noop", err_noop, flush }
+  , { "vrfy", err_vrfy, flush }
+  , { 0, err_unimpl, flush }
+---- netqmail-1.06-orig/qmail-remote.c	2020-01-07 10:27:08.927951519 +0000
+-+++ netqmail-1.06/qmail-remote.c	2019-11-14 09:25:07.561610517 +0000
+-@@ -48,6 +48,17 @@ saa reciplist = {0};
++--- notqmail-1.08-orig/qmail-remote.c	2023-12-30 20:01:57.430244334 +0000
+++++ notqmail-1.08/qmail-remote.c	2023-12-30 19:25:12.202167983 +0000
++@@ -47,6 +47,17 @@ saa reciplist = {0};
+  
+  struct ip_address partner;
+  
+@@ -641,7 +578,7 @@
+  void out(s) char *s; { if (substdio_puts(subfdoutsmall,s) == -1) _exit(0); }
+  void zero() { if (substdio_put(subfdoutsmall,"\0",1) == -1) _exit(0); }
+  void zerodie() { zero(); substdio_flush(subfdoutsmall); _exit(0); }
+-@@ -99,6 +110,9 @@ void dropped() {
++@@ -98,6 +109,9 @@ void dropped() {
+    outhost();
+    out(" but connection died. ");
+    if (flagcritical) out("Possible duplicate! ");
+@@ -651,7 +588,7 @@
+    out("(#4.4.2)\n");
+    zerodie();
+  }
+-@@ -110,6 +124,12 @@ int timeout = 1200;
++@@ -109,6 +123,12 @@ int timeout = 1200;
+  int saferead(fd,buf,len) int fd; char *buf; int len;
+  {
+    int r;
+@@ -664,7 +601,7 @@
+    r = timeoutread(timeout,smtpfd,buf,len);
+    if (r <= 0) dropped();
+    return r;
+-@@ -117,6 +137,12 @@ int saferead(fd,buf,len) int fd; char *b
++@@ -116,6 +136,12 @@ int saferead(fd,buf,len) int fd; char *b
+  int safewrite(fd,buf,len) int fd; char *buf; int len;
+  {
+    int r;
+@@ -677,7 +614,7 @@
+    r = timeoutwrite(timeout,smtpfd,buf,len);
+    if (r <= 0) dropped();
+    return r;
+-@@ -194,19 +220,25 @@ unsigned long ehlo()
++@@ -193,19 +219,25 @@ unsigned long ehlo()
+    e = smtptext.s + smtptext.len - 6; /* 250-?\n */
+    while (s <= e)
+    {
+@@ -712,7 +649,7 @@
+      /* keyword should consist of alpha-num and '-'
+       * broken AUTH might use '=' instead of space */
+      for (p = sa->s; *p; ++p) if (*p == '=') { *p = 0; break; }
+-@@ -232,6 +264,17 @@ void quit(prepend,append)
++@@ -231,6 +263,17 @@ void quit(prepend,append)
+  char *prepend;
+  char *append;
+  {
+@@ -730,7 +667,7 @@
+    substdio_putsflush(&smtpto,"QUIT\r\n");
+    /* waiting for remote side is just too ridiculous */
+    out(prepend);
+-@@ -239,6 +282,30 @@ char *append;
++@@ -238,6 +281,30 @@ char *append;
+    out(append);
+    out(".\n");
+    outsmtptext();
+@@ -761,7 +698,7 @@
+    zerodie();
+  }
+  
+-@@ -267,6 +334,210 @@ void blast()
++@@ -266,6 +333,210 @@ void blast()
+    substdio_flush(&smtpto);
+  }
+  
+@@ -830,17 +767,14 @@
+ +    }
+ +  }
+ +
+-+  SSL_library_init();
+-+  ctx = SSL_CTX_new(SSLv23_client_method());
+++  OPENSSL_init_ssl(OPENSSL_INIT_LOAD_SSL_STRINGS, NULL);
+++  ctx = SSL_CTX_new(TLS_client_method());
+ +  if (!ctx) {
+ +    if (!smtps && !servercert) return 0;
+ +    smtptext.len = 0;
+ +    tls_quit_error("ZTLS error initializing ctx");
+ +  }
+ +
+-+  /* POODLE vulnerability */
+-+  SSL_CTX_set_options(ctx, SSL_OP_NO_SSLv2 | SSL_OP_NO_SSLv3);
+-+
+ +  if (servercert) {
+ +    if (!SSL_CTX_load_verify_locations(ctx, servercert, NULL)) {
+ +      SSL_CTX_free(ctx);
+@@ -880,7 +814,10 @@
+ +    ciphers = saciphers.s;
+ +  }
+ +  else ciphers = "DEFAULT";
+++  /* TLSv1.2 and lower*/
+ +  SSL_set_cipher_list(myssl, ciphers);
+++  /* TLSv1.3 and above*/
+++  SSL_set_ciphersuites(myssl, ciphers);
+ +  alloc_free(saciphers.s);
+ +
+ +  SSL_set_fd(myssl, smtpfd);
+@@ -972,7 +909,7 @@
+  stralloc recip = {0};
+  
+  void smtp()
+-@@ -274,12 +545,37 @@ void smtp()
++@@ -273,12 +544,37 @@ void smtp()
+    unsigned long code;
+    int flagbother;
+    int i;
+@@ -1010,7 +947,7 @@
+    if (code == 250) {
+      /* add EHLO response checks here */
+  
+-@@ -484,6 +780,9 @@ char **argv;
++@@ -483,6 +779,9 @@ char **argv;
+      if (timeoutconn(smtpfd,&ip.ix[i].ip,(unsigned int) port,timeoutconnect) == 0) {
+        tcpto_err(&ip.ix[i].ip,0);
+        partner = ip.ix[i].ip;
+@@ -1020,8 +957,8 @@
+        smtp(); /* does not return */
+      }
+      tcpto_err(&ip.ix[i].ip,errno == error_timeout);
+---- netqmail-1.06-orig/qmail-smtpd.8	1998-06-15 10:53:16.000000000 +0000
+-+++ netqmail-1.06/qmail-smtpd.8	2016-09-18 09:51:27.707704853 +0000
++--- notqmail-1.08-orig/qmail-smtpd.8	2020-05-20 15:13:41.000000000 +0000
+++++ notqmail-1.08/qmail-smtpd.8	2023-12-28 20:41:08.669606069 +0000
+ @@ -14,6 +14,15 @@ must be supplied several environment var
+  see
+  .BR tcp-environ(5) .
+@@ -1118,9 +1055,9 @@
+  .SH "SEE ALSO"
+  tcp-env(1),
+  tcp-environ(5),
+---- netqmail-1.06-orig/qmail-remote.8	1998-06-15 10:53:16.000000000 +0000
+-+++ netqmail-1.06/qmail-remote.8	2015-12-01 15:54:59.029940779 +0000
+-@@ -114,6 +114,10 @@ arguments.
++--- notqmail-1.08-orig/qmail-remote.8	2020-05-20 15:13:41.000000000 +0000
+++++ notqmail-1.08/qmail-remote.8	2023-12-28 20:41:08.669606069 +0000
++@@ -121,6 +121,10 @@ arguments.
+  always exits zero.
+  .SH "CONTROL FILES"
+  .TP 5
+@@ -1131,7 +1068,7 @@
+  .I helohost
+  Current host name,
+  for use solely in saying hello to the remote SMTP server.
+-@@ -123,6 +127,16 @@ if that is supplied;
++@@ -130,6 +134,16 @@ if that is supplied;
+  otherwise
+  .B qmail-remote
+  refuses to run.
+@@ -1148,7 +1085,7 @@
+  .TP 5
+  .I smtproutes
+  Artificial SMTP routes.
+-@@ -156,6 +170,8 @@ may be empty;
++@@ -163,6 +177,8 @@ may be empty;
+  this tells
+  .B qmail-remote
+  to look up MX records as usual.
+@@ -1157,7 +1094,7 @@
+  .I smtproutes
+  may include wildcards:
+  
+-@@ -195,6 +211,33 @@ Number of seconds
++@@ -202,6 +218,33 @@ Number of seconds
+  .B qmail-remote
+  will wait for each response from the remote SMTP server.
+  Default: 1200.
+@@ -1191,8 +1128,8 @@
+  .SH "SEE ALSO"
+  addresses(5),
+  envelopes(5),
+---- netqmail-1.06-orig/qmail-control.9	1998-06-15 10:53:16.000000000 +0000
+-+++ netqmail-1.06/qmail-control.9	2015-12-08 00:33:06.248714330 +0000
++--- notqmail-1.08-orig/qmail-control.9	2020-05-20 15:13:41.000000000 +0000
+++++ notqmail-1.08/qmail-control.9	2023-12-28 20:41:08.673606076 +0000
+ @@ -43,11 +43,14 @@ control	default	used by
+  .I badmailfrom	\fR(none)	\fRqmail-smtpd
+  .I bouncefrom	\fRMAILER-DAEMON	\fRqmail-send
+@@ -1226,10 +1163,10 @@
+  .I virtualdomains	\fR(none)	\fRqmail-send
+  .fi
+  .RE
+---- netqmail-1.06-orig/dns.c	2007-11-30 20:22:54.000000000 +0000
+-+++ netqmail-1.06/dns.c	2019-04-08 15:22:04.390598941 +0000
+-@@ -267,12 +267,14 @@ stralloc *sa;
+- int pref;
++--- notqmail-1.08-orig/dns.c	2020-05-20 15:13:41.000000000 +0000
+++++ notqmail-1.08/dns.c	2023-12-28 20:41:08.673606076 +0000
++@@ -263,12 +263,14 @@ int dns_ptr(stralloc *sa, struct ip_addr
++ static int dns_ipplus(ipalloc *ia, stralloc *sa, int dpref)
+  {
+   int r;
+ - struct ip_mx ix;
+@@ -1244,9 +1181,9 @@
+     if (!glue.s[ip_scan(glue.s,&ix.ip)] || !glue.s[ip_scanbracket(glue.s,&ix.ip)])
+      {
+       if (!ipalloc_append(ia,&ix)) return DNS_MEM;
+-@@ -291,9 +293,16 @@ int pref;
++@@ -287,9 +289,16 @@ static int dns_ipplus(ipalloc *ia, stral
+     ix.ip = ip;
+-    ix.pref = pref;
++    ix.pref = dpref;
+     if (r == DNS_SOFT) return DNS_SOFT;
+ -   if (r == 1)
+ +   if (r == 1) {
+@@ -1262,7 +1199,7 @@
+   return 0;
+  }
+  
+-@@ -313,7 +322,7 @@ unsigned long random;
++@@ -309,7 +318,7 @@ unsigned long random;
+  {
+   int r;
+   struct mx { stralloc sa; unsigned short p; } *mx;
+@@ -1271,7 +1208,7 @@
+   int nummx;
+   int i;
+   int j;
+-@@ -325,7 +334,9 @@ unsigned long random;
++@@ -321,7 +330,9 @@ unsigned long random;
+   if (!stralloc_copy(&glue,sa)) return DNS_MEM;
+   if (!stralloc_0(&glue)) return DNS_MEM;
+   if (glue.s[0]) {
+@@ -1281,8 +1218,8 @@
+     if (!glue.s[ip_scan(glue.s,&ix.ip)] || !glue.s[ip_scanbracket(glue.s,&ix.ip)])
+      {
+       if (!ipalloc_append(ia,&ix)) return DNS_MEM;
+---- netqmail-1.06-orig/hier.c	1998-06-15 10:53:16.000000000 +0000
+-+++ netqmail-1.06/hier.c	2015-12-01 15:54:59.033940812 +0000
++--- notqmail-1.08-orig/hier.c	2020-05-20 15:13:41.000000000 +0000
+++++ notqmail-1.08/hier.c	2023-12-28 20:41:08.673606076 +0000
+ @@ -143,6 +143,9 @@ void hier()
+    c(auto_qmail,"bin","qail",auto_uido,auto_gidq,0755);
+    c(auto_qmail,"bin","elq",auto_uido,auto_gidq,0755);
+@@ -1293,8 +1230,8 @@
+  
+    c(auto_qmail,"man/man5","addresses.5",auto_uido,auto_gidq,0644);
+    c(auto_qmail,"man/cat5","addresses.0",auto_uido,auto_gidq,0644);
+---- netqmail-1.06-orig/ipalloc.h	1998-06-15 10:53:16.000000000 +0000
+-+++ netqmail-1.06/ipalloc.h	2015-12-01 15:54:59.033940812 +0000
++--- notqmail-1.08-orig/ipalloc.h	2020-05-20 15:13:41.000000000 +0000
+++++ notqmail-1.08/ipalloc.h	2023-12-28 20:41:08.673606076 +0000
+ @@ -3,7 +3,15 @@
+  
+  #include "ip.h"
+@@ -1311,8 +1248,8 @@
+  
+  #include "gen_alloc.h"
+  
+---- netqmail-1.06-orig/tls.c	2020-01-07 10:27:08.931951527 +0000
+-+++ netqmail-1.06/tls.c	2019-04-08 15:17:31.924930725 +0000
++--- notqmail-1.08-orig/tls.c	2023-12-30 20:01:57.434244340 +0000
+++++ notqmail-1.08/tls.c	2023-12-28 20:41:08.673606076 +0000
+ @@ -0,0 +1,27 @@
+ +#ifdef TLS
+ +#include "exit.h"
+@@ -1341,8 +1278,8 @@
+ +  return (errno == error_timeout) ? "timed out" : error_str(errno);
+ +}
+ +#endif
+---- netqmail-1.06-orig/tls.h	2020-01-07 10:27:08.931951527 +0000
+-+++ netqmail-1.06/tls.h	2015-12-01 15:54:59.033940812 +0000
++--- notqmail-1.08-orig/tls.h	2023-12-30 20:01:57.434244340 +0000
+++++ notqmail-1.08/tls.h	2023-12-28 20:41:08.673606076 +0000
+ @@ -0,0 +1,16 @@
+ +#ifndef TLS_H
+ +#define TLS_H
+@@ -1360,8 +1297,8 @@
+ +const char *ssl_error_str();
+ +
+ +#endif
+---- netqmail-1.06-orig/ssl_timeoutio.c	2020-01-07 10:27:08.931951527 +0000
+-+++ netqmail-1.06/ssl_timeoutio.c	2020-01-07 10:04:16.529224478 +0000
++--- notqmail-1.08-orig/ssl_timeoutio.c	2023-12-30 20:01:57.434244340 +0000
+++++ notqmail-1.08/ssl_timeoutio.c	2023-12-28 20:41:08.673606076 +0000
+ @@ -0,0 +1,126 @@
+ +#ifdef TLS
+ +#include "select.h"
+@@ -1489,8 +1426,8 @@
+ +  return ssl_timeoutio(SSL_write, t, rfd, wfd, ssl, buf, len);
+ +}
+ +#endif
+---- netqmail-1.06-orig/ssl_timeoutio.h	2020-01-07 10:27:08.931951527 +0000
+-+++ netqmail-1.06/ssl_timeoutio.h	2019-03-22 21:11:16.610440636 +0000
++--- notqmail-1.08-orig/ssl_timeoutio.h	2023-12-30 20:01:57.434244340 +0000
+++++ notqmail-1.08/ssl_timeoutio.h	2023-12-28 20:41:08.673606076 +0000
+ @@ -0,0 +1,21 @@
+ +#ifndef SSL_TIMEOUTIO_H
+ +#define SSL_TIMEOUTIO_H
+@@ -1513,9 +1450,9 @@
+ +  int (*fun)(), int t, int rfd, int wfd, SSL *ssl, char *buf, int len);
+ +
+ +#endif
+---- netqmail-1.06-orig/TARGETS	1998-06-15 10:53:16.000000000 +0000
+-+++ netqmail-1.06/TARGETS	2015-12-01 15:54:59.033940812 +0000
+-@@ -168,6 +168,8 @@ control.o
++--- notqmail-1.08-orig/TARGETS	2020-05-20 15:13:41.000000000 +0000
+++++ notqmail-1.08/TARGETS	2023-12-28 20:44:04.377930428 +0000
++@@ -186,6 +186,8 @@ control.o
+  constmap.o
+  timeoutread.o
+  timeoutwrite.o
+@@ -1524,21 +1461,23 @@
+  timeoutconn.o
+  tcpto.o
+  dns.o
+-@@ -320,6 +322,7 @@ binm2
++@@ -334,6 +336,7 @@ binm2
+  binm2+df
+  binm3
+  binm3+df
+ +Makefile-cert
+- it
+  qmail-local.0
+  qmail-lspawn.0
+-@@ -385,3 +388,4 @@ forgeries.0
+- man
++ qmail-getpw.8
++@@ -396,5 +399,6 @@ addresses.0
++ envelopes.0
++ forgeries.0
+  setup
+- check
+ +update_tmprsadh
+---- netqmail-1.06-orig/Makefile-cert.mk	2020-01-07 10:27:08.931951527 +0000
+-+++ netqmail-1.06/Makefile-cert.mk	2015-12-01 15:54:59.033940812 +0000
++ qtmp.h
++ qmail-send.service
++--- notqmail-1.08-orig/Makefile-cert.mk	2023-12-30 20:01:57.434244340 +0000
+++++ notqmail-1.08/Makefile-cert.mk	2023-12-28 20:41:08.673606076 +0000
+ @@ -0,0 +1,21 @@
+ +cert-req: req.pem
+ +cert cert-req: QMAIL/control/clientcert.pem
+@@ -1561,51 +1500,41 @@
+ +	@echo
+ +	@echo "Send req.pem to your CA to obtain signed_req.pem, and do:"
+ +	@echo "cat signed_req.pem >> QMAIL/control/servercert.pem"
+---- netqmail-1.06-orig/conf-cc	1998-06-15 10:53:16.000000000 +0000
+-+++ netqmail-1.06/conf-cc	2020-01-07 10:15:59.770628786 +0000
++--- notqmail-1.08-orig/conf-cc	2020-05-20 15:13:41.000000000 +0000
+++++ notqmail-1.08/conf-cc	2023-12-30 19:59:00.857917954 +0000
+ @@ -1,3 +1,3 @@
+ -cc -O2
+-+cc -O2 -DTLS=20200107 -I/usr/local/ssl/include
+++cc -O2 -DTLS=20231230
+  
+  This will be used to compile .c files.
+---- netqmail-1.06-orig/Makefile	2007-11-30 20:22:54.000000000 +0000
+-+++ netqmail-1.06/Makefile	2015-12-01 15:54:59.033940812 +0000
+-@@ -808,7 +808,7 @@ dnsptr dnsip dnsmxip dnsfq hostname ipme
++--- notqmail-1.08-orig/Makefile	2020-05-20 15:13:41.000000000 +0000
+++++ notqmail-1.08/Makefile	2023-12-28 20:55:39.719214037 +0000
++@@ -813,7 +813,7 @@ dnsptr dnsip dnsfq hostname ipmeprint qr
+  forward preline condredirect bouncesaying except maildirmake \
+- maildir2mbox maildirwatch qail elq pinq idedit install-big install \
++ maildir2mbox maildirwatch qail elq pinq install instpackage instchown \
+  instcheck home home+df proc proc+df binm1 binm1+df binm2 binm2+df \
+ -binm3 binm3+df
+ +binm3 binm3+df update_tmprsadh
+  
+  load: \
+- make-load warn-auto.sh systype
+-@@ -1444,6 +1444,7 @@ ndelay.a case.a sig.a open.a lock.a seek
++ make-load warn-auto.sh
++@@ -1434,6 +1434,7 @@ ndelay.a case.a sig.a open.a lock.a seek
+  substdio.a error.a str.a fs.a auto_qmail.o dns.lib socket.lib
+  	./load qmail-remote control.o constmap.o timeoutread.o \
+  	timeoutwrite.o timeoutconn.o tcpto.o now.o dns.o ip.o \
+-+	tls.o ssl_timeoutio.o -L/usr/local/ssl/lib -lssl -lcrypto \
+++	tls.o ssl_timeoutio.o -lssl -lcrypto \
+  	ipalloc.o ipme.o quote.o ndelay.a case.a sig.a open.a \
+  	lock.a seek.a getln.a stralloc.a alloc.a substdio.a error.a \
+  	str.a fs.a auto_qmail.o  `cat dns.lib` `cat socket.lib`
+-@@ -1539,6 +1540,7 @@ open.a sig.a case.a env.a stralloc.a all
++@@ -1534,6 +1535,7 @@ open.a sig.a case.a env.a stralloc.a all
+  fs.a auto_qmail.o socket.lib
+  	./load qmail-smtpd rcpthosts.o commands.o timeoutread.o \
+  	timeoutwrite.o ip.o ipme.o ipalloc.o control.o constmap.o \
+-+	tls.o ssl_timeoutio.o ndelay.a -L/usr/local/ssl/lib -lssl -lcrypto \
+++	tls.o ssl_timeoutio.o ndelay.a -lssl -lcrypto \
+  	received.o date822fmt.o now.o qmail.o cdb.a fd.a wait.a \
+  	datetime.a getln.a open.a sig.a case.a env.a stralloc.a \
+  	alloc.a substdio.a error.a str.a fs.a auto_qmail.o  `cat \
+-@@ -1827,7 +1829,8 @@ date822fmt.h date822fmt.c dns.h dns.c tr
+- ipalloc.h ipalloc.c select.h1 select.h2 trysysel.c ndelay.h ndelay.c \
+- ndelay_off.c direntry.3 direntry.h1 direntry.h2 trydrent.c prot.h \
+- prot.c chkshsgr.c warn-shsgr tryshsgr.c ipme.h ipme.c trysalen.c \
+--maildir.5 maildir.h maildir.c tcp-environ.5 constmap.h constmap.c
+-+maildir.5 maildir.h maildir.c tcp-environ.5 constmap.h constmap.c \
+-+update_tmprsadh
+- 	shar -m `cat FILES` > shar
+- 	chmod 400 shar
+- 
+-@@ -2108,6 +2111,19 @@ timeoutwrite.o: \
++@@ -2022,6 +2024,19 @@ timeoutwrite.o: \
+  compile timeoutwrite.c timeoutwrite.h select.h error.h readwrite.h
+  	./compile timeoutwrite.c
+  
+@@ -1624,8 +1553,8 @@
+ +
+  token822.o: \
+  compile token822.c stralloc.h gen_alloc.h alloc.h str.h token822.h \
+- gen_alloc.h gen_allocdefs.h
+-@@ -2139,3 +2155,26 @@ compile wait_nohang.c haswaitp.h
++ gen_alloc.h gen_allocdefs.h oflops.h error.h
++@@ -2050,3 +2065,26 @@ compile wait_nohang.c haswaitp.h
+  wait_pid.o: \
+  compile wait_pid.c error.h haswaitp.h
+  	./compile wait_pid.c
+@@ -1652,18 +1581,16 @@
+ +update_tmprsadh
+ +	echo "Creating new temporary RSA and DH parameters"
+ +	./update_tmprsadh
+---- netqmail-1.06-orig/update_tmprsadh.sh	2020-01-07 10:27:08.931951527 +0000
+-+++ netqmail-1.06/update_tmprsadh.sh	2015-12-08 00:32:33.936474103 +0000
+-@@ -0,0 +1,19 @@
++--- notqmail-1.08-orig/update_tmprsadh.sh	2023-12-30 20:01:57.434244340 +0000
+++++ notqmail-1.08/update_tmprsadh.sh	2023-12-28 20:56:39.363324171 +0000
++@@ -0,0 +1,17 @@
+ +#!/bin/sh
+ +
+ +# Update temporary RSA and DH keys
+-+# Frederik Vermeulen 2004-05-31 GPL
+++# Frederik Vermeulen 2023-12-28 GPL
+ +
+ +umask 0077 || exit 0
+ +
+-+export PATH="$PATH:/usr/local/bin/ssl:/usr/sbin"
+-+
+ +openssl genrsa -out QMAIL/control/rsa2048.new 2048 &&
+ +chmod 600 QMAIL/control/rsa2048.new &&
+ +chown UGQMAILD QMAIL/control/rsa2048.new &&

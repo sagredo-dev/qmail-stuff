@@ -1,0 +1,154 @@
+v. 2024.07.29
+
+multilog_readable-datetime patch for daemontools-0.78 https://github.com/sagredo-dev/daemontools
+by Roberto Puzzanghera https://notes.sagredo.eu
+
+The multilog program has been modified to work both with timestamps and human readable datetimes (commit)
+
+The action t inserts an @, a precise timestamp, and a space in front of each line, using the same format as tai64n.
+
+Example:
+
+  multilog t '-*' '+* fatal: *' ./main
+
+prints the line
+
+  @400000003b4a39c23294b13c fatal: out of memory
+
+The action d inserts a human readable datetime and a space in front of each line.
+
+Example:
+
+  multilog d '-*' '+* fatal: *' ./main
+
+prints the line
+
+  2024-07-29 10:36:08.811661123 fatal: out of memory
+
+Both flags are required to be the first action.
+
+######################
+
+This patch is compatible with jms' convert-multilog script, with a few modifications.
+
+If your multilog prints timestamps (t flag) download from here
+https://notes.sagredo.eu/files/qmail/convert-multilog.orig
+
+If your multilog prints readable datetime (d flag) download from here
+https://notes.sagredo.eu/files/qmail/convert-multilog_readable-datetime
+
+Also the qlog archive program is compatible with the datetime format, provided that you
+adjust your log/run files in this way
+
+timestamp (t flag)
+  n5 s16777215 '-*' '+* qlog*' !/usr/local/bin/archive_qmail_qlog $LOGDIRQLOG
+
+readable datetime (d flag). Note the missing blank space before 'qlog'.
+  n5 s16777215 '-*' '+*qlog*' !/usr/local/bin/archive_qmail_qlog $LOGDIRQLOG
+
+=======================================================================================
+
+From 80f213303646419ddfbfe412df21741d5ee2abfd Mon Sep 17 00:00:00 2001
+From: sagredo-dev <roberto.puzzanghera@sagredo.eu>
+Date: Mon, 29 Jul 2024 10:42:23 +0200
+Subject: [PATCH] multilog prints a readable datetime if used with "d" flag, it
+ prints timestamps if used in the usual way with the "t" flag
+
+---
+ admin/daemontools-0.78/src/CHANGES     |  1 +
+ admin/daemontools-0.78/src/multilog.c  | 14 +++++++++++---
+ admin/daemontools-0.78/src/timestamp.c | 16 ++++++++++++++++
+ admin/daemontools-0.78/src/timestamp.h |  2 ++
+ 4 files changed, 30 insertions(+), 3 deletions(-)
+
+diff --git a/admin/daemontools-0.78/src/CHANGES b/admin/daemontools-0.78/src/CHANGES
+index 8e34469..0f55b84 100644
+--- a/admin/daemontools-0.78/src/CHANGES
++++ b/admin/daemontools-0.78/src/CHANGES
+@@ -92,5 +92,6 @@ Dec 9, 2023
+ 
+ July 2024
+         version daemontools 0.78 (Roberto Puzzanghera)
++	- multilog prints a readable datetime if used with "d" flag, it prints timestamps if used in the usual way with the "t" flag
+ 	- fixed several compilation warnings
+ 
+diff --git a/admin/daemontools-0.78/src/multilog.c b/admin/daemontools-0.78/src/multilog.c
+index 10cd23c..5d4216f 100644
+--- a/admin/daemontools-0.78/src/multilog.c
++++ b/admin/daemontools-0.78/src/multilog.c
+@@ -495,11 +495,14 @@ void doit(char **script)
+   char *action;
+   int flagselected;
+   int flagtimestamp;
++  int flagdatetime;
+ 
+   flagtimestamp = 0;
+-  if (script[0])
+-    if (script[0][0] == 't')
+-      flagtimestamp = 1;
++  flagdatetime  = 0;
++  if (script[0]) {
++    if (script[0][0] == 't') flagtimestamp = 1;
++    else if (script[0][0] == 'd') flagdatetime = 1;
++  }
+ 
+   for (i = 0;i <= 1000;++i) line[i] = '\n';
+   linelen = 0;
+@@ -521,6 +524,11 @@ void doit(char **script)
+           line[25] = ' ';
+           linelen = 26;
+         }
++        else if (flagdatetime) {
++          readable_datetime(line);
++          line[29] = ' ';
++          linelen = 30;
++        }
+       if (ch == '\n')
+         break;
+       line[linelen++] = ch;
+diff --git a/admin/daemontools-0.78/src/timestamp.c b/admin/daemontools-0.78/src/timestamp.c
+index 37a75d1..ae4c534 100644
+--- a/admin/daemontools-0.78/src/timestamp.c
++++ b/admin/daemontools-0.78/src/timestamp.c
+@@ -1,7 +1,14 @@
++#include <stdio.h>
++#include <string.h>
++#include <time.h>
++#include <sys/time.h>
+ #include "taia.h"
+ #include "timestamp.h"
+ 
+ static char hex[16] = "0123456789abcdef";
++struct tm *tm_info;
++struct timespec tv;
++char nsec_buf[11];
+ 
+ void timestamp(char s[TIMESTAMP])
+ {
+@@ -18,3 +25,12 @@ void timestamp(char s[TIMESTAMP])
+     s[i * 2 + 2] = hex[nowpack[i] & 15];
+   }
+ }
++
++void readable_datetime(char s[DATETIME])
++{
++  clock_gettime(CLOCK_REALTIME, &tv);
++  tm_info = localtime(&tv.tv_sec);
++  strftime(s, DATETIME, "%F %T", tm_info);
++  sprintf(nsec_buf, ".%09ld", tv.tv_nsec);
++  strcat(s, nsec_buf);
++}
+diff --git a/admin/daemontools-0.78/src/timestamp.h b/admin/daemontools-0.78/src/timestamp.h
+index c923633..c55f1bc 100644
+--- a/admin/daemontools-0.78/src/timestamp.h
++++ b/admin/daemontools-0.78/src/timestamp.h
+@@ -2,7 +2,9 @@
+ #define TIMESTAMP_H
+ 
+ #define TIMESTAMP 25
++#define DATETIME  29
+ 
+ extern void timestamp(char *);
++extern void readable_datetime(char *);
+ 
+ #endif

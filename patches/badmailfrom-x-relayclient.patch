@@ -1,0 +1,25 @@
+This patch disables the badmailfrom check where RELAYCLIENT is set.
+
+This allows you to put your own domain in badmailfrom, but still allow your
+customers to relay through your mail server.
+
+Also Works with the qmail-smtpd-auth patch from http://members.elysium.pl/brush/qmail-smtpd-auth/
+so your smtp authenticated users are also permitted to relay.
+
+The basic idea behind the need for this concept is so you can put your own domain in badmailfrom,
+and still allow your trusted users to be able to send mail through your mail server.
+
+Jeremy Kitchen -- kitchen@scriptkitchen.com 12/23/2003
+
+diff -urN qmail-1.03.orig/qmail-smtpd.c qmail-1.03/qmail-smtpd.c
+--- qmail-1.03.orig/qmail-smtpd.c	1998-06-15 05:53:16.000000000 -0500
++++ qmail-1.03/qmail-smtpd.c	2003-12-23 16:41:44.386786384 -0600
+@@ -240,7 +240,7 @@
+ void smtp_mail(arg) char *arg;
+ {
+   if (!addrparse(arg)) { err_syntax(); return; }
+-  flagbarf = bmfcheck();
++  if (!relayclient) flagbarf = bmfcheck();
+   seenmail = 1;
+   if (!stralloc_copys(&rcptto,"")) die_nomem();
+   if (!stralloc_copys(&mailfrom,addr.s)) die_nomem();

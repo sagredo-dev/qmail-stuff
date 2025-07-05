@@ -1,0 +1,53 @@
+#!/bin/bash
+#
+# Mailman init script
+# grabbed from https://wiki.list.org/DOC/Mailman%203%20installation%20experience?action=AttachFile&do=view&target=init.d_mailman.txt
+# modified by Roberto Puzzanghera - https://notes.sagredo.eu
+#
+
+MAILMAN_DIR=/usr/local/mailman
+PATH=$MAILMAN_DIR/bin:/usr/sbin:/usr/bin:/bin:/sbin:
+DAEMON=$MAILMAN_DIR/bin/mailman
+CONFIG=$MAILMAN_DIR/etc/mailman.cfg
+
+DESC="GNU Mailman service"
+NAME=Mailman
+USER=mailman
+GROUP=mailman
+
+# Exit if the package is not installed
+[ -x "$DAEMON" ] || exit 0
+
+##########################################################################
+# we need to position in the ~mailman dir to avoid errors
+# see https://gitlab.com/mailman/mailman/-/issues/797
+cd $MAILMAN_DIR
+
+case "$1" in
+  start)
+        echo "Starting $DESC" "$NAME"
+        # use --force to remove a stale lock.
+        sudo -u $USER $DAEMON -C $CONFIG start --force
+        ;;
+  stop)
+        echo "Stopping $DESC" "$NAME"
+        sudo -u $USER $DAEMON -C $CONFIG stop
+        ;;
+  status)
+        sudo -u $USER $DAEMON -C $CONFIG status
+        ;;
+    info)
+        sudo -u $USER $DAEMON -C $CONFIG info
+        ;;
+  reopen)
+        sudo -u $USER $DAEMON -C $CONFIG reopen
+        ;;
+  restart)
+        echo "Restarting $DESC" "$NAME"
+        sudo -u $USER $DAEMON -C $CONFIG restart
+        ;;
+  *)
+        echo "Usage: $SCRIPTNAME {start|stop|status|info|reopen|restart}" >&2
+        exit 1
+        ;;
+esac

@@ -1,0 +1,468 @@
+diff -ruN vpopmail-5.4.33-original/Makefile.am vpopmail-5.4.33/Makefile.am
+--- vpopmail-5.4.33-original/Makefile.am	2021-10-30 19:33:38.141169429 +0200
++++ vpopmail-5.4.33/Makefile.am	2022-08-09 14:04:47.325812976 +0200
+@@ -19,7 +19,7 @@
+ MYSQLCONF=$(DESTDIR)@vpopmaildir@/etc/vpopmail.mysql
+ VLIMITS=$(DESTDIR)@vpopmaildir@/etc/vlimits.default
+ VUSAGECCONF=$(DESTDIR)@vpopmaildir@/etc/vusagec.conf
+-DOVECOT_SQL=$(DESTDIR)@vpopmaildir@/etc/pwd-query_disable-many-domains.sql
++DOVECOT_SQL=$(DESTDIR)@vpopmaildir@/etc/disable-many-domains_procedures.sql
+ 
+ noinst_LIBRARIES=libvpopmail.a
+ 
+@@ -159,7 +159,7 @@
+ 	if test @MANY_DOMAINS@ = 0; then \
+ 		if test ! -r $(DOVECOT_SQL); then \
+ 			$(INSTALL) -o root -m 0644 \
+-			dovecot/pwd-query_disable-many-domains.sql $(DOVECOT_SQL); \
++			dovecot/disable-many-domains_procedures.sql $(DOVECOT_SQL); \
+ 		fi \
+ 	fi
+ 
+diff -ruN vpopmail-5.4.33-original/doc/README.dovecot-pwd-query vpopmail-5.4.33/doc/README.dovecot-pwd-query
+--- vpopmail-5.4.33-original/doc/README.dovecot-pwd-query	2021-10-30 19:33:38.139169447 +0200
++++ vpopmail-5.4.33/doc/README.dovecot-pwd-query	1970-01-01 01:00:00.000000000 +0100
+@@ -1,29 +0,0 @@
+-v. 2021.07.08
+-vpopmail-dovecot-pwd_query patch for vpopmail-5.4.33 by Roberto Puzzanghera
+-More info here https://notes.sagredo.eu/en/qmail-notes-185/installing-and-configuring-vpopmail-81.html
+-
+-==================================================================================================================
+-
+-If you want to use the dovecot's sql auth driver with one table for each domain (--disable-many-domains) you have
+-to heavily customize your password query.
+-With this patch vpopmail installs the sql procedure and functions in the database when you create a new domain.
+-The procedure can be called by dovecot to perform the auth.
+-The sql stuff supports aliasdomains and mysql limits and will be loaded from ~/vpopmail/etc/pwd-query_disable-many-domains.sql.
+-You can customize the sql procedure editing this file.
+-Be aware that the aliasdomains support requires that you patched your vpopmail accordingly with my
+-sql-aliasdomains patch.
+-
+-Read the reference above for more info.
+-
+-=================================================================================================================
+-
+-== Settings
+-
+-This patch must be installed over the "sql-aliasdomains" patch.
+-
+-An autoreconf is needed as I modified the original configure.in and Makefile.am files.
+-
+-Configure as follows:
+-
+-autoreconf -f -i
+-./configure --disable-many-domains --enable-sql-aliasdomains --enable-mysql-bin=PATH
+diff -ruN vpopmail-5.4.33-original/doc/README.dovecot-sql-procedures vpopmail-5.4.33/doc/README.dovecot-sql-procedures
+--- vpopmail-5.4.33-original/doc/README.dovecot-sql-procedures	1970-01-01 01:00:00.000000000 +0100
++++ vpopmail-5.4.33/doc/README.dovecot-sql-procedures	2022-08-09 14:20:25.167679183 +0200
+@@ -0,0 +1,53 @@
++v. 2022.08.09
++vpopmail-dovecot-sql-procedures patch for vpopmail-5.4.33 by Roberto Puzzanghera
++More info here https://notes.sagredo.eu/en/qmail-notes-185/installing-and-configuring-vpopmail-81.html
++
++==================================================================================================================
++
++If you want to use the dovecot's sql auth driver with one table for each domain (--disable-many-domains) you have
++to heavily customize your password_query and user_query.
++With this patch vpopmail installs the sql procedures and functions in the database when you create a new domain.
++The procedures can be called by dovecot to perform the auth.
++The sql stuff supports aliasdomains and mysql limits and will be loaded from ~/vpopmail/etc/disable-many-domains_procedures.sql.
++You can customize the sql procedure editing this file.
++Be aware that the aliasdomains support requires that you patched your vpopmail accordingly with my
++sql-aliasdomains patch.
++
++Read the reference above for more info.
++
++=================================================================================================================
++
++== Settings
++
++This patch must be installed over the "sql-aliasdomains" patch.
++
++An autoreconf is needed as I modified the original configure.in and Makefile.am files.
++
++Configure as follows:
++
++autoreconf -f -i
++./configure --disable-many-domains --enable-sql-aliasdomains --enable-mysql-bin=PATH
++
++=== dovecot configuration
++
++auth-sql.conf.ext
++
++passdb {
++  driver = sql
++  args = /usr/local/dovecot/etc/dovecot/dovecot-sql.conf.ext
++}
++
++userdb {
++  driver = prefetch
++}
++
++# This is for LDA.
++userdb {
++  driver = sql
++  args = /usr/local/dovecot/etc/dovecot/dovecot-sql.conf.ext
++}
++
++dovecot-sql.conf.ext
++
++password_query = CALL dovecot_password_query_disable_many_domains('%n','%d','127.0.0.1','%r','%a')
++user_query = CALL dovecot_user_query_disable_many_domains('%n','%d')
+diff -ruN vpopmail-5.4.33-original/dovecot/disable-many-domains_procedures.sql vpopmail-5.4.33/dovecot/disable-many-domains_procedures.sql
+--- vpopmail-5.4.33-original/dovecot/disable-many-domains_procedures.sql	1970-01-01 01:00:00.000000000 +0100
++++ vpopmail-5.4.33/dovecot/disable-many-domains_procedures.sql	2022-08-10 12:30:39.894515798 +0200
+@@ -0,0 +1,166 @@
++/*******************************************************************************************************
++  password_query and user_query procedures for dovecot's sql auth in case of --disable-many-domains.
++  It supports aliasdomains and mysql-limits.
++
++  More info here
++  https://notes.sagredo.eu/en/qmail-notes-185/dovecot-vpopmail-auth-driver-removal-migrating-to-the-sql-driver-241.html
++
++  By Roberto Puzzanghera
++
++######  auth-sql.conf.ext
++
++passdb {
++  driver = sql
++  args = /usr/local/dovecot/etc/dovecot/dovecot-sql.conf.ext
++}
++
++userdb {
++  driver = prefetch
++}
++
++# This is for LDA.
++userdb {
++  driver = sql
++  args = /usr/local/dovecot/etc/dovecot/dovecot-sql.conf.ext
++}
++
++##### dovecot-sql.conf.ext
++
++password_query = CALL dovecot_password_query_disable_many_domains('%n','%d','127.0.0.1','%r','%a')
++user_query = CALL dovecot_user_query_disable_many_domains('%n','%d')
++
++ ***************************************************************************************************/
++
++
++/****************************************************************
++  Returns the domain table
++ ****************************************************************/
++DROP FUNCTION IF EXISTS `get_domain_table`;
++
++DELIMITER $$
++CREATE FUNCTION `get_domain_table`(`d` VARCHAR(100)) RETURNS varchar(100) CHARSET latin1
++BEGIN
++
++   DECLARE domain_table varchar(100);
++   SET domain_table = dot2underscore(get_real_domain(d));
++
++   RETURN domain_table;
++
++END$$
++DELIMITER ;
++
++
++/****************************************************************
++  Replaces dots and "-" with undescores in domain name
++ ****************************************************************/
++DROP FUNCTION IF EXISTS `dot2underscore`;
++
++DELIMITER $$
++CREATE FUNCTION `dot2underscore`(`d` VARCHAR(100)) RETURNS varchar(100) CHARSET latin1
++BEGIN
++
++   RETURN REPLACE(REPLACE(d, ".", "_"), "-", "_");
++
++END$$
++DELIMITER ;
++
++
++/*******************************************************************
++  Returns the real domain given an alias domain or the domain name
++  if it's not an alias.
++ *******************************************************************/
++DROP FUNCTION IF EXISTS `get_real_domain`;
++
++DELIMITER $$
++CREATE FUNCTION `get_real_domain`(`d` VARCHAR(100)) RETURNS varchar(100) CHARSET latin1
++BEGIN
++   DECLARE real_domain varchar(100);
++
++   IF NOT
++      (SELECT 1 FROM INFORMATION_SCHEMA.TABLES
++      WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME=dot2underscore(d))
++   IS NULL THEN
++      SET real_domain = d;
++
++   ELSEIF NOT
++      (SELECT 1 FROM aliasdomains WHERE alias=d)
++   IS NULL THEN
++      SELECT domain INTO real_domain FROM aliasdomains WHERE alias=d;
++
++   ELSE
++   SET real_domain = NULL;
++
++   END IF;
++
++   RETURN real_domain;
++
++END$$
++DELIMITER ;
++
++
++/**************************************************************************
++  Stored procedure for password_query in case of "disabled many domains"
++ **************************************************************************/
++DROP PROCEDURE IF EXISTS `dovecot_password_query_disable_many_domains`;
++
++DELIMITER $$
++CREATE PROCEDURE `dovecot_password_query_disable_many_domains`(IN `name` VARCHAR(255), IN `domain` VARCHAR(255), IN `webmail_ip` VARCHAR(255), IN `remote_ip` VARCHAR(255), IN `port` INT)
++BEGIN
++DECLARE vpopmail varchar(256);
++SET vpopmail = get_domain_table(domain);
++
++IF (vpopmail) IS NULL THEN
++   SET @SQL = "SELECT NULL";
++ELSE
++	SET @SQL = CONCAT("SELECT CONCAT(",vpopmail,".pw_name, '@', '",domain,"') AS user,",
++	vpopmail,".pw_passwd AS password,",
++	vpopmail,".pw_dir AS userdb_home,
++	89 AS userdb_uid,
++	89 AS userdb_gid,
++	CONCAT('*:bytes=', REPLACE(SUBSTRING_INDEX(",vpopmail,".pw_shell, 'S', 1), 'NOQUOTA', '0')) AS userdb_quota_rule
++	FROM ",vpopmail,"
++	LEFT JOIN limits ON limits.domain='",get_real_domain(domain),"'
++	WHERE ",vpopmail,".pw_name='",name,"'
++	AND
++	('",port,"'!='995' OR !(",vpopmail,".pw_gid & 2))
++	AND
++	('",remote_ip,"'!='",webmail_ip,"' OR !(",vpopmail,".pw_gid & 4))
++	AND
++	('",remote_ip,"'='",webmail_ip,"' OR '",port,"'!='993' OR !(",vpopmail,".pw_gid & 8))
++	AND
++	('",remote_ip,"'!='",webmail_ip,"' OR COALESCE(disable_webmail,0)!=1)
++	AND
++	('",remote_ip,"'='",webmail_ip,"' OR COALESCE(disable_imap,0)!=1)");
++END IF;
++
++PREPARE sql_code FROM @SQL;
++EXECUTE sql_code;
++DEALLOCATE PREPARE sql_code;
++
++END$$
++DELIMITER ;
++
++
++/**************************************************************************
++  Stored procedure for user_query in case of "disabled many domains"
++ **************************************************************************/
++DROP PROCEDURE IF EXISTS `dovecot_user_query_disable_many_domains`;
++
++DELIMITER $$
++CREATE PROCEDURE `dovecot_user_query_disable_many_domains`(IN `name` VARCHAR(255), IN `domain` VARCHAR(255))
++BEGIN
++DECLARE vpopmail varchar(256);
++SET vpopmail = get_domain_table(domain);
++
++IF (vpopmail) IS NULL THEN
++	SET @SQL = "SELECT NULL";
++ELSE
++	set @SQL = concat("SELECT ",vpopmail,".pw_dir AS home, 89 AS uid, 89 AS gid FROM ",vpopmail," where ",vpopmail,".pw_name='",name,"'");
++END IF;
++
++PREPARE sql_code FROM @SQL;
++EXECUTE sql_code;
++DEALLOCATE PREPARE sql_code;
++
++END$$
++DELIMITER ;
+diff -ruN vpopmail-5.4.33-original/dovecot/pwd-query_disable-many-domains.sql vpopmail-5.4.33/dovecot/pwd-query_disable-many-domains.sql
+--- vpopmail-5.4.33-original/dovecot/pwd-query_disable-many-domains.sql	2021-10-30 19:33:38.141169429 +0200
++++ vpopmail-5.4.33/dovecot/pwd-query_disable-many-domains.sql	1970-01-01 01:00:00.000000000 +0100
+@@ -1,141 +0,0 @@
+-/************************************************************************************************
+-  password_query procedure for dovecot's sql auth in case of --disable-many-domains.
+-  It supports aliasdomains and mysql-limits.
+-
+-  More info here
+-  https://notes.sagredo.eu/en/qmail-notes-185/dovecot-vpopmail-auth-driver-removal-migrating-to-the-sql-driver-241.html
+-
+-  By Roberto Puzzanghera
+-
+-######  auth-sql.conf.ext
+-
+-passdb {
+-  driver = sql
+-  args = /usr/local/dovecot/etc/dovecot/dovecot-sql.conf.ext
+-}
+-
+-userdb {
+-  driver = prefetch
+-}
+-
+-# This is for LDA.
+-userdb {
+-  driver = static
+-  args = uid=89 gid=89 home=/home/vpopmail/domains/%d/%n
+-}
+-}
+-
+-##### dovecot-sql.conf.ext
+-
+-password_query = CALL dovecot_password_query_disable_many_domains('%n','%d','127.0.0.1','%r','%a')
+-
+- ***************************************************************************************************/
+-
+-
+-/****************************************************************
+-  Returns the domain table
+- ****************************************************************/
+-DROP FUNCTION IF EXISTS `get_domain_table`;
+-
+-DELIMITER $$
+-CREATE FUNCTION `get_domain_table`(`d` VARCHAR(100)) RETURNS varchar(100) CHARSET latin1
+-BEGIN
+-
+-   DECLARE domain_table varchar(100);
+-   SET domain_table = dot2underscore(get_real_domain(d));
+-
+-   RETURN domain_table;
+-
+-END$$
+-DELIMITER ;
+-
+-
+-/****************************************************************
+-  Replaces dots and "-" with undescores in domain name
+- ****************************************************************/
+-DROP FUNCTION IF EXISTS `dot2underscore`;
+-
+-DELIMITER $$
+-CREATE FUNCTION `dot2underscore`(`d` VARCHAR(100)) RETURNS varchar(100) CHARSET latin1
+-BEGIN
+-
+-   RETURN REPLACE(REPLACE(d, ".", "_"), "-", "_");
+-
+-END$$
+-DELIMITER ;
+-
+-
+-/*******************************************************************
+-  Returns the real domain given an alias domain or the domain name
+-  if it's not an alias.
+- *******************************************************************/
+-DROP FUNCTION IF EXISTS `get_real_domain`;
+-
+-DELIMITER $$
+-CREATE FUNCTION `get_real_domain`(`d` VARCHAR(100)) RETURNS varchar(100) CHARSET latin1
+-BEGIN
+-   DECLARE real_domain varchar(100);
+-
+-   IF NOT
+-      (SELECT 1 FROM INFORMATION_SCHEMA.TABLES
+-      WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME=dot2underscore(d))
+-   IS NULL THEN
+-      SET real_domain = d;
+-
+-   ELSEIF NOT
+-      (SELECT 1 FROM aliasdomains WHERE alias=d)
+-   IS NULL THEN
+-      SELECT domain INTO real_domain FROM aliasdomains WHERE alias=d;
+-
+-   ELSE
+-   SET real_domain = NULL;
+-
+-   END IF;
+-
+-   RETURN real_domain;
+-
+-END$$
+-DELIMITER ;
+-
+-
+-/**************************************************************************
+-  Stored procedure for password_query in case of "disabled many domains"
+- **************************************************************************/
+-DROP PROCEDURE IF EXISTS `dovecot_password_query_disable_many_domains`;
+-
+-DELIMITER $$
+-CREATE PROCEDURE `dovecot_password_query_disable_many_domains`(IN `name` VARCHAR(255), IN `domain` VARCHAR(255), IN `webmail_ip` VARCHAR(255), IN `remote_ip` VARCHAR(255), IN `port` INT)
+-BEGIN
+-DECLARE vpopmail varchar(256);
+-SET vpopmail = get_domain_table(domain);
+-
+-IF (vpopmail) IS NULL THEN
+-   SET @SQL = "SELECT NULL";
+-ELSE
+-	SET @SQL = CONCAT("SELECT CONCAT(",vpopmail,".pw_name, '@', '",domain,"') AS user,",
+-	vpopmail,".pw_passwd AS password,",
+-	vpopmail,".pw_dir AS userdb_home,
+-	89 AS userdb_uid,
+-	89 AS userdb_gid,
+-	CONCAT('*:bytes=', REPLACE(SUBSTRING_INDEX(",vpopmail,".pw_shell, 'S', 1), 'NOQUOTA', '0')) AS userdb_quota_rule
+-	FROM ",vpopmail,"
+-	LEFT JOIN limits ON limits.domain='",get_real_domain(domain),"'
+-	WHERE ",vpopmail,".pw_name='",name,"'
+-	AND
+-	('",port,"'!='995' OR !(",vpopmail,".pw_gid & 2))
+-	AND
+-	('",remote_ip,"'!='",webmail_ip,"' OR !(",vpopmail,".pw_gid & 4))
+-	AND
+-	('",remote_ip,"'='",webmail_ip,"' OR '",port,"'!='993' OR !(",vpopmail,".pw_gid & 8))
+-	AND
+-	('",remote_ip,"'!='",webmail_ip,"' OR COALESCE(disable_webmail,0)!=1)
+-	AND
+-	('",remote_ip,"'='",webmail_ip,"' OR COALESCE(disable_imap,0)!=1)");
+-END IF;
+-
+-PREPARE sql_code FROM @SQL;
+-EXECUTE sql_code;
+-DEALLOCATE PREPARE sql_code;
+-
+-END$$
+-DELIMITER ;
+diff -ruN vpopmail-5.4.33-original/vmysql.c vpopmail-5.4.33/vmysql.c
+--- vpopmail-5.4.33-original/vmysql.c	2022-03-17 18:23:55.836591319 +0100
++++ vpopmail-5.4.33/vmysql.c	2022-08-09 14:04:47.328812970 +0200
+@@ -371,7 +371,7 @@
+ {
+ #ifndef MANY_DOMAINS
+ #ifdef SQL_ALIASDOMAINS
+-  vcreate_pwd_query_proc();
++  vcreate_sql_procedures();
+ #endif
+   vset_default_domain( domain );
+   return (vauth_create_table (vauth_munch_domain( domain ), TABLE_LAYOUT, 1));
+@@ -1891,17 +1891,17 @@
+ /************************************************************************/
+ #ifndef MANY_DOMAINS
+ #ifdef SQL_ALIASDOMAINS
+-int vcreate_pwd_query_proc()
++int vcreate_sql_procedures()
+ {
+   char sql_file[256], command[256];
+   FILE *sql;
+ 
+   /* retrieve the file with the sql stuff */
+-  snprintf(sql_file, sizeof(sql_file), "%s/etc/pwd-query_disable-many-domains.sql",VPOPMAILDIR);
++  snprintf(sql_file, sizeof(sql_file), "%s/etc/disable-many-domains_procedures.sql",VPOPMAILDIR);
+   sql = fopen(sql_file, "r");
+   if( sql == NULL )
+   {
+-     printf("\nERROR: Missing %s/etc/pwd-query_disable-many-domains.sql file.\n",VPOPMAILDIR);
++     printf("\nERROR: Missing %s/etc/disable-many-domains_procedures.sql file.\n",VPOPMAILDIR);
+      exit(EXIT_FAILURE);
+   }
+ 
+diff -ruN vpopmail-5.4.33-original/vmysql.h vpopmail-5.4.33/vmysql.h
+--- vpopmail-5.4.33-original/vmysql.h	2021-10-30 19:33:38.132169510 +0200
++++ vpopmail-5.4.33/vmysql.h	2022-08-09 14:04:47.328812970 +0200
+@@ -299,4 +299,4 @@
+       domain varchar(100) NOT NULL, \
+       PRIMARY KEY (alias)"
+ 
+-int vcreate_pwd_query_proc();
++int vcreate_sql_procedures();

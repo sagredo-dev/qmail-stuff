@@ -1,0 +1,123 @@
+=Digitalmind qlogfix patch (2017-08-23)
+* log strings should terminate with \n to avoid trailing ^M using splogger
+* bug reporting custom errors from qmail-queue in qlog
+--- a/qmail-smtpd.c
++++ b/qmail-smtpd.c
+@@ -99,6 +99,8 @@ substdio sslog = SUBSTDIO_FDBUF(safewrit
+ char sserrbuf[512];
+ substdio sserr = SUBSTDIO_FDBUF(safewrite,2,sserrbuf,sizeof sserrbuf);
+ 
++int addrinrcpthosts = 0;
++int envelopepos = 0; // 1: ehlo/helo, 2: mailfrom, 3: rcptto: 4: data
+ void qsmtpdlog(const char *head, const char *result, const char *reason, const char *detail, const char *statuscode);
+ void qlogenvelope(char *result, char *reason, char *detail, char *statuscode) { qsmtpdlog("qlogenvelope",result,reason,detail,statuscode); }
+ void qlogreceived(char *result, char *reason, char *detail, char *statuscode) { qsmtpdlog("qlogreceived",result,reason,detail,statuscode); }
+@@ -1148,6 +1150,7 @@ void mailfrom_parms(arg) char *arg;
+ 
+ void smtp_helo(arg) char *arg;
+ {
++  envelopepos = 1;
+   smtp_greet("250 "); out("\r\n");
+   seenmail = 0; dohelo(arg);
+   if (bhelook) flagbarfbhelo = bmcheck(BMCHECK_BHELO);
+@@ -1168,6 +1171,7 @@ void smtp_ehlo(arg) char *arg;
+   struct stat st;
+ #endif
+   size[fmt_ulong(size,(unsigned int) databytes)] = 0;
++  envelopepos = 1;
+   smtp_greet("250-");
+   #ifdef TLS
+   if (!disabletls && !ssl && (stat("control/servercert.pem",&st) == 0))
+@@ -1199,6 +1203,7 @@ void smtp_mail(arg) char *arg;
+ {
+   int r;
+ 
++  envelopepos = 2;
+   if (smtpauth)
+     if (smtpauth > 10 && !seenauth) { err_submission(); return; }
+   if (!addrparse(arg)) { err_syntax(); return; }
+@@ -1333,11 +1338,14 @@ void smtp_rcpt(arg) char *arg; {
+ /* added by empf patch */
+   int ret = 0;
+ /* end of empf pacth  */
++  envelopepos = 3;
+   if (!seenmail) { err_wantmail(); return; }
+   if (!addrparse(arg)) { err_syntax(); return; }
+ /* rejectrelaytest: start */
+   if (addrrelay()) { err_relay(); return; }
+-/* rejectrelaytest: start */
++/* rejectrelaytest: end */
++  if (addr.len) addrinrcpthosts = addrallowed();
++  else addrinrcpthosts = 0;
+ /* qregex: start */
+   /*
+   if (flagbarf) { err_bmf(); return; }
+@@ -1760,16 +1768,17 @@ void acceptmessage(qp) unsigned long qp;
+   substdio_puts(&sslog, mailfrom.s);
+   substdio_puts(&sslog, "> qp ");
+   substdio_puts(&sslog, accept_buf);
+-  substdio_putsflush(&sslog, "\r\n");
++  substdio_putsflush(&sslog, "\n");
+ }
+ 
+ void smtp_data(arg) char *arg; {
+   int hops;
+   unsigned long qp;
+   char *qqx;
+- 
++
+   if (!seenmail) { err_wantmail(); return; }
+   if (!rcptto.len) { err_wantrcpt(); return; }
++  envelopepos = 4;
+   seenmail = 0;
+   if (databytes) bytestooverflow = databytes + 1;
+   if (qmail_open(&qqt) == -1) { err_qqt(); return; }
+@@ -1800,11 +1809,11 @@ void smtp_data(arg) char *arg; {
+   }
+   if (*qqx == 'D') {
+     out("554 ");
+-    qlogreceived("rejected","queuereject","qqx + 1","554");
++    qlogreceived("rejected","queuereject",qqx + 1,"554");
+     logit2("message rejected", qqx + 1);
+   } else {
+     out("451 ");
+-    qlogreceived("rejected","queuedelay","qqx + 1","451");
++    qlogreceived("rejected","queuedelay",qqx + 1,"451");
+     logit2("message delayed", qqx + 1);
+   }
+   out(qqx + 1);
+@@ -2307,7 +2316,9 @@ void qsmtpdlog(const char *head, const c
+   substdio_puts(&sslog, " reason="); if (reason) outsqlog(reason);
+   substdio_puts(&sslog, " detail="); if (detail) outsqlog(detail);
+   substdio_puts(&sslog, " helo="); if (helohost.len) outsqlog(helohost.s);
+-  substdio_puts(&sslog, " mailfrom="); if (mailfrom.len) outsqlog(mailfrom.s);
++  substdio_puts(&sslog, " mailfrom=");
++  if (mailfrom.len) outsqlog(mailfrom.s);
++  else if ( (envelopepos==2) && (addr.len) ) outsqlog(addr.s); // qlog called in smtp_mail() doesn't have mailfrom.s defined yet
+ 
+   substdio_puts(&sslog, " rcptto=");
+   if ((rcptto.len) && (!isenvelope)) {
+@@ -2320,11 +2331,12 @@ void qsmtpdlog(const char *head, const c
+       while (*ch++);
+     }
+   }
+-  else if (addr.len) outsqlog(addr.s);
++  else if ( (envelopepos==3) && (addr.len) ) outsqlog(addr.s); // qlog was probably called at the beginning of smtp_rcpt and addr.s contains the recipient
+ 
+   substdio_puts(&sslog, " relay="); if (relayclient) outsqlog("yes"); else outsqlog("no");
+ 
+-  substdio_puts(&sslog, " rcpthosts="); if (isenvelope && addr.len) { r = addrallowed(); if (r == 1) outsqlog("yes"); else outsqlog("no"); }
++  // only log rcpthosts value in smtp_rcpt(), that is for a single recipient, this field is meaningless for multiple recipients
++  substdio_puts(&sslog, " rcpthosts="); if (isenvelope && addr.len && (envelopepos==3)) { if (addrinrcpthosts) outsqlog("yes"); else outsqlog("no"); }
+ 
+   substdio_puts(&sslog, " size=");
+   if (bytestooverflow) {
+@@ -2358,7 +2370,7 @@ void qsmtpdlog(const char *head, const c
+   substdio_puts(&sslog, " remotehost="); x = env_get("TCPREMOTEHOST"); if (x) outsqlog(x);
+   substdio_puts(&sslog, " qp="); if (strnumqp) outsqlog(strnumqp);
+   substdio_puts(&sslog, " pid="); if (strnumpid) outsqlog(strnumpid);
+-  substdio_putsflush(&sslog, "\r\n");
++  substdio_putsflush(&sslog, "\n");
+ }
+ /* qsmtpdlog: end */
+ 

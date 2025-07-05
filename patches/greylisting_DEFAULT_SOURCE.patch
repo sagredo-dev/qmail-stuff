@@ -1,0 +1,14 @@
+Solves a warning or even a compilation break on rocky 8 (tx Shailendra Shukla)
+
+diff -ruN greylisting-0.5-original/greylisting.c greylisting-0.5/greylisting.c
+--- greylisting-0.5-original/greylisting.c	2015-05-19 21:07:27.000000000 +0200
++++ greylisting-0.5/greylisting.c	2025-03-16 13:08:31.822506866 +0100
+@@ -19,7 +19,7 @@
+  * Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+  */
+ 
+-#define _BSD_SOURCE
++#define _DEFAULT_SOURCE
+ #include <stdio.h>
+ #include <stdlib.h>
+ #include <string.h>

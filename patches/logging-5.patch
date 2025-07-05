@@ -1,0 +1,117 @@
+Only in netqmail-1.05-logging/: logging-4.patch
+diff -burp netqmail-1.05-orig/qmail-smtpd.c netqmail-1.05-logging/qmail-smtpd.c
+--- netqmail-1.05-orig/qmail-smtpd.c	2010-09-28 10:22:37.489770109 -0400
++++ netqmail-1.05-logging/qmail-smtpd.c	2018-08-22 22:13:47.971312525 -0400
+@@ -38,16 +38,20 @@ int safewrite(fd,buf,len) int fd; char *
+ 
+ char ssoutbuf[512];
+ substdio ssout = SUBSTDIO_FDBUF(safewrite,1,ssoutbuf,sizeof ssoutbuf);
++char sserrbuf[512];
++substdio sserr = SUBSTDIO_FDBUF(write,2,sserrbuf,sizeof sserrbuf);
+ 
++void logit(const char* message);
++void logit2(const char* message, const char* reason);
+ void flush() { substdio_flush(&ssout); }
+ void out(s) char *s; { substdio_puts(&ssout,s); }
+ 
+-void die_read() { _exit(1); }
+-void die_alarm() { out("451 timeout (#4.4.2)\r\n"); flush(); _exit(1); }
++void die_read() { logit("read failed"); _exit(1); }
++void die_alarm() { logit("timeout"); out("451 timeout (#4.4.2)\r\n"); flush(); _exit(1); }
+ void die_nomem() { out("421 out of memory (#4.3.0)\r\n"); flush(); _exit(1); }
+-void die_control() { out("421 unable to read controls (#4.3.0)\r\n"); flush(); _exit(1); }
+-void die_ipme() { out("421 unable to figure out my IP addresses (#4.3.0)\r\n"); flush(); _exit(1); }
+-void straynewline() { out("451 See http://pobox.com/~djb/docs/smtplf.html.\r\n"); flush(); _exit(1); }
++void die_control() { logit("unable to read controls"); out("421 unable to read controls (#4.3.0)\r\n"); flush(); _exit(1); }
++void die_ipme() { logit("unable to figure out my IP addresses"); out("421 unable to figure out my IP addresses (#4.3.0)\r\n"); flush(); _exit(1); }
++void straynewline() { logit("bad newlines"); out("451 See http://pobox.com/~djb/docs/smtplf.html.\r\n"); flush(); _exit(1); }
+ 
+ void err_bmf() { out("553 sorry, your envelope sender is in my badmailfrom list (#5.7.1)\r\n"); }
+ void err_nogateway() { out("553 sorry, that domain isn't in my list of allowed rcpthosts (#5.7.1)\r\n"); }
+@@ -221,6 +225,48 @@ int seenmail = 0;
+ int flagbarf; /* defined if seenmail */
+ stralloc mailfrom = {0};
+ stralloc rcptto = {0};
++stralloc log_buf = {0};
++
++void safeloglen(const char* string, const int len) {
++    if (string && len) {
++        if (!stralloc_catb(&log_buf, string, len-1)) die_nomem();
++    } else {
++        if (!stralloc_catb(&log_buf, "(null)", 6)) die_nomem();
++    }
++}
++
++void safelog(const char* string) {
++    if (string) {
++        if (!stralloc_cats(&log_buf, string)) die_nomem();
++    } else {
++        if (!stralloc_catb(&log_buf, "(null)", 6)) die_nomem();
++    }
++}
++
++void logit(const char* message) {
++    logit2(message, (const char*)0);
++}
++
++void logit2(const char* message, const char* reason)
++{
++  if (!stralloc_copys(&log_buf, "qmail-smtpd: ")) die_nomem();
++  safelog(message);
++  if (reason) {
++      if (!stralloc_cats(&log_buf, " (")) die_nomem();
++      if (!stralloc_cats(&log_buf, reason)) die_nomem();
++      if (!stralloc_cats(&log_buf, "): ")) die_nomem();
++  }
++  if (!stralloc_catb(&log_buf, ": ", 2)) die_nomem();
++  safeloglen(mailfrom.s, mailfrom.len);
++  if (!stralloc_catb(&log_buf, " from ", 6)) die_nomem();
++  safelog(remoteip);
++  if (!stralloc_catb(&log_buf, " to ", 4)) die_nomem();
++  safeloglen(addr.s, addr.len);
++  if (!stralloc_catb(&log_buf, " helo ", 6)) die_nomem();
++  safeloglen(helohost.s, helohost.len);
++  if (!stralloc_catb(&log_buf, "\n", 1)) die_nomem();
++  substdio_putflush(&sserr, log_buf);
++}
+ 
+ void smtp_helo(arg) char *arg;
+ {
+@@ -250,7 +296,7 @@ void smtp_mail(arg) char *arg;
+ void smtp_rcpt(arg) char *arg; {
+   if (!seenmail) { err_wantmail(); return; }
+   if (!addrparse(arg)) { err_syntax(); return; }
+-  if (flagbarf) { err_bmf(); return; }
++  if (flagbarf) { logit("badmailfrom"); err_bmf(); return; }
+   if (relayclient) {
+     --addr.len;
+     if (!stralloc_cats(&addr,relayclient)) die_nomem();
+@@ -386,10 +432,24 @@ void smtp_data(arg) char *arg; {
+   qmail_put(&qqt,rcptto.s,rcptto.len);
+  
+   qqx = qmail_close(&qqt);
+-  if (!*qqx) { acceptmessage(qp); return; }
+-  if (hops) { out("554 too many hops, this message is looping (#5.4.6)\r\n"); return; }
+-  if (databytes) if (!bytestooverflow) { out("552 sorry, that message size exceeds my databytes limit (#5.3.4)\r\n"); return; }
+-  if (*qqx == 'D') out("554 "); else out("451 ");
++  if (!*qqx) { acceptmessage(qp); logit("message accepted"); return; }
++  if (hops) {
++    out("554 too many hops, this message is looping (#5.4.6)\r\n");
++    logit("message looping");
++    return;
++  }
++  if (databytes) if (!bytestooverflow) {
++    out("552 sorry, that message size exceeds my databytes limit (#5.3.4)\r\n");
++    logit("message too big");
++    return;
++  }
++  if (*qqx == 'D') {
++    out("554 ");
++    logit2("message rejected", qqx + 1);
++  } else {
++    out("451 ");
++    logit2("message delayed", qqx + 1);
++  }
+   out(qqx + 1);
+   out("\r\n");
+ }

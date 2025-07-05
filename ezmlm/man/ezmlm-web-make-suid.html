@@ -1,0 +1,71 @@
+Content-type: text/html
+
+<HTML><HEAD><TITLE>Manpage of ezmlm-web-make-suid</TITLE>
+</HEAD><BODY>
+<H1>ezmlm-web-make-suid</H1>
+Section: helper script (1)<BR>Updated: January 02006<BR><A HREF="#index">Index</A>
+<A HREF="http://localhost/cgi-bin/man/man2html">Return to Main Contents</A><HR>
+
+<A NAME="lbAB">&nbsp;</A>
+<H2>NAME</H2>
+
+ezmlm-web-make-suid - create user-specific suid wrappers for ezmlm-web
+<A NAME="lbAC">&nbsp;</A>
+<H2>SYNOPSIS</H2>
+
+<B>ezmlm-web-make-suid</B>
+
+[<I>USERNAME</I>] <I>DESTINATION_FILE</I>
+<A NAME="lbAD">&nbsp;</A>
+<H2>DESCRIPTION</H2>
+
+<P>
+
+Create a user-specific copy of the suid wrapper for ezmlm-web. This is
+necessary, as the mailing lists are usually not owned by the user of the
+webserver, that executes the cgi.
+<P>
+
+The destination file determines where to put the resulting wrapper.
+<P>
+
+Only root is allowed to choose a username.
+<A NAME="lbAE">&nbsp;</A>
+<H2>EXAMPLES</H2>
+
+<P>
+
+ezmlm-web-make-suid john ~john/public_html/ezmlm-web
+<A NAME="lbAF">&nbsp;</A>
+<H2>AUTHOR</H2>
+
+Written by Lars Kruse
+<A NAME="lbAG">&nbsp;</A>
+<H2>REPORTING BUGS</H2>
+
+Report bugs to &lt;<A HREF="mailto:devel@sumpfralle.de">devel@sumpfralle.de</A>&gt;
+<A NAME="lbAH">&nbsp;</A>
+<H2>COPYRIGHT</H2>
+
+Copyright &#169; 02006 Lars Kruse
+<P>
+<P>
+
+<HR>
+<A NAME="index">&nbsp;</A><H2>Index</H2>
+<DL>
+<DT><A HREF="#lbAB">NAME</A><DD>
+<DT><A HREF="#lbAC">SYNOPSIS</A><DD>
+<DT><A HREF="#lbAD">DESCRIPTION</A><DD>
+<DT><A HREF="#lbAE">EXAMPLES</A><DD>
+<DT><A HREF="#lbAF">AUTHOR</A><DD>
+<DT><A HREF="#lbAG">REPORTING BUGS</A><DD>
+<DT><A HREF="#lbAH">COPYRIGHT</A><DD>
+</DL>
+<HR>
+This document was created by
+<A HREF="http://localhost/cgi-bin/man/man2html">man2html</A>,
+using the manual pages.<BR>
+Time: 18:29:39 GMT, January 24, 2011
+</BODY>
+</HTML>

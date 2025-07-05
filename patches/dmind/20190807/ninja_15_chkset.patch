@@ -1,0 +1,31 @@
+Index: netqmail-ninja-1.06/chkuser_settings.h
+===================================================================
+--- netqmail-ninja-1.06.orig/chkuser_settings.h
++++ netqmail-ninja-1.06/chkuser_settings.h
+@@ -209,7 +209,7 @@
+  * Uncomment next define to accept recipients for
+  * aliases that have a -default extension
+  */
+-/* #define CHKUSER_ENABLE_ALIAS_DEFAULT */
++#define CHKUSER_ENABLE_ALIAS_DEFAULT
+ 
+ 
+ /*
+@@ -360,7 +360,7 @@
+  */
+ 
+ /* #define CHKUSER_VAUTH_OPEN_CALL vauth_open   */
+-/* #define CHKUSER_VAUTH_OPEN_CALL vauth_open_update */
++#define CHKUSER_VAUTH_OPEN_CALL vauth_open_update
+ 
+ /*
+  * Variable to be set in order to disable chkuser
+@@ -380,7 +380,7 @@
+  *		should be invoked to handle exceptions.
+  *
+  */
+-/* #define CHKUSER_DISABLE_VARIABLE "RELAYCLIENT" */
++#define CHKUSER_DISABLE_VARIABLE "RELAYCLIENT"
+ 
+ 
+ /*

@@ -1,0 +1,691 @@
+v. 2021.02.05
+combined patch for vpopmail-5.4.33 by Roberto Puzzanghera
+More info here https://notes.sagredo.eu
+==================================================================================================
+
+== This patch puts together
+
+* A patch to make vpopmail store aliasdomains on mysql. This gets dovecot sql auth driver
+  to work with vpopmail also in case of aliasdomains, provided that you modify the sql query as
+  well.
+  More info here https://notes.sagredo.eu/en/qmail-notes-185/dovecot-vpopmail-auth-driver-removal-241.html
+
+* A patch which gets vpopmail to compile with gcc-10
+
+== Settings
+
+* ./configure --enable-sql-aliasdomains (default)
+
+* Adjust your dovecot-sql.conf.ext in order to auth both real and alias domains:
+  (more info here https://notes.sagredo.eu/en/qmail-notes-185/installing-dovecot-and-sieve-on-a-vpopmail-qmail-server-28.html#sql)
+
+password_query = SELECT \
+       CONCAT(vpopmail.pw_name, '@', vpopmail.pw_domain) AS user, \
+               vpopmail.pw_passwd AS password, \
+               vpopmail.pw_dir as userdb_home, \
+               89 AS userdb_uid, \
+               89 AS userdb_gid \
+       FROM `vpopmail` \
+       LEFT JOIN aliasdomains \
+               ON aliasdomains.alias='%d' \
+       WHERE \
+               vpopmail.pw_name = '%n' \
+               AND \
+               (vpopmail.pw_domain = aliasdomains.domain \
+                OR \
+                vpopmail.pw_domain = '%d')
+
+user_query = \
+       SELECT \
+               vpopmail.pw_dir AS home, \
+               89 AS uid, \
+               89 AS gid, \
+               CONCAT('*:bytes=', REPLACE(SUBSTRING_INDEX(vpopmail.pw_shell, 'S', 1), 'NOQUOTA', '0')) AS quota_rule \
+       FROM vpopmail \
+       LEFT JOIN aliasdomains \
+               ON aliasdomains.alias='%d' \
+       WHERE \
+               vpopmail.pw_name = '%n' \
+               AND \
+               (vpopmail.pw_domain = aliasdomains.domain \
+                OR \
+                vpopmail.pw_domain = '%d')
+               AND \
+               ('%a'!='995' or !(vpopmail.pw_gid & 2)) \
+               AND \
+               ('%r'!='localhost' or !(vpopmail.pw_gid & 4)) \
+               AND \
+               ('%r'='localhost' or '%a'!='993' or !(vpopmail.pw_gid & 8))
+
+* Create/delete aliasdomains in the usual way with vaddaliasdomain/vdeldomain
+
+* If you already have aliasdomains, you have to populate the dbtable, so you can
+  1. delete and create again each domain alias
+  2. use my valiasdomain shell script to save the aliases on MySQL:
+     valiasadomain <real_domain> <alias_domain>
+
+===============================================================================================
+
+diff -ruN ../vpopmail-5.4.33-original/Makefile.am vpopmail-5.4.33/Makefile.am
+--- ../vpopmail-5.4.33-original/Makefile.am	2011-02-28 18:00:45.000000000 +0100
++++ vpopmail-5.4.33/Makefile.am	2021-02-03 22:17:48.861623134 +0100
+@@ -16,6 +16,8 @@
+ INSTALL_PROGRAM= ${INSTALL} -o @vpopuser@ -m 711 -g @vpopgroup@ $(AM_INSTALL_PROGRAM_FLAGS)
+ INSTALL_STRIP_PROGRAM=${INSTALL_PROGRAM} -s
+ 
++VALIASDOMAIN=$(DESTDIR)@vpopmaildir@/bin/valiasdomain
++
+ MYSQLCONF=$(DESTDIR)@vpopmaildir@/etc/vpopmail.mysql
+ VLIMITS=$(DESTDIR)@vpopmaildir@/etc/vlimits.default
+ VUSAGECCONF=$(DESTDIR)@vpopmaildir@/etc/vusagec.conf
+@@ -149,11 +151,13 @@
+ 	echo "-L@vpopmaildir@/lib -lvpopmail @auth_libs@ @LIBS@" > \
+ 	 $(DESTDIR)@vpopmaildir@/etc/lib_deps
+ 
++	$(INSTALL) -o @vpopuser@ -m 0711 -g @vpopgroup@ \
++	  valiasdomain.sh $(VALIASDOMAIN);
++
+ 	if test ! -r $(VUSAGECCONF); then \
+ 		$(INSTALL) -o @vpopuser@ -m 0644 -g @vpopgroup@ \
+ 		vusagec.conf $(VUSAGECCONF); \
+ 	fi
+-
+ 	if test ! -r $(VLIMITS); then \
+ 	  $(INSTALL) -o @vpopuser@ -m 0644 -g @vpopgroup@ \
+ 	    vlimits.default $(VLIMITS); \
+diff -ruN ../vpopmail-5.4.33-original/Makefile.in vpopmail-5.4.33/Makefile.in
+--- ../vpopmail-5.4.33-original/Makefile.in	2011-02-28 18:00:45.000000000 +0100
++++ vpopmail-5.4.33/Makefile.in	2021-02-05 21:24:09.932739784 +0100
+@@ -359,6 +359,7 @@
+ CONFIG_CLEAN_FILES = vauth.c cdb/conf-cc cdb/conf-ld cdb/compile cdb/load
+ MYSQLCONF = $(DESTDIR)@vpopmaildir@/etc/vpopmail.mysql
+ VLIMITS = $(DESTDIR)@vpopmaildir@/etc/vlimits.default
++VALIASDOMAIN=$(DESTDIR)@vpopmaildir@/bin/valiasdomain
+ VUSAGECCONF = $(DESTDIR)@vpopmaildir@/etc/vusagec.conf
+ noinst_LIBRARIES = libvpopmail.a
+ libvpopmail_a_SOURCES = $(COMMONSOURCES) 
+@@ -1175,6 +1176,9 @@
+ 	echo "-L@vpopmaildir@/lib -lvpopmail @auth_libs@ @LIBS@" > \
+ 	 $(DESTDIR)@vpopmaildir@/etc/lib_deps
+ 
++	$(INSTALL) -o @vpopuser@ -m 0711 -g @vpopgroup@ \
++	  valiasdomain.sh $(VALIASDOMAIN);
++
+ 	if test ! -r $(VUSAGECCONF); then \
+ 		$(INSTALL) -o @vpopuser@ -m 0644 -g @vpopgroup@ \
+ 		vusagec.conf $(VUSAGECCONF); \
+diff -ruN ../vpopmail-5.4.33-original/config.h.in vpopmail-5.4.33/config.h.in
+--- ../vpopmail-5.4.33-original/config.h.in	2011-02-28 18:00:45.000000000 +0100
++++ vpopmail-5.4.33/config.h.in	2021-02-03 12:39:48.003620115 +0100
+@@ -313,6 +313,9 @@
+ #undef SPAMC_PROG
+ 
+ /* "" */
++#undef SQL_ALIASDOMAINS
++
++/* "" */
+ #undef SQWEBMAIL_PASS
+ 
+ /* Define to 1 if you have the ANSI C header files. */
+diff -ruN ../vpopmail-5.4.33-original/configure vpopmail-5.4.33/configure
+--- ../vpopmail-5.4.33-original/configure	2011-02-28 18:00:45.000000000 +0100
++++ vpopmail-5.4.33/configure	2021-02-03 13:31:12.341991730 +0100
+@@ -737,6 +737,7 @@
+ enable_mysql_replication
+ enable_valias
+ enable_many_domains
++enable_sql_aliasdomains
+ enable_mysql_logging
+ enable_pgsql_logging
+ enable_mysql
+@@ -7176,6 +7177,44 @@
+ 
+ #----------------------------------------------------------------------
+ 
++{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether sql-aliasdomains is enabled" >&5
++$as_echo_n "checking whether sql-aliasdomains is enabled... " >&6; }
++# Check whether --enable-sql-aliasdomains was given.
++if test "${enable_sql_aliasdomains+set}" = set; then :
++  enableval=$enable_sql_aliasdomains; SQL_ALIASDOMAINS=$enableval
++else
++
++                        SQL_ALIASDOMAINS=y
++
++
++fi
++
++
++case $SQL_ALIASDOMAINS in
++  1*|y*|Y*)
++                { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
++$as_echo "yes" >&6; }
++                if [ "$AUTH_MODULE" != "mysql" ];
++                then
++                        as_fn_error $? "sql-aliasdomains is only supported in the MySQL authentication module." "$LINENO" 5
++                else
++                        SQL_ALIASDOMAINS=1
++
++cat >>confdefs.h <<_ACEOF
++#define SQL_ALIASDOMAINS $SQL_ALIASDOMAINS
++_ACEOF
++
++                fi
++        ;;
++  *)
++                { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
++$as_echo "no" >&6; }
++                SQL_ALIASDOMAINS=0
++        ;;
++esac
++
++#----------------------------------------------------------------------
++
+ { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether any discontinued --enable commands have been used" >&5
+ $as_echo_n "checking whether any discontinued --enable commands have been used... " >&6; }
+ 
+@@ -9013,6 +9052,16 @@
+   fi
+ fi
+ 
++if [ "$AUTH_MODULE" == "mysql" ];
++then
++  if test "$SQL_ALIASDOMAINS" = 1
++  then
++    echo "SQL domain aliases = ON  domain aliases saved in an SQL table    --enable-sql-aliasdomains (default)"
++  else
++    echo "SQL domain aliases = OFF domain aliases NOT saved in an SQL table    --disable-sql-aliasdomains"
++  fi
++fi
++
+ case $ENABLE_SPAMASSASSIN in
+   1*|y*|Y*)
+     echo "      spamassassin = ON  --enable-spamassassin"
+@@ -9042,3 +9091,9 @@
+    echo ""
+    echo ""
+ fi
++
++if [ "$AUTH_MODULE" == "mysql" ]; then
++        if [ "$vpopmaildir" != "/home/vpopmail" ]; then
++                sed -i "s|/home/vpopmail|$vpopmaildir|" valiasdomain.sh
++        fi
++fi
+diff -ruN ../vpopmail-5.4.33-original/configure.in vpopmail-5.4.33/configure.in
+--- ../vpopmail-5.4.33-original/configure.in	2011-02-28 18:00:45.000000000 +0100
++++ vpopmail-5.4.33/configure.in	2021-02-03 12:39:22.101869180 +0100
+@@ -1484,6 +1484,34 @@
+ 
+ #----------------------------------------------------------------------
+ 
++AC_MSG_CHECKING(whether sql-aliasdomains is enabled)
++AC_ARG_ENABLE(sql-aliasdomains,
++        [  --enable-sql-aliasdomains     Creates a table for alias/domain pairs. Only valid for MySQL auth module.],
++        SQL_ALIASDOMAINS=$enableval,
++                [
++                        SQL_ALIASDOMAINS=y
++                ]
++)
++
++case $SQL_ALIASDOMAINS in
++  1*|y*|Y*)
++                AC_MSG_RESULT(yes)
++		if [[ "$AUTH_MODULE" != "mysql" ]];
++                then
++			AC_MSG_ERROR(sql-aliasdomains is only supported in the MySQL authentication module.)
++                else
++			SQL_ALIASDOMAINS=1
++			AC_DEFINE_UNQUOTED(SQL_ALIASDOMAINS,$SQL_ALIASDOMAINS,"")
++                fi
++        ;;
++  *)
++                AC_MSG_RESULT(no)
++                SQL_ALIASDOMAINS=0
++        ;;
++esac
++
++#----------------------------------------------------------------------
++
+ AC_MSG_CHECKING(whether any discontinued --enable commands have been used)
+ 
+ AC_ARG_ENABLE(mysql-logging, [],
+@@ -1848,6 +1876,16 @@
+   fi
+ fi
+ 
++if [[ "$AUTH_MODULE" == "mysql" ]];
++then
++  if test "$SQL_ALIASDOMAINS" = 1
++  then
++    echo "SQL domain aliases = ON  domain aliases saved in an SQL table    --enable-sql-aliasdomains (default)"
++  else
++    echo "SQL domain aliases = OFF domain aliases NOT saved in an SQL table    --disable-sql-aliasdomains"
++  fi
++fi
++
+ case $ENABLE_SPAMASSASSIN in
+   1*|y*|Y*)
+     echo "      spamassassin = ON  --enable-spamassassin"
+@@ -1877,3 +1915,10 @@
+    echo ""
+    echo ""
+ fi
++
++if [[ "$AUTH_MODULE" == "mysql" ]]; then
++        if [[ "$vpopmaildir" != "/home/vpopmail" ]]; then
++                sed -i "s|/home/vpopmail|$vpopmaildir|" valiasdomain.sh
++        fi
++fi
++
+diff -ruN ../vpopmail-5.4.33-original/doc/README.sql-aliasdomains vpopmail-5.4.33/doc/README.sql-aliasdomains
+--- ../vpopmail-5.4.33-original/doc/README.sql-aliasdomains	1970-01-01 01:00:00.000000000 +0100
++++ vpopmail-5.4.33/doc/README.sql-aliasdomains	2021-02-02 22:18:18.234301156 +0100
+@@ -0,0 +1,49 @@
++v. 2021.02.02
++sql-aliasdomains patch for vpopmail-5.4.33 by Roberto Puzzanghera
++More info here https://notes.sagredo.eu/en/qmail-notes-185/dovecot-vpopmail-auth-driver-removal-241.html
++
++==================================================================================================================
++
++This patch makes vpopmail store aliasdomains on mysql. This gets dovecot sql auth driver
++to work with vpopmail also in case of aliasdomains, provided that you modify the sql query as well.
++
++= Settings
++
++* ./configure --enable-sql-aliasdomains (default)
++
++* Adjust your dovecot-sql.conf.ext in order to auth both real and alias domains:
++  (more info here https://notes.sagredo.eu/en/qmail-notes-185/installing-dovecot-and-sieve-on-a-vpopmail-qmail-server-28.html#sql)
++
++password_query = \
++        SELECT \
++                CONCAT(vpopmail.pw_name, '@', vpopmail.pw_domain) AS user, \
++                vpopmail.pw_passwd AS password, \
++                vpopmail.pw_dir AS userdb_home, \
++                89 AS userdb_uid, \
++                89 AS userdb_gid, \
++                CONCAT('*:bytes=', REPLACE(SUBSTRING_INDEX(vpopmail.pw_shell, 'S', 1), 'NOQUOTA', '0')) AS userdb_quota_rule \
++        FROM `vpopmail` \
++                LEFT JOIN aliasdomains ON aliasdomains.alias='%d' \
++        WHERE \
++                vpopmail.pw_name='%n' \
++                AND \
++                (vpopmail.pw_domain='%d' OR vpopmail.pw_domain=aliasdomains.domain) \
++                AND \
++                ('%a'!='995' OR !(vpopmail.pw_gid & 2)) \
++                AND \
++                ('%r'!='10.0.0.4' OR !(vpopmail.pw_gid & 4)) \
++                AND \
++                ('%r'='10.0.0.4' OR '%a'!='993' OR !(vpopmail.pw_gid & 8))
++
++user_query = \
++        SELECT \
++                vpopmail.pw_dir AS home, \
++                89 AS uid, \
++                89 AS gid \
++        FROM vpopmail \
++        WHERE \
++                vpopmail.pw_name='%n' \
++                AND \
++                vpopmail.pw_domain='%d'
++
++* Create/delete aliasdomains in the usual way with vaddaliasdomain/vdeldomain
+diff -ruN ../vpopmail-5.4.33-original/valiasdomain.sh vpopmail-5.4.33/valiasdomain.sh
+--- ../vpopmail-5.4.33-original/valiasdomain.sh	1970-01-01 01:00:00.000000000 +0100
++++ vpopmail-5.4.33/valiasdomain.sh	2021-02-03 22:17:55.228561791 +0100
+@@ -0,0 +1,149 @@
++#!/bin/bash
++#
++# v. 2021.02.03
++# by Roberto Puzzanghera
++# More info here https://notes.sagredo.eu/en/qmail-notes-185/dovecot-vpopmail-auth-driver-removal-241.html
++#
++# Records/delete the aliasdomains in mysql
++# This gets dovecot's sql auth driver working with vpopmail's aliasdomains as well
++#
++#############################################################################################
++
++# vpopmail config path. default VPOPMAILDIR eventually changed by configure command
++VPOPMAILDIR="/home/vpopmail"
++VPOPMAIL_MYSQL_CONFIG=$VPOPMAILDIR"/etc/vpopmail.mysql"
++
++# mysql bin path
++MYSQL=""
++for f in /usr/bin/mysql /usr/mysql/bin/mysql /usr/local/mysql/bin/mysql /usr/local/bin/mysql
++do
++    if test -x $f
++    then
++        MYSQL=$f
++        break
++    fi
++done
++if [[ $MYSQL == "" ]]; then
++	echo "MySQL binary not found. sql-aliasdomain not created."
++	echo "If you have MySQL installed edit your $VPOPMAILDIR/bin/valiasdomain file."
++	exit 1;
++fi
++
++# sed path
++SED=""
++for f in /usr/bin/sed /usr/sbin/sed /usr/local/bin/sed /usr/local/sbin/sed
++do
++    if test -x $f
++    then
++        SED=$f
++        break
++    fi
++done
++if [[ $SED == "" ]]; then
++        echo "sed binary not found. sql-aliasdomain not created."
++        echo "If you have sed installed edit your $VPOPMAILDIR/bin/valiasdomain file."
++        exit 1;
++fi
++
++# extract mysql params
++HOST=$($SED -n "/#/! s/^\(.*\)|.*|.*|.*|.*/\1/p" $VPOPMAIL_MYSQL_CONFIG)
++PORT=$($SED -n "/#/! s/^.*|\(.*\)|.*|.*|.*/\1/p" $VPOPMAIL_MYSQL_CONFIG)
++USER=$($SED -n "/#/! s/^.*|.*|\(.*\)|.*|.*/\1/p" $VPOPMAIL_MYSQL_CONFIG)
++ PWD=$($SED -n "/#/! s/^.*|.*|.*|\(.*\)|.*/\1/p" $VPOPMAIL_MYSQL_CONFIG)
++  DB=$($SED -n "/#/! s/^.*|.*|.*|.*|\(.*\)/\1/p" $VPOPMAIL_MYSQL_CONFIG)
++
++######################################################################################
++
++# connect to mysql and do the query
++function exec_query() {
++        $MYSQL -h $HOST -P $PORT -u $USER -p$PWD -N -A < /tmp/query.sql
++}
++
++# create the table if not exists
++function create_table() {
++        # Output the query to a file that we want to run
++        cat << EOF > /tmp/query.sql;
++	USE $DB;
++	CREATE TABLE IF NOT EXISTS aliasdomains (
++	alias varchar(100) NOT NULL,
++	domain varchar(100) NOT NULL,
++	PRIMARY KEY (alias)
++	) ENGINE=InnoDB DEFAULT CHARSET=latin1;
++EOF
++        # Execute the query
++        exec_query
++}
++
++# create the alias
++function create() {
++	# create table if not exist
++	create_table
++	# Output the query to a file that we want to run
++	cat << EOF > /tmp/query.sql;
++	USE $DB;
++	INSERT IGNORE INTO aliasdomains (domain,alias) VALUES ("$1","$2");
++EOF
++	# Execute the query
++	exec_query
++}
++
++# delete the alias
++function delete() {
++        # create table if not exist
++        create_table
++        # Output the query to a file that we want to run
++        cat << EOF > /tmp/query.sql;
++        USE $DB;
++        DELETE FROM aliasdomains WHERE alias="$1";
++EOF
++        # Execute the query
++        exec_query
++}
++
++# delete all aliases related to a domain
++function force_delete() {
++        # create table if not exist
++        create_table
++        # Output the query to a file that we want to run
++        cat << EOF > /tmp/query.sql;
++        USE $DB;
++        DELETE FROM aliasdomains WHERE domain="$1";
++EOF
++        # Execute the query
++        exec_query
++}
++
++
++if [ "$2" = 'delete' ]; then
++
++    # Delete mysql record
++    delete $1
++
++elif [ "$2" = 'force' ]; then
++
++    # Delete mysql records
++    force_delete $1
++
++elif [ "$2" != '' ]; then
++
++    # Create mysql record
++    create $1 $2
++
++elif [ "$1" = '' ] || [ "$1" = 'help' ]; then
++
++    # Usage
++    echo
++    echo "Usage"
++    echo
++    echo "Creating an aliasdomain:"
++    echo "$0 <real_domain> <alias_domain>"
++    echo
++    echo "Deleting an aliasdomain:"
++    echo "$0 <alias_domain> delete"
++    echo
++    echo "Deleting all aliases related to a domain:"
++    echo "$0 <domain> force"
++    echo
++fi
++
++exit 0
+diff -ruN ../vpopmail-5.4.33-original/vmysql.c vpopmail-5.4.33/vmysql.c
+--- ../vpopmail-5.4.33-original/vmysql.c	2011-02-28 18:00:45.000000000 +0100
++++ vpopmail-5.4.33/vmysql.c	2021-02-05 21:12:20.214644775 +0100
+@@ -96,6 +96,20 @@
+ void vcreate_lastauth_table();
+ #endif
+ 
++char *MYSQL_READ_SERVER;
++int MYSQL_READ_PORT;
++char *MYSQL_READ_SOCKET;
++char *MYSQL_READ_USER;
++char *MYSQL_READ_PASSWD;
++char *MYSQL_READ_DATABASE;
++
++char *MYSQL_UPDATE_SERVER;
++int MYSQL_UPDATE_PORT;
++char *MYSQL_UPDATE_SOCKET;
++char *MYSQL_UPDATE_USER;
++char *MYSQL_UPDATE_PASSWD;
++int MYSQL_UPDATE_VPORT;
++char *MYSQL_UPDATE_DATABASE;
+ 
+ /************************************************************************/
+ /* 
+@@ -361,8 +375,11 @@
+ #else
+   /* if creation fails, don't show an error */
+   vauth_create_table (MYSQL_DEFAULT_TABLE, TABLE_LAYOUT, 0);
+-  return (0);
+ #endif
++#ifdef SQL_ALIASDOMAINS
++  vcreate_aliasdomains_table();
++#endif
++  return (0);
+ }
+ 
+ 
+@@ -1866,3 +1883,59 @@
+ 
+   return(strcmp(crypt(clear_pass,vpw->pw_passwd),vpw->pw_passwd));
+ }
++
++
++/************************************************************************/
++#ifdef SQL_ALIASDOMAINS
++void vcreate_aliasdomains_table()
++{
++  /* if creation fails do not throw an error */
++  vauth_create_table ("aliasdomains", ALIASDOMAINS_TABLE_LAYOUT, 0);
++  return;
++}
++
++/************************************************************************/
++int vcreate_sql_aliasdomain(char *domain,  char *alias)
++{
++ int err;
++
++    if ( (err=vauth_open_update()) != 0 ) return(err);
++
++    qnprintf( SqlBufUpdate, SQL_BUF_SIZE,
++        "INSERT IGNORE INTO aliasdomains (domain,alias) VALUES ('%s','%s')",
++        domain,
++	alias );
++
++    if (mysql_query(&mysql_update,SqlBufUpdate)) {
++        vcreate_aliasdomains_table();
++        if (mysql_query(&mysql_update,SqlBufUpdate)) {
++            fprintf(stderr, "vmysql: sql error[m]: %s\n", mysql_error(&mysql_update));
++            return(-1);
++        }
++    }
++    return(0);
++}
++
++
++/************************************************************************/
++int vdelete_sql_aliasdomain(char *alias)
++{
++ int err;
++
++    if ( (err=vauth_open_update()) != 0 ) return(err);
++
++    qnprintf( SqlBufUpdate, SQL_BUF_SIZE,
++        "DELETE FROM aliasdomains WHERE alias='%s'",
++        alias );
++
++    if (mysql_query(&mysql_update,SqlBufUpdate)) {
++        vcreate_aliasdomains_table();
++        if (mysql_query(&mysql_update,SqlBufUpdate)) {
++            fprintf(stderr, "vmysql: sql error[m]: %s\n", mysql_error(&mysql_update));
++            return(-1);
++        }
++    }
++    return(0);
++}
++#endif
++
+diff -ruN ../vpopmail-5.4.33-original/vmysql.h vpopmail-5.4.33/vmysql.h
+--- ../vpopmail-5.4.33-original/vmysql.h	2011-02-28 18:00:45.000000000 +0100
++++ vpopmail-5.4.33/vmysql.h	2021-02-03 22:09:19.338533195 +0100
+@@ -41,20 +41,20 @@
+    
+  */
+ 
+-char *MYSQL_READ_SERVER;
+-int MYSQL_READ_PORT;
+-char *MYSQL_READ_SOCKET;
+-char *MYSQL_READ_USER;
+-char *MYSQL_READ_PASSWD;
+-char *MYSQL_READ_DATABASE;
+-
+-char *MYSQL_UPDATE_SERVER;
+-int MYSQL_UPDATE_PORT;
+-char *MYSQL_UPDATE_SOCKET;
+-char *MYSQL_UPDATE_USER;
+-char *MYSQL_UPDATE_PASSWD;
+-int MYSQL_UPDATE_VPORT;
+-char *MYSQL_UPDATE_DATABASE;
++extern char *MYSQL_READ_SERVER;
++extern int MYSQL_READ_PORT;
++extern char *MYSQL_READ_SOCKET;
++extern char *MYSQL_READ_USER;
++extern char *MYSQL_READ_PASSWD;
++extern char *MYSQL_READ_DATABASE;
++
++extern char *MYSQL_UPDATE_SERVER;
++extern int MYSQL_UPDATE_PORT;
++extern char *MYSQL_UPDATE_SOCKET;
++extern char *MYSQL_UPDATE_USER;
++extern char *MYSQL_UPDATE_PASSWD;
++extern int MYSQL_UPDATE_VPORT;
++extern char *MYSQL_UPDATE_DATABASE;
+ 
+ /* defaults - no need to change */
+ #define MYSQL_DEFAULT_TABLE "vpopmail"
+@@ -306,3 +306,8 @@
+       perm_defaultquota        TINYINT(2) NOT NULL DEFAULT 0"
+ #endif
+ 
++#ifdef SQL_ALIASDOMAINS
++#define ALIASDOMAINS_TABLE_LAYOUT "alias varchar(100) NOT NULL, \
++      domain varchar(100) NOT NULL, \
++      PRIMARY KEY (alias)"
++#endif
+diff -ruN ../vpopmail-5.4.33-original/vpgsql.c vpopmail-5.4.33/vpgsql.c
+--- ../vpopmail-5.4.33-original/vpgsql.c	2011-02-28 18:00:45.000000000 +0100
++++ vpopmail-5.4.33/vpgsql.c	2021-01-15 21:38:02.124121798 +0100
+@@ -392,10 +392,10 @@
+ #endif
+ 
+ #ifdef ENABLE_SQL_LOGGING
+-    qnprintf( sqlBufUpdate, SQL_BUF_SIZE,
++    qnprintf( SqlBufUpdate, SQL_BUF_SIZE,
+        "delete from vlog where domain = '%s'", domain );
+     pgres=PQexec(pgc, SqlBufUpdate);
+-    if( !pgres || PGresultStatus(pgres)!=PGRES_COMMAND_OK) {
++    if( !pgres || PQresultStatus(pgres)!=PGRES_COMMAND_OK) {
+       return(-1);
+     }
+ #endif
+@@ -445,11 +445,11 @@
+ #endif
+ 
+ #ifdef ENABLE_SQL_LOGGING
+-    qnprintf( sqlBufUpdate, SQL_BUF_SIZE,
++    qnprintf( SqlBufUpdate, SQL_BUF_SIZE,
+         "delete from vlog where domain = '%s' and user='%s'", 
+        domain, user );
+     pgres=PQexec(pgc, SqlBufUpdate);
+-    if( !pgres || PGresultStatus(pgres)!=PGRES_COMMAND_OK) {
++    if( !pgres || PQresultStatus(pgres)!=PGRES_COMMAND_OK) {
+       err = -1;
+     }
+ #endif
+diff -ruN ../vpopmail-5.4.33-original/vpopmail.c vpopmail-5.4.33/vpopmail.c
+--- ../vpopmail-5.4.33-original/vpopmail.c	2011-02-28 18:00:45.000000000 +0100
++++ vpopmail-5.4.33/vpopmail.c	2021-02-05 21:31:46.216264707 +0100
+@@ -554,6 +554,17 @@
+     fprintf (stderr, "Warning: Failed to delete domain from the assign file\n");
+   }
+ 
++#ifdef SQL_ALIASDOMAINS
++  /* aliasdomain table will eventually be created */
++  char alias_string[MAX_BUFF];
++
++  for(i=0; i<aliases.count; i++)
++  {
++    snprintf(alias_string, sizeof(alias_string), "%s", aliases.values[i]);
++    vdelete_sql_aliasdomain(aliases.values[i]);
++  }
++#endif
++
+   /* send a HUP signal to qmail-send process to reread control files */
+   signal_process("qmail-send", SIGHUP);
+ 
+@@ -3772,6 +3783,11 @@
+   call_onchange ( "add_alias_domain" );
+ #endif
+ 
++#ifdef SQL_ALIASDOMAINS
++  /* aliasdomain table will eventually be created */
++  vcreate_sql_aliasdomain(real_domain, alias_domain);
++#endif
++
+   return(VA_SUCCESS);
+ }
+ 

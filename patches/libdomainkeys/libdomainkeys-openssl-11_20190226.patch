@@ -1,0 +1,28 @@
+diff -ruN libdomainkeys-0.69-original/domainkeys.c libdomainkeys-0.69/domainkeys.c
+--- libdomainkeys-0.69-original/domainkeys.c	2008-04-01 00:50:39.000000000 +0200
++++ libdomainkeys-0.69/domainkeys.c	2019-02-13 23:20:40.272195961 +0100
+@@ -120,7 +120,11 @@
+ {
+ /* STARTPRIV */
+   int dkmarker;     /* in case somebody casts in */
+-  EVP_MD_CTX mdctx;   /* the hash */
++#if (OPENSSL_VERSION_NUMBER < 0x10100000L) || (defined(LIBRESSL_VERSION_NUMBER) && LIBRESSL_VERSION_NUMBER < 0x20700000L)
++  EVP_MD_CTX mdctx; /* the hash */
++#else
++  EVP_MD_CTX *mdctx; /* the hash */
++#endif
+   int signing;      /* our current signing/verifying state */
+   int in_headers;   /* true if we're still processing headers */
+   char *header;     /* points to a malloc'ed block for header. */
+@@ -2152,7 +2156,11 @@
+ #ifdef DK_HASH_BUFF
+   DK_MFREE(dk->hash_buff);
+ #endif
++#if (OPENSSL_VERSION_NUMBER < 0x10100000L) || (defined(LIBRESSL_VERSION_NUMBER) && LIBRESSL_VERSION_NUMBER < 0x20700000L)
+   EVP_MD_CTX_cleanup(&dk->mdctx);
++#else
++  EVP_MD_CTX_free(&dk->mdctx);
++#endif
+   DK_MFREE(dk->header);   /* alloc'ing dk->header is not optional. */
+   dk->dkmarker = ~DKMARK;
+   DK_MFREE(dk);

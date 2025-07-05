@@ -1,0 +1,29 @@
+--- /orig/dovecot-expunge 2021-01-17 11:23:55.845365502 +0200
++++ new/dovecot-expunge 2021-01-17 11:25:21.060576680 +0200
+@@ -1,8 +1,9 @@
+-#!/bin/sh
++#!/bin/bash
+
+@@ -27,19 +28,19 @@
+while read list; do
+if [[ "$USER" = "*" ]]; then
+u=$(echo $list|cut -d" " -f1)
+- f=$(echo $list|cut -d" " -f2)
++ f=$(echo $list|sed 's/[^ ]* //')
+else
+u="$USER@$DOMAIN"
+f=$list
+fi
+
+if [[ "$FOLDER" = "*" ]]; then
+- $DOVEADM expunge -u $u mailbox $f savedbefore "$DAY""d"
++ $DOVEADM expunge -u $u mailbox "$f" savedbefore "$DAY""d"
+echo $(date +"%Y%m%d %T") \
+"expunged $u:$f:$DAY days before" >> $LOG
+else
+if [ -z "${FOLDER##*$f*}" ]; then
+- $DOVEADM expunge -u $u mailbox $f savedbefore "$DAY""d"
++ $DOVEADM expunge -u $u mailbox "$f" savedbefore "$DAY""d"
+echo $(date +"%Y%m%d %T") \
+"expunged $u:$f:$DAY days before" >> $LOG
+fi

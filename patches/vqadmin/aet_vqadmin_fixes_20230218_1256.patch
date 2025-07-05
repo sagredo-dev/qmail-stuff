@@ -1,0 +1,1899 @@
+tx Ali Erturk TURKER
+https://notes.sagredo.eu/en/qmail-notes-185/vqadmin-26.html#comment2825
+
+If you are using vpopmail with mysql backend and enabled mysql limits option (--enable-mysql-limits), vqadmin
+is pretty much useless, because it is not aware of this option. It creates ".qmailadmin-limits" in the domain
+folder, but vpopmail does not care at all (due to --enable-mysql-limits).
+That annoyed me a little bit, so I fixed it. Now vqadmin is aware of mysql-limits, and updates the database as
+necessary.
+
+I also fixed a core-dump due to SIGILL caused by memcpy. I changed it to memmove, as suggested on this link:
+https://clc-wiki.net/wiki/memcpy
+
+The memcpy() function shall copy the first n bytes pointed to by src to the buffer pointed to by dest.
+Source and destination may not overlap. If source and destination might overlap, memmove() must be used instead.
+
+I added missing limits and permissions, changed the UI to be more user-friendly.
+
+diff -ruN vqadmin-2.3.7-original/cgi.c vqadmin-2.3.7/cgi.c
+--- vqadmin-2.3.7-original/cgi.c	2003-01-27 20:25:59.000000000 +0200
++++ vqadmin-2.3.7/cgi.c	2023-02-13 13:23:52.000000000 +0300
+@@ -164,7 +164,7 @@
+             
+         *p = r;
+ 
+-        memcpy((char *)(p + 1), (char *)(p + 3), (len - 2));
++        memmove((char *)(p + 1), (char *)(p + 3), (len - 2));
+ 
+         *(p + len - 1) = '\0';
+       }         
+diff -ruN vqadmin-2.3.7-original/domain.c vqadmin-2.3.7/domain.c
+--- vqadmin-2.3.7-original/domain.c	2023-02-18 11:44:02.000000000 +0300
++++ vqadmin-2.3.7/domain.c	2023-02-18 10:40:14.000000000 +0300
+@@ -31,6 +31,7 @@
+ #include "vpopmail.h"
+ #include "vpopmail_config.h"
+ #include "vauth.h"
++#include "vlimits.h"
+ 
+ #define TOKENS " :\t\n\r"
+ 
+@@ -47,12 +48,13 @@
+ {
+  char *domain = NULL;
+  char *passwd = NULL;
++
+  char *lusers = NULL;
+  char *lfor = NULL;
+  char *lalias = NULL;
+  char *lresponder = NULL;
+  char *llists = NULL;
+- char *quota = NULL;
++
+  char *upop = NULL;
+  char *uimap = NULL;
+  char *udialup = NULL;
+@@ -60,47 +62,33 @@
+  char *uweb = NULL;
+  char *urelay = NULL;
+  char *uspam = NULL;
++ char *usmtp = NULL;
++ char *udeletespam  = NULL;
++ char *umaildrop  = NULL;
++
++ char *quota = NULL;
++ char *maxmsgcount = NULL;
++ char *defaultquota = NULL;
++ char *defaultmaxmsgcount = NULL;
++ storage_t tmpdefaultquota;
++
+  int   ret;
+- char dir[156];
+- uid_t uid;
+- gid_t gid;
+- FILE *fs;
++ int limitsmodified = 0;
++ struct vlimits defaultlimits;
++ struct vlimits limits;
+ 
+   if (!(acl_features & ACL_DOMAIN_CREATE)) {
+     global_warning("Create Domain: Permission denied");
+     t_open(T_MAIN, 1);
+   }
+ 
+-  domain = cgi_is_var("dname");
+-  passwd = cgi_is_var("pp");
+-
+-  lusers = cgi_is_var("lusers");
+-  lfor = cgi_is_var("lfor");
+-  lalias = cgi_is_var("lalias");
+-  lresponder = cgi_is_var("lresponder");
+-  llists = cgi_is_var("llists");
+-
+-  quota   = cgi_is_var("quota");
+-  upop    = cgi_is_var("upop");
+-  uimap   = cgi_is_var("uimap");
+-  udialup = cgi_is_var("udialup");
+-  upassc  = cgi_is_var("upassc");
+-  uweb    = cgi_is_var("uweb");
+-  urelay  = cgi_is_var("urelay");
+-  uspam  = cgi_is_var("uspam");
+-
+   /* get the domain name */
++  domain = cgi_is_var("dname");
+   if (domain==NULL || strlen(domain)==0) {
+     global_warning("Create Domain: Failed: Must supply domain name");
+     t_open("html/add_domain.html", 1);
+   }
+ 
+-  /* get the password */
+-  if (passwd==NULL || strlen(passwd)==0 ) {
+-    global_warning("Create Domain: Failed: Must supply password");
+-    t_open("html/add_domain.html", 1);
+-  }
+-
+   /* add the domain with defaults */
+   ret = vadddomain(domain, VPOPMAILDIR, VPOPMAILUID, VPOPMAILGID );
+   if (ret != VA_SUCCESS) {
+@@ -110,43 +98,14 @@
+     global_warning("Created Domain");
+   }
+ 
+-  /* setup the .qmailadmin-limits file */
+-  vget_assign(domain,dir,156,&uid,&gid);
+-  strncat(dir,"/.qmailadmin-limits", 156);
+-  if ( (fs = fopen(dir,"w+")) == NULL ) {
+-    global_warning("Create Domain: open .qmailadmin-limits failed");
+-    t_open(T_MAIN, 1);
++  /* get the password for postmaster */
++  passwd = cgi_is_var("ppass");
++  if (passwd==NULL || strlen(passwd)==0 ) {
++    global_warning("Create Domain: Failed: Must supply password");
++    t_open("html/add_domain.html", 1);
+   }
+ 
+-  if (lusers!=NULL&&strlen(lusers)>0)  
+-    fprintf(fs, "maxpopaccounts: %s\n", lusers);
+-
+-  if (lalias!=NULL&&strlen(lalias)>0)  
+-    fprintf(fs, "maxaliases: %s\n", lalias);
+-
+-  if (lfor!=NULL&&strlen(lfor)>0)  
+-    fprintf(fs, "maxforwards: %s\n", lfor);
+-
+-  if (lresponder!=NULL&&strlen(lresponder)>0)  
+-    fprintf(fs, "maxautoresponders: %s\n", lresponder);
+-
+-  if (llists!=NULL&&strlen(llists)>0)  
+-    fprintf(fs, "maxmailinglists: %s\n", llists);
+-
+-  if (quota!=NULL && strlen(quota)>0) 
+-    fprintf(fs,"default_quota: %s\n",quota);
+-
+-  if (upop!=NULL)  fprintf(fs, "disable_pop\n");
+-  if (uimap!=NULL) fprintf(fs, "disable_imap\n");
+-  if (udialup!=NULL) fprintf(fs, "disable_dialup\n");
+-  if (upassc!=NULL) fprintf(fs, "disable_password_changing\n");
+-  if (uweb!=NULL) fprintf(fs, "disable_webmail\n");
+-  if (urelay!=NULL) fprintf(fs, "disable_external_relay\n");
+-  if (uspam!=NULL) fprintf(fs, "disable_spamassasin\n");
+-  fclose(fs);
+-  chown(dir,uid, gid);
+-  chmod(dir, S_IRUSR | S_IWUSR);
+-
++  /* add the postmaster user */
+   ret = vadduser("postmaster", domain, passwd, "Postmaster", USE_POP );
+   if (ret != VA_SUCCESS) {
+     global_warning(verror(ret));
+@@ -155,6 +114,125 @@
+     global_warning("Domain postmaster added");
+   }
+ 
++//-------------- FORM VALUES --------------
++
++  //-------------- DOMAIN LIMITS --------------
++  lusers = cgi_is_var("lusers");
++  lfor = cgi_is_var("lfor");
++  lalias = cgi_is_var("lalias");
++  lresponder = cgi_is_var("lresponder");
++  llists = cgi_is_var("llists");
++  quota   = cgi_is_var("quota");
++  maxmsgcount = cgi_is_var("maxmsgcount");
++  defaultquota = cgi_is_var("defaultquota");
++  defaultmaxmsgcount = cgi_is_var("defaultmaxmsgcount");
++
++  //-------------- DOMAIN PERMISSIONS --------------
++  upop    = cgi_is_var("upop");
++  uimap   = cgi_is_var("uimap");
++  udialup = cgi_is_var("udialup");
++  upassc  = cgi_is_var("upassc");
++  uweb    = cgi_is_var("uweb");
++  urelay  = cgi_is_var("urelay");
++  uspam  = cgi_is_var("uspam");
++  usmtp  = cgi_is_var("usmtp");
++  udeletespam  = cgi_is_var("udeletespam");
++  umaildrop  = cgi_is_var("umaildrop"); 
++
++  // INITIALIZE DEFAULT STRUCTS
++  vdefault_limits (&defaultlimits);
++
++  // FETCH DEFAULT DOMAIN LIMITS FROM "VLIMITS_DEFAULT_FILE"
++  if (vlimits_read_limits_file (VLIMITS_DEFAULT_FILE, &defaultlimits) != 0) {
++    snprintf(WarningBuff, MAX_WARNING_BUFF,"Failed to get limits from vlimits_default_file for domain %s", domain); 
++    global_warning(WarningBuff);
++    global_par("DN", domain);
++    t_open("html/view_domain.html", 1);
++  }
++
++  // CLONE DEFAULT LIMITS TO DETECT IF THE USER CHANGED THE DEFAULTS
++  memcpy(&limits, &defaultlimits, sizeof(limits));
++
++  // PROCESS NEW LIMITS
++  if (lusers!=NULL && strlen(lusers)>0) {
++    limits.maxpopaccounts = atoi(lusers);
++  }
++  if (lfor!=NULL && strlen(lfor)>0) {
++    limits.maxforwards = atoi(lfor);
++  }
++  if (lalias!=NULL && strlen(lalias)>0) {
++    limits.maxaliases = atoi(lalias);
++  }
++  if (lresponder!=NULL && strlen(lresponder)>0) {
++    limits.maxautoresponders = atoi(lresponder);
++  }
++  if (llists!=NULL && strlen(llists)>0) {
++    limits.maxmailinglists = atoi(llists);
++  }
++  if (quota!=NULL && strlen(quota)>0) {
++    limits.diskquota = strtoll(quota, NULL, 10);
++  }
++  if (maxmsgcount!=NULL && strlen(maxmsgcount)>0) {
++    limits.maxmsgcount = strtoll(maxmsgcount, NULL, 10);
++  }
++  if (defaultquota!=NULL && strlen(defaultquota)>0) {
++    // CONVERT bytes->Mbytes
++    if ((tmpdefaultquota = strtoll(defaultquota, NULL, 10))) {
++        tmpdefaultquota *= 1048576;
++        limits.defaultquota = tmpdefaultquota;
++    }
++  }
++  if (defaultmaxmsgcount!=NULL && strlen(defaultmaxmsgcount)>0) {
++    limits.defaultmaxmsgcount = strtoll(defaultmaxmsgcount, NULL, 10);
++  }
++
++  // PROCESS NEW PERMISSIONS
++  if (upop!=NULL) {limits.disable_pop = 1;}
++  if (uimap!=NULL) {limits.disable_imap = 1;}
++  if (udialup!=NULL) {limits.disable_dialup = 1;}
++  if (upassc!=NULL) {limits.disable_passwordchanging = 1;}
++  if (uweb!=NULL) {limits.disable_webmail = 1;}
++  if (urelay!=NULL) {limits.disable_relay = 1;}
++  if (uspam!=NULL) {limits.disable_spamassassin = 1;}
++  if (usmtp!=NULL) {limits.disable_smtp = 1;}
++  if (udeletespam!=NULL) {limits.delete_spam = 1;}
++  if (umaildrop!=NULL) {limits.disable_maildrop = 1;}
++
++  // DETECT DEVIATIONS FROM DEFAULT LIMITS, IF ANY
++  if (limits.maxpopaccounts != defaultlimits.maxpopaccounts) {limitsmodified = 1;}
++  if (limits.maxaliases != defaultlimits.maxaliases) {limitsmodified = 1;}
++  if (limits.maxforwards != defaultlimits.maxforwards) {limitsmodified = 1;}
++  if (limits.maxautoresponders != defaultlimits.maxautoresponders) {limitsmodified = 1;}
++  if (limits.maxmailinglists != defaultlimits.maxmailinglists) {limitsmodified = 1;}
++  if (limits.diskquota != defaultlimits.diskquota) {limitsmodified = 1;}
++  if (limits.maxmsgcount != defaultlimits.maxmsgcount) {limitsmodified = 1;}
++  if (limits.defaultquota != defaultlimits.defaultquota) {limitsmodified = 1;}
++  if (limits.defaultmaxmsgcount != defaultlimits.defaultmaxmsgcount) {limitsmodified = 1;}
++
++  // DETECT DEVIATIONS FROM DEFAULT PERMISSIONS, IF ANY
++  if (limits.disable_pop != defaultlimits.disable_pop) {limitsmodified = 1;}
++  if (limits.disable_imap != defaultlimits.disable_imap) {limitsmodified = 1;}
++  if (limits.disable_dialup != defaultlimits.disable_dialup) {limitsmodified = 1;}
++  if (limits.disable_passwordchanging != defaultlimits.disable_passwordchanging) {limitsmodified = 1;}
++  if (limits.disable_webmail != defaultlimits.disable_webmail) {limitsmodified = 1;}
++  if (limits.disable_relay != defaultlimits.disable_relay) {limitsmodified = 1;}
++  if (limits.disable_smtp != defaultlimits.disable_smtp) {limitsmodified = 1;}
++  if (limits.disable_spamassassin != defaultlimits.disable_spamassassin) {limitsmodified = 1;}
++  if (limits.delete_spam != defaultlimits.delete_spam) {limitsmodified = 1;}
++  if (limits.disable_maildrop != defaultlimits.disable_maildrop) {limitsmodified = 1;}
++
++  // APPLY NEW LIMITS, IF ANY CHANGE DETECTED
++  if (limitsmodified) {
++    if (vset_limits(domain,&limits) != 0) {
++      snprintf(WarningBuff, MAX_WARNING_BUFF,"Failed to set limits for domain %s", domain);
++      global_warning(WarningBuff);
++      global_par("DN", domain);
++      t_open("html/view_domain.html", 1);
++    }
++  }
++
++//-------------- DOMAIN LIMITS FINISHED --------------
++
+ #ifdef ENABLE_ISOQLOG
+   add_isoqlog(domain); /* add the domain to isoqlog's domains file */
+ #endif
+@@ -178,15 +256,15 @@
+     global_warning("Delete Domain: Failed: Must supply domain name");
+     t_open("html/del_domain.html", 1);
+   }
+-  
++
+   ret = vdeldomain(domain);
+   if (ret != VA_SUCCESS) global_warning("Delete Domain: Failed");
+   else global_warning("Deleted Domain");
+-  
++
+ #ifdef ENABLE_ISOQLOG
+   del_isoqlog(domain); /* remove the domain from the isoqlog domains file */
+ #endif
+-  
++
+   t_open(T_MAIN, 1);
+ }
+ 
+@@ -216,97 +294,200 @@
+ void mod_domain()
+ {
+  char *domain = NULL;
+- char *ppass = NULL;
++ char *passwd = NULL;
++
+  char *lusers = NULL;
+  char *lfor = NULL;
+  char *lalias = NULL;
+  char *lresponder = NULL;
+  char *llists = NULL;
+  char *quota = NULL;
++
+  char *upop = NULL;
+  char *uimap = NULL;
+  char *udialup = NULL;
+  char *upassc = NULL;
+  char *uweb = NULL;
+  char *urelay = NULL;
+- int   ret;
+- char dir[156];
+- uid_t uid;
+- gid_t gid;
+- FILE *fs;
++ char *uspam = NULL;
++ char *usmtp = NULL;
++ char *udeletespam  = NULL;
++ char *umaildrop  = NULL;
++ char *maxmsgcount = NULL;
++ char *defaultquota = NULL;
++ char *defaultmaxmsgcount = NULL;
++ storage_t tmpdefaultquota;
++
++ int ret;
++ int limitsmodified = 0;
++ struct vlimits defaultlimits;
++ struct vlimits limits;
+ 
+   if (!(acl_features & ACL_DOMAIN_MOD)) {
+     global_warning("Mod Domain: Permission denied");
+     t_open(T_MAIN, 1);
+   }
+ 
+-  domain = cgi_is_var("dname");
+-
+   /* get the domain name */
++  domain = cgi_is_var("dname");
+   if (domain==NULL || strlen(domain)==0) {
+-    global_warning("Mod Domain: Failed: Must supply domain name");
++    global_warning("Mod Domain: Failed: Missing domain name");
+     t_open("html/mod_domain.html", 1);
+   }
+ 
++  /* Change the postmaster password (if requested) */
++  passwd = cgi_is_var("ppass");
++  if (passwd!=NULL && strlen(passwd)>0) {
++    ret = vpasswd("postmaster", domain, passwd, USE_POP);
++    if ( ret != VA_SUCCESS ) {
++      snprintf(WarningBuff, MAX_WARNING_BUFF,
++          "Postmaster Password error %s", verror(ret));
++      global_warning(WarningBuff);
++    } else {
++      global_warning("Postmaster password set");
++    }
++  }
++
++//-------------- FORM VALUES --------------
++
++  //-------------- DOMAIN LIMITS --------------
+   lusers = cgi_is_var("lusers");
+   lfor = cgi_is_var("lfor");
+   lalias = cgi_is_var("lalias");
+   lresponder = cgi_is_var("lresponder");
+   llists = cgi_is_var("llists");
++
+   quota   = cgi_is_var("quota");
++  maxmsgcount = cgi_is_var("maxmsgcount");
++  defaultquota = cgi_is_var("defaultquota");
++  defaultmaxmsgcount = cgi_is_var("defaultmaxmsgcount");
++
++  //-------------- DOMAIN PERMISSIONS --------------
+   upop    = cgi_is_var("upop");
+   uimap   = cgi_is_var("uimap");
+   udialup = cgi_is_var("udialup");
+   upassc  = cgi_is_var("upassc");
+   uweb    = cgi_is_var("uweb");
+   urelay  = cgi_is_var("urelay");
++  uspam  = cgi_is_var("uspam");
++  usmtp  = cgi_is_var("usmtp");
++  udeletespam  = cgi_is_var("udeletespam");
++  umaildrop  = cgi_is_var("umaildrop");
+ 
+-  vget_assign(domain,dir,156,&uid,&gid);
+-  strncat(dir,"/.qmailadmin-limits", 156);
+-  if ( (fs = fopen(dir,"w+")) == NULL ) {
+-    global_warning("Create Domain: open .qmailadmin-limits failed");
+-    t_open(T_MAIN, 1);
++
++  // INITIALIZE DEFAULT STRUCT
++  vdefault_limits (&defaultlimits);
++
++  // FETCH DEFAULT DOMAIN LIMITS FROM "VLIMITS_DEFAULT_FILE"
++  if (vlimits_read_limits_file (VLIMITS_DEFAULT_FILE, &defaultlimits) != 0) {
++    snprintf(WarningBuff, MAX_WARNING_BUFF,"Failed to get limits from vlimits_default_file for domain %s", domain); 
++    global_warning(WarningBuff);
++    global_par("DN", domain);
++    t_open("html/view_domain.html", 1);
+   }
+-  if ( lusers!=NULL && strlen(lusers) > 0 ) 
+-    fprintf(fs, "maxpopaccounts: %s\n", lusers);
+-  if ( lalias!=NULL && strlen(lalias) > 0 ) 
+-    fprintf(fs, "maxaliases: %s\n", lalias);
+-  if ( lfor!=NULL && strlen(lfor) > 0 ) 
+-    fprintf(fs, "maxforwards: %s\n", lfor);
+-  if ( lresponder!=NULL && strlen(lresponder) > 0 ) 
+-    fprintf(fs, "maxautoresponders: %s\n", lresponder);
+-  if ( llists!=NULL && strlen(llists) > 0 ) 
+-    fprintf(fs, "maxmailinglists: %s\n", llists);
+-  if (quota!=NULL && strlen(quota)>0) 
+-    fprintf(fs,"default_quota: %s\n",quota);
+-
+-  if (upop!=NULL)  fprintf(fs, "disable_pop\n");
+-  if (uimap!=NULL) fprintf(fs, "disable_imap\n");
+-  if (udialup!=NULL) fprintf(fs, "disable_dialup\n");
+-  if (upassc!=NULL) fprintf(fs, "disable_password_changing\n");
+-  if (uweb!=NULL) fprintf(fs, "disable_webmail\n");
+-  if (urelay!=NULL) fprintf(fs, "disable_external_relay\n");
+ 
+-  fclose(fs);
+-  chown(dir,uid, gid);
+-  chmod(dir, S_IRUSR | S_IWUSR);
++#ifdef ENABLE_MYSQL_LIMITS
++  // DUMMY CALL TO "vget_limits", OTHERWISE "vdel_limits" WILL CORE DUMP AT THE END
++  if (vget_limits(domain, &limits) != 0) {
++    snprintf(WarningBuff, MAX_WARNING_BUFF,"Failed to vget_limits for domain %s", domain);
++    global_warning(WarningBuff);
++    global_par("DN", domain);
++    t_open("html/view_domain.html", 1);
++  }
++#endif
+ 
+-  ppass = cgi_is_var("ppass");
+-  if (ppass!=NULL && strlen(ppass)>0) {
+-    ret = vpasswd("postmaster", domain, ppass, USE_POP);
+-    if ( ret != VA_SUCCESS ) {
+-      snprintf(WarningBuff, MAX_WARNING_BUFF, 
+-          "Postmaster Password error %s", verror(ret)); 
++  // CLONE LIMITS TO CHECK IF THE USER CHANGED THE DEFAULTS
++  memcpy(&limits, &defaultlimits, sizeof(limits));
++
++  // PROCESS NEW LIMITS
++  if (lusers!=NULL && strlen(lusers)>0) {
++    limits.maxpopaccounts = atoi(lusers);
++  }
++  if (lfor!=NULL && strlen(lfor)>0) {
++    limits.maxforwards = atoi(lfor);
++  }
++  if (lalias!=NULL && strlen(lalias)>0) {
++    limits.maxaliases = atoi(lalias);
++  }
++  if (lresponder!=NULL && strlen(lresponder)>0) {
++    limits.maxautoresponders = atoi(lresponder);
++  }
++  if (llists!=NULL && strlen(llists)>0) {
++    limits.maxmailinglists = atoi(llists);
++  }
++  if (quota!=NULL && strlen(quota)>0) {
++    limits.diskquota = strtoll(quota, NULL, 10);
++  }
++  if (maxmsgcount!=NULL && strlen(maxmsgcount)>0) {
++    limits.maxmsgcount = strtoll(maxmsgcount, NULL, 10);
++  }
++  if (defaultquota!=NULL && strlen(defaultquota)>0) {
++    // CONVERT bytes->Mbytes
++    if ((tmpdefaultquota = strtoll(defaultquota, NULL, 10))) {
++        tmpdefaultquota *= 1048576;
++        limits.defaultquota = tmpdefaultquota;
++    }
++  }
++  if (defaultmaxmsgcount!=NULL && strlen(defaultmaxmsgcount)>0) {
++    limits.defaultmaxmsgcount = strtoll(defaultmaxmsgcount, NULL, 10);
++  }
++
++  // PROCESS NEW PERMISSIONS
++  if (upop!=NULL) {limits.disable_pop = 1;}
++  if (uimap!=NULL) {limits.disable_imap = 1;}
++  if (udialup!=NULL) {limits.disable_dialup = 1;}
++  if (upassc!=NULL) {limits.disable_passwordchanging = 1;}
++  if (uweb!=NULL) {limits.disable_webmail = 1;}
++  if (urelay!=NULL) {limits.disable_relay = 1;}
++  if (uspam!=NULL) {limits.disable_spamassassin = 1;}
++  if (usmtp!=NULL) {limits.disable_smtp = 1;}
++  if (udeletespam!=NULL) {limits.delete_spam = 1;}
++  if (umaildrop!=NULL) {limits.disable_maildrop = 1;}
++
++  // DETECT DEVIATIONS FROM DEFAULT, IF ANY
++  if (limits.maxpopaccounts != defaultlimits.maxpopaccounts) {limitsmodified = 1;}
++  if (limits.maxaliases != defaultlimits.maxaliases) {limitsmodified = 1;}
++  if (limits.maxforwards != defaultlimits.maxforwards) {limitsmodified = 1;}
++  if (limits.maxautoresponders != defaultlimits.maxautoresponders) {limitsmodified = 1;}
++  if (limits.maxmailinglists != defaultlimits.maxmailinglists) {limitsmodified = 1;}
++  if (limits.diskquota != defaultlimits.diskquota) {limitsmodified = 1;}
++  if (limits.maxmsgcount != defaultlimits.maxmsgcount) {limitsmodified = 1;}
++  if (limits.defaultquota != defaultlimits.defaultquota) {limitsmodified = 1;}
++  if (limits.defaultmaxmsgcount != defaultlimits.defaultmaxmsgcount) {limitsmodified = 1;}
++
++  // DETECT DEVIATIONS FROM DEFAULT PERMISSIONS, IF ANY
++  if (limits.disable_pop != defaultlimits.disable_pop) {limitsmodified = 1;}
++  if (limits.disable_imap != defaultlimits.disable_imap) {limitsmodified = 1;}
++  if (limits.disable_dialup != defaultlimits.disable_dialup) {limitsmodified = 1;}
++  if (limits.disable_passwordchanging != defaultlimits.disable_passwordchanging) {limitsmodified = 1;}
++  if (limits.disable_webmail != defaultlimits.disable_webmail) {limitsmodified = 1;}
++  if (limits.disable_relay != defaultlimits.disable_relay) {limitsmodified = 1;}
++  if (limits.disable_smtp != defaultlimits.disable_smtp) {limitsmodified = 1;}
++  if (limits.disable_spamassassin != defaultlimits.disable_spamassassin) {limitsmodified = 1;}
++  if (limits.delete_spam != defaultlimits.delete_spam) {limitsmodified = 1;}
++  if (limits.disable_maildrop != defaultlimits.disable_maildrop) {limitsmodified = 1;}
++
++  // PURGE EXISTING DOMAIN LIMITS
++  if (vdel_limits(domain)!=0) {
++    snprintf(WarningBuff, MAX_WARNING_BUFF,"Failed to reset limits for domain %s", domain); 
++    global_warning(WarningBuff);
++    global_par("DN", domain);
++    t_open("html/view_domain.html", 1);
++  }
++
++  // APPLY NEW LIMITS, IF ANY CHANGE DETECTED
++  if (limitsmodified) {
++    if (vset_limits(domain,&limits) != 0) {
++      snprintf(WarningBuff, MAX_WARNING_BUFF,"Failed to set limits for domain %s", domain);
+       global_warning(WarningBuff);
+-    } else {
+-      global_warning("Postmaster password set");
++      global_par("DN", domain);
++      t_open("html/view_domain.html", 1);
+     }
+-  } 
++  }
++//-------------- DOMAIN LIMITS FINISHED --------------
+ 
+   post_domain_info(domain);
+-
+   t_open("html/mod_domain.html", 1);
+-
+ }
+ 
+ void post_domain_info(char *domain)
+@@ -315,12 +496,12 @@
+  char cuid[10];
+  char cgid[10];
+  char cusers[10];
+- char *tmpstr1;
+- char *tmpstr2;
++ char qconvert[11];
+  uid_t uid;
+  gid_t gid;
+- FILE *fs;
++ struct vlimits limits;
+  struct vqpasswd *vpw;
++ storage_t tmpdefaultquota;
+ 
+   if ( vget_assign(domain,Dir,156,&uid,&gid) == NULL ) {
+     snprintf(WarningBuff, MAX_WARNING_BUFF, 
+@@ -348,67 +529,73 @@
+   if ( vpw != NULL ) global_par("DP", vpw->pw_clear_passwd);
+   else global_par("DP", "Domain has no postmaster!!");
+ 
+-  strncat(Dir,"/.qmailadmin-limits", 156);
+-  fs = fopen(Dir,"r");
+-  if ( fs != NULL ) {
+-    global_par("QL", "CHECKED");
+-    while(fgets(Dir,156,fs)!=NULL) {
+-      if ( (tmpstr1 = strtok(Dir,TOKENS))==NULL) continue;
+-
+-      if ( strcmp(tmpstr1, "maxpopaccounts") == 0 ) {
+-        if ( (tmpstr2 = strtok(NULL,TOKENS))==NULL) continue;
+-        global_par("MU", tmpstr2);
+-
+-      } else if ( strcmp(tmpstr1, "maxaliases") == 0 ) {
+-        if ( (tmpstr2 = strtok(NULL,TOKENS))==NULL) continue;
+-        global_par("MA", tmpstr2);
+-
+-      } else if ( strcmp(tmpstr1, "maxforwards") == 0 ) {
+-        if ( (tmpstr2 = strtok(NULL,TOKENS))==NULL) continue;
+-        global_par("MF", tmpstr2);
++//	FETCH DOMAIN LIMITS
+ 
+-      } else if ( strcmp(tmpstr1, "maxautoresponders") == 0 ) {
+-        if ( (tmpstr2 = strtok(NULL,TOKENS))==NULL) continue;
+-        global_par("MR", tmpstr2);
+-
+-      } else if ( strcmp(tmpstr1, "maxmailinglists") == 0 ) {
+-        if ( (tmpstr2 = strtok(NULL,TOKENS))==NULL) continue;
+-        global_par("ML", tmpstr2);
++  if (vget_limits(domain, &limits) != 0) {
++    snprintf(WarningBuff, MAX_WARNING_BUFF,
++        "Failed to vget_limits for domain %s", domain); 
++    global_warning(WarningBuff);
++    global_par("DN", domain);
++    t_open("html/view_domain.html", 1);
++  } else {
++    char buffer[20];
+ 
+-      } else if ( strcmp(tmpstr1, "quota") == 0 ) {
+-        if ( (tmpstr2 = strtok(NULL,TOKENS))==NULL) continue;
+-        global_par("MQ", tmpstr2);
++    if(limits.maxpopaccounts != -1) {
++      snprintf(buffer, sizeof(buffer), "%d", limits.maxpopaccounts);
++      global_par("MU", buffer);
++    }
+ 
+-      } else if ( strcmp(tmpstr1, "default_quota") == 0 ) {
+-        if ( (tmpstr2 = strtok(NULL,TOKENS))==NULL) continue;
+-        global_par("MQ", tmpstr2);
++    if(limits.maxaliases != -1) {
++      snprintf(buffer, sizeof(buffer), "%d", limits.maxaliases);
++      global_par("MA", buffer);
++    }
+ 
+-      } else if ( strcmp(tmpstr1, "disable_pop") == 0 ) {
+-        global_par("MP", "checked");
++    if(limits.maxforwards != -1) {
++      snprintf(buffer, sizeof(buffer), "%d", limits.maxforwards);
++      global_par("MF", buffer);
++    }
+ 
+-      } else if ( strcmp(tmpstr1, "disable_imap") == 0 ) {
+-        global_par("MI", "checked");
++    if(limits.maxautoresponders != -1) {
++      snprintf(buffer, sizeof(buffer), "%d", limits.maxautoresponders);
++      global_par("MR", buffer);
++    }
+ 
+-      } else if ( strcmp(tmpstr1, "disable_dialup") == 0 ) {
+-        global_par("MD", "checked");
++    if(limits.maxmailinglists != -1) {
++      snprintf(buffer, sizeof(buffer), "%d", limits.maxmailinglists);
++      global_par("ML", buffer);
++    }
+ 
+-      } else if ( strcmp(tmpstr1, "disable_password_changing") == 0 ) {
+-        global_par("MC", "checked");
++    if(limits.diskquota != 0) {
++      snprintf(buffer, sizeof(buffer), "%lu", limits.diskquota);
++      global_par("MQ", buffer);
++    }
+ 
+-      } else if ( strcmp(tmpstr1, "disable_external_relay") == 0 ) {
+-        global_par("MS", "checked");
+-		
+-	  } else if ( strcmp(tmpstr1, "disable_spamassassin") == 0 ) {
+-		global_par("MZ", "checked");
++    if(limits.maxmsgcount != 0) {
++      snprintf(buffer, sizeof(buffer), "%lu", limits.maxmsgcount);
++      global_par("ME", buffer);
++    }
+ 
+-      } else if ( strcmp(tmpstr1, "disable_webmail") == 0 ) {
+-        global_par("MW", "checked");
++    if(limits.defaultquota != 0) {
++      tmpdefaultquota = limits.defaultquota/1048576.0;
++      sprintf(qconvert, "%.2lf", (double)tmpdefaultquota);
++      global_par("MB", qconvert);
++    }
+ 
+-      }
++    if(limits.defaultmaxmsgcount != 0) {
++      snprintf(buffer, sizeof(buffer), "%lu", limits.defaultmaxmsgcount);
++      global_par("MG", buffer);
+     }
+-    fclose(fs);
+-  } else {
+-    global_par("QU", "CHECKED");
++
++    if (limits.disable_pop) global_par("MP", "checked");
++    if (limits.disable_imap) global_par("MI", "checked");
++    if (limits.disable_dialup) global_par("MD", "checked");
++    if (limits.disable_passwordchanging) global_par("MC", "checked");
++    if (limits.disable_webmail) global_par("MW", "checked");
++    if (limits.disable_relay) global_par("MS", "checked");
++    if (limits.disable_smtp) global_par("MH", "checked");
++    if (limits.disable_spamassassin) global_par("MZ", "checked");
++    if (limits.delete_spam) global_par("ML", "checked");
++    if (limits.disable_maildrop) global_par("MN", "checked");
+   }
+ 
+ }
+@@ -475,18 +662,17 @@
+       printf("<a href=vqadmin.cgi?nav=view_domain&dname=%s>%s</a><BR>\n",
+         assign_alias_domain, assign_alias_domain);
+     } else {
+-      printf(
+-"<a href=vqadmin.cgi?nav=view_domain&dname=%s>%s</a> Aliased to %s<BR>\n",
++      printf("<a href=vqadmin.cgi?nav=view_domain&dname=%s>%s</a> Aliased to %s<BR>\n",
+         assign_alias_domain, assign_domain, assign_alias_domain);
+     }
+   }
+   fclose(fs);
+-    
++
+   printf("<HR>\n");
+   printf("<a href=\"/cgi-bin/vqadmin/vqadmin.cgi\">Main VqAdmin Menu</a><BR><BR>\n");
+-  printf("<a href=http://www.inter7.com/vqadmin/>%s</a> %s<BR>\n", 
++  printf("<a href=http://www.inter7.com/vqadmin/>%s</a> %s<BR>\n",
+     VQA_PACKAGE, VQA_VERSION);
+-  printf("<a href=http://www.inter7.com/vpopmail/>%s</a> %s<BR>\n", 
++  printf("<a href=http://www.inter7.com/vpopmail/>%s</a> %s<BR>\n",
+     PACKAGE, VERSION);
+ 
+   free(tmpbuf);
+@@ -545,7 +731,7 @@
+  char *dom; /* pointer to temp buffer */
+  char tmpbuf[100];
+  char status[100];
+-	
++
+   snprintf(tmpbuf, 100, "%s.tmp", ISOQLOGPATH);
+   infile = fopen(ISOQLOGPATH, "a+"); /* open the existing domains file */
+   if (infile == NULL) {
+@@ -554,7 +740,7 @@
+     global_warning(status);
+     return;
+   } /* reports error opening input file */
+-	
++
+   tmpfile = fopen(tmpbuf,"w+"); /* open the temporary file */
+   if (tmpfile == NULL) {
+    snprintf(status, 100, "Error: Unable to open temporary file %s You \
+@@ -562,15 +748,15 @@
+     global_warning(status);
+     return;
+   } /* reports error opening temp file */
+-	
+-	
++
++
+   /* 
+    * this loop is pretty pointless.  it simply copies one file into the other
+    * and then we add to it right after the loop completes.  However, it
+    * does attempt to clean up a messy file, which is good, who likes
+    * messy files? :)
+    */
+-	
++
+   /* while there's something to be read */
+   while( fgets (buffer, 100, infile) != NULL ) {
+     /* munge */
+@@ -595,9 +781,9 @@
+  char *dom; /* pointer to temp buffer */
+  char tmpbuf[100];
+  char status[100];
+-	
++
+   snprintf(tmpbuf, 100, "%s.tmp", ISOQLOGPATH);
+-	
++
+   infile = fopen(ISOQLOGPATH, "r+"); /* open the existing domains file */
+   if (infile == NULL) {
+     snprintf(status, 100, "Error: Unable to open input file %s you may \
+@@ -605,23 +791,23 @@
+     global_warning(status);
+     return;
+   } /* reports error opening input file */
+-	
++
+   tmpfile = fopen(tmpbuf,"w+"); /* open the temporary file */
+   if (tmpfile == NULL) {
+     snprintf(status, 100, "Error: Unable to open temporary file %s you may have to remove the domain from isoqlog manually", tmpbuf);
+     global_warning(status);
+     return;
+   } /* reports error opening temp file */
+-	
++
+   while( fgets (buffer, 100, infile) != NULL ) { /* while there's something to be read */
+     dom = strtok( buffer, " \n\t\r"); /* munge */
+     if (dom == NULL) continue; /* blank line */
+     if (strcmp(dom, domain) == 0) continue; /* hey! we found our domain! */
+     fprintf(tmpfile, "%s\n", dom); /* nope, wasn't him, spit it out */
+-  }	
+-	
++  }
++
+    fclose(infile); fclose(tmpfile); /* close files */
+-	
++
+    rename ( tmpbuf, ISOQLOGPATH ); /* move the modified file into place */
+ }
+ 
+diff -ruN vqadmin-2.3.7-original/global.c vqadmin-2.3.7/global.c
+--- vqadmin-2.3.7-original/global.c	2003-01-27 19:51:52.000000000 +0200
++++ vqadmin-2.3.7/global.c	2023-02-14 11:15:36.000000000 +0300
+@@ -193,3 +193,45 @@
+   vclose();
+   exit(exit_code);
+ }
++
++/* quota_to_bytes: used to convert user entered quota (given in MB)
++                   back to bytes for vpasswd file
++   return value: 0 for success, 1 for failure
++*/
++int quota_to_bytes(char returnval[], char *quota) {
++    storage_t tmp;
++
++    if (quota == NULL) { return 1; }
++    if ((tmp = strtoll(quota, NULL, 10))) {
++        tmp *= 1048576;
++        sprintf(returnval, "%.0lf", (double)tmp);
++        return 0;
++    } else {
++	strcpy (returnval, "");
++	return 1;
++    }
++}
++
++/* quota_to_megabytes: used to convert vpasswd representation of quota
++                       to number of megabytes.
++   return value: 0 for success, 1 for failure
++*/
++int quota_to_megabytes(char *returnval, char *quota) {
++    storage_t tmp;
++    int i;
++
++    if (quota == NULL) { return 1; }
++    i = strlen(quota);
++    if ((quota[i-1] == 'M') || (quota[i-1] == 'm')) {
++        tmp = strtoll(quota, NULL, 10);  /* already in megabytes */
++    } else if ((quota[i-1] == 'K') || (quota[i-1] == 'k')) {
++	tmp = strtoll(quota, NULL, 10) * 1024;  /* convert kilobytes to megabytes */
++    } else if ((tmp = strtoll(quota, NULL, 10))) {
++        tmp /= 1048576.0;
++    } else {
++	strcpy (returnval, "");
++	return 1;
++    }
++    sprintf(returnval, "%.2lf", (double)tmp);
++    return 0;
++}
+diff -ruN vqadmin-2.3.7-original/global.h vqadmin-2.3.7/global.h
+--- vqadmin-2.3.7-original/global.h	2003-01-27 20:24:03.000000000 +0200
++++ vqadmin-2.3.7/global.h	2023-02-14 11:20:18.000000000 +0300
+@@ -146,3 +146,7 @@
+ void modify_file();
+ void show_controls();
+ void delete_file();
++
++typedef uint64_t storage_t;
++int quota_to_bytes(char[], char*);     //jhopper prototype
++int quota_to_megabytes(char[], char*); //jhopper prototype
+diff -ruN vqadmin-2.3.7-original/html/add_domain.html vqadmin-2.3.7/html/add_domain.html
+--- vqadmin-2.3.7-original/html/add_domain.html	2020-06-24 19:23:11.000000000 +0300
++++ vqadmin-2.3.7/html/add_domain.html	2023-02-18 12:41:02.000000000 +0300
+@@ -3,67 +3,111 @@
+ </HEAD>
+ <body onLoad="javascript:form1.dname.focus();">
+ 
+-
+ <div align="center"><B>%-W</B></div>
+ <div align="center">#-003 %-U (%-G)</div>
+-<B>#-003</B><BR>
+-<hr size="1" noshade>
+-<form action="/cgi-bin/vqadmin/vqadmin.cgi" method="post" name="form1" id="form1">
+-<table border="0" cellspacing="0" cellpadding="2">
+-<tr><td class="clsLabelR">#-010</td>
+-    <td><input type="text" name="dname" size="30" title="#-010" onBlur="fillForm();"></td></tr>
+-<tr><td class="clsLabelR">#-011</td>
+-    <td><input type="text" name="pp" size="30" title="#-011"></td></tr>
+-</table>
+-  <INPUT TYPE="HIDDEN" NAME="nav" VALUE="add_domain">
+-<HR>
+-<b>#-012</b><BR>
+-<table border="0" cellspacing="0" cellpadding="2">
+-<tr><td class="clsLabelR">#-015</td>
+-    <td><input type="text" name="lusers" size="4" title="#-015"></td>
+-    <td class="clsInfo">#-050</td></tr>
+-<tr><td class="clsLabelR">#-016</td>
+-    <td><INPUT TYPE="TEXT" NAME="lfor" SIZE="4" title="#-016" ></td>
+-    <td class="clsInfo">#-050</td></tr>
+-<tr><td class="clsLabelR">#-017</td>
+-    <td><INPUT TYPE="TEXT" NAME="lalias" SIZE="4" title="#-017"></td>
+-    <td class="clsInfo">#-050</td></tr>
+-<tr><td class="clsLabelR">#-018</td>
+-    <td><INPUT TYPE="TEXT" NAME="lresponder" SIZE="4" title="#-018"></td>
+-    <td class="clsInfo">#-050</td></tr>
+-<tr><td class="clsLabelR">#-019</td>
+-    <td><INPUT TYPE="TEXT" NAME="llists" SIZE="4" title="#-019"></td>
+-    <td class="clsInfo">#-050</td></tr>
+-<tr><td class="clsLabelR">#-039</td>
+-    <td><input type="text" name="quota" size="10" title="#-039"></td></tr>
+-</table>
+ 
+-<table border="0" cellspacing="0" cellpadding="0">
+-
+-<tr><td><INPUT TYPE="CHECKBOX" NAME="upop" id="upop"><label for="upop" title="#-042">#-042</label></td></tr>
+-<tr><td><INPUT TYPE="CHECKBOX" NAME="uimap" id="uimap"><label for="uimap" title="#-044">#-044</label></td></tr>
+-<tr><td><INPUT TYPE="CHECKBOX" NAME="udialup" id="udialup"><label for="udialup" title="#-049">#-049</label></td></tr>
+-<tr><td><INPUT TYPE="CHECKBOX" NAME="upassc" id="upassc" ><label for="upassc" title="#-045">#-045</label></td></tr>
+-<tr><td><INPUT TYPE="CHECKBOX" NAME="uweb" id="uweb"><label for="uweb" title="#-043">#-043</label></td></tr>
+-<tr><td><INPUT TYPE="CHECKBOX" NAME="urelay" id="urelay"><label for="urelay" title="#-047">#-047</label></td></tr>
+-<tr><td><INPUT TYPE="CHECKBOX" NAME="uspam" id="uspam"><label for="uspam" title="#-069">#-069</label></td></tr>
+-
+-<tr><td><br>
+-  <input type="submit" name="Submit" value="#-003" title="#-003"></td></tr>
++<form action="/cgi-bin/vqadmin/vqadmin.cgi" method="post" name="form1" id="form1">
++<table border="0" cellspacing="2" cellpadding="2">
++<tr><td colspan="3"><B>#-003</B></td></tr>
++<tr><td colspan="3"><hr size="1" noshade></td></tr>
++<tr>
++    <td class="clsLabelR" width="200">#-010</td>
++    <td colspan="2"><input type="text" name="dname" size="30" title="#-010"></td>
++</tr>
++<tr>
++    <td class="clsLabelR">#-011</td>
++    <td colspan="2"><input type="password" name="ppass" size="30" title="#-011"></td>
++</tr>
++<tr>
++    <td class="clsLabelR">#-035</td>
++    <td colspan="2"><input type="text" value="" size="50" disabled></td>
++</tr>
++<tr><td colspan="3">&nbsp;</td></tr>
++<tr><td colspan="3"><b>#-012</b></td></tr>
++<tr><td colspan="3"><hr size="1" noshade></td>
++<tr>
++    <td class="clsLabelR">#-015</td>
++    <td><input type="text" name="lusers" value="" size="4" title="#-015"></td>
++    <td class="clsInfo">#-050</td>
++</tr>
++<tr>
++    <td class="clsLabelR">#-016</td>
++    <td><INPUT TYPE="TEXT" NAME="lfor" value="" SIZE="4" title="#-016"></td>
++    <td class="clsInfo">#-050</td>
++</tr>
++<tr>
++    <td class="clsLabelR">#-017</td>
++    <td><INPUT TYPE="TEXT" NAME="lalias" value="" SIZE="4" title="#-017"></td>
++    <td class="clsInfo">#-050</td>
++</tr>
++<tr>
++    <td class="clsLabelR">#-018</td>
++    <td><INPUT TYPE="TEXT" NAME="lresponder" value="" SIZE="4" title="#-018"></td>
++    <td class="clsInfo">#-050</td>
++</tr>
++<tr>
++    <td class="clsLabelR">#-019</td>
++    <td><INPUT TYPE="TEXT" NAME="llists" value="" SIZE="4" title="#-019"></td>
++    <td class="clsInfo">#-050</td>
++</tr>
++<!-- README.quotas file in vpopmail disttribution says domain quotas are broken. Hide these options.
++<tr>
++    <td class="clsLabelR">#-039</td>
++    <td><input type="text" name="quota" value="" size="10" title="#-039" disabled></td>
++    <td class="clsInfo">#-077</td>
++</tr>
++<tr>
++    <td class="clsLabelR">#-073</td>
++    <td><input type="text" name="maxmsgcount" value="" size="10" title="#-073" disabled></td>
++    <td class="clsInfo">#-077</td>
++</tr>
++-->
++<tr>
++    <td class="clsLabelR">#-074</td>
++    <td><input type="text" name="defaultquota" value="" size="10" title="#-074"></td>
++    <td class="clsInfo">#-077</td>
++</tr>
++<tr>
++    <td class="clsLabelR">#-075</td>
++    <td><input type="text" name="defaultmaxmsgcount" value="" size="10" title="#-075"></td>
++    <td class="clsInfo">#-077</td>
++</tr>
++<tr><td colspan="3">&nbsp;</td></tr>
++<tr><td colspan="3"><B>#-078</B></td></tr>
++<tr><td colspan="3"><hr size="1" noshade></td></tr>
++<tr>
++    <td colspan="3" align="center">
++	<table border="0" cellspacing="0" cellpadding="0">
++	    <tr>
++		<td>
++		<table border="0" cellspacing="0" cellpadding="0">
++		    <tr><td><INPUT TYPE="CHECKBOX" NAME="upop" id="upop" value="1"><label for="upop" title="#-042">#-042</label></td></tr>
++		    <tr><td><INPUT TYPE="CHECKBOX" NAME="uimap" id="uimap" value="1"><label for="uimap" title="#-044">#-044</label></td></tr>
++		    <tr><td><INPUT TYPE="CHECKBOX" NAME="udialup" id="udialup" value="1"><label for="udialup" title="#-049">#-049</label></td></tr>
++		    <tr><td><INPUT TYPE="CHECKBOX" NAME="upassc" id="upassc" value="1"><label for="upassc" title="#-045">#-045</label></td></tr>
++		    <tr><td><INPUT TYPE="CHECKBOX" NAME="uweb" id="uweb" value="1"><label for="uweb" title="#-043">#-043</label></td></tr>
++		</table>
++		</td>
++		<td width="20">&nbsp;</td>
++		<td>
++		<table border="0" cellspacing="0" cellpadding="0">
++		    <tr><td><INPUT TYPE="CHECKBOX" NAME="urelay" id="urelay" value="1"><label for="urelay" title="#-047">#-047</label></td></tr>
++		    <tr><td><INPUT TYPE="CHECKBOX" NAME="uspam" id="uspam" value="1"><label for="uspam" title="#-069">#-069</label></td></tr>
++		    <tr><td><INPUT TYPE="CHECKBOX" NAME="usmtp" id="usmtp" value="1"><label for="usmtp" title="#-070">#-070</label></td></tr>
++		    <tr><td><INPUT TYPE="CHECKBOX" NAME="umaildrop" id="udisablemaildrop" value="1"><label for="udisablemaildrop" title="#-072">#-072</label></td></tr>
++		    <tr><td><INPUT TYPE="CHECKBOX" NAME="udeletespam" id="udeletespam" value="1"><label for="udeletespam" title="#-071">#-071</label></td></tr>
++		</table>
++		</td>
++	    </tr>
++	</table>
++    </td>
++</tr>
++<tr><td colspan="3">&nbsp;</td></tr>
++<tr><td colspan="3" align="center"><input type="submit" value="#-003" title="#-003"></td></tr>
+ </table>
+-</FORM>
+-<script language="JavaScript">
+-	function fillForm() {
+-	form1.lusers.value = '';
+-	form1.lfor.value = '';
+-	form1.lalias.value = '';
+-	form1.lresponder.value = '';
+-	form1.llists.value = '';
+-	form1.quota.value = '';
+-	}
+-</script>
+-
++<INPUT TYPE="HIDDEN" NAME="nav" VALUE="add_domain">
++</form>
+ <hr size="1" noshade>
+-<a href="/cgi-bin/vqadmin/vqadmin.cgi" title="#-000">#-000</a><BR><BR>
++<a href="/cgi-bin/vqadmin/vqadmin.cgi">#-000</a><BR><BR>
+ %-V
+ </BODY></HTML>
+diff -ruN vqadmin-2.3.7-original/html/add_user.html vqadmin-2.3.7/html/add_user.html
+--- vqadmin-2.3.7-original/html/add_user.html	2020-06-24 19:23:11.000000000 +0300
++++ vqadmin-2.3.7/html/add_user.html	2023-02-18 12:28:52.000000000 +0300
+@@ -1,49 +1,74 @@
+-<HTML><HEAD><TITLE>#-038 %-U (%-G)</TITLE>
+-      <link href="/images/vqadmin/vqadmin.css" rel="stylesheet" rev="stylesheet" type="text/css" media="all">
++<HTML>
++<HEAD>
++    <TITLE>#-008 %-U (%-G)</TITLE>
++    <link href="/images/vqadmin/vqadmin.css" rel="stylesheet" rev="stylesheet" type="text/css" media="all">
+ </HEAD>
+ <body onLoad="javascript:form1.eaddr.focus();">
+-
+-
+ <div align="center"><B>%-W</B></div>
+ <div align="center">#-008 %-U (%-G)</div>
+-<B>#-008</B>
+-<hr size="1" noshade>
++<br>
+ <form action="/cgi-bin/vqadmin/vqadmin.cgi" method="post" name="form1" id="form1">
+ <table border="0" cellspacing="2" cellpadding="2">
+-<tr><td class="clsLabelR">#-020</td>
+-    <td><INPUT TYPE="TEXT" NAME="eaddr" SIZE="30" VALUE="$-UA"></td></tr>
+-<tr><td class="clsLabelR">#-021</td>
+-    <td><INPUT TYPE="TEXT" NAME="cpass" SIZE="30" VALUE="$-UO"></td></tr>
+-<tr><td class="clsLabelR">#-039</td>
+-    <td><INPUT TYPE="TEXT" NAME="quota" SIZE="30" VALUE="$-UQ"></td></tr>
+-<tr><td class="clsLabelR">#-022</td>
+-    <td><INPUT TYPE="TEXT" NAME="fname" SIZE="30" VALUE="$-UN"></td></tr>
+-<tr><td class="clsLabel">#-040</td> </tr>
+-</table>
+-<table border="0" cellspacing="0" cellpadding="0">
+-<tr><td><INPUT TYPE="CHECKBOX" NAME="udisable" id="udisable" $-UP>
+-   <label for="udisable" title="#-042">#-042</label></td></tr>
+-<tr><td><INPUT TYPE="CHECKBOX" NAME="uweb" id="uweb" $-UW>
+-    <label for="uweb" title="#-043">#-043</label></td></tr>
+-<tr><td><INPUT TYPE="CHECKBOX" NAME="uimap" id="uimap" $-UI>
+-   <label for="uimap" title="#-044">#-044</label></td> </tr>
+-<tr><td><INPUT TYPE="CHECKBOX" NAME="upassc" id="upassc" $-UC>
+-   <label for="upassc" title="#-045">#-045</label></td> </tr>
+-<tr><td><INPUT TYPE="CHECKBOX" NAME="ubounce" id="ubounce" $-UB>
+-   <label for="ubounce" title="#-046">#-046</label></td> </tr>
+-<tr><td><INPUT TYPE="CHECKBOX" NAME="urelay" id="urelay" $-US>
+-   <label for="urelay" title="#-047">#-047</label></td> </tr>
+-<tr><td><INPUT TYPE="CHECKBOX" NAME="uspam" id="uspam" $-UF>
+-   <label for="uspam" title="#-069">#-069</label></td> </tr>
+-<tr><td><INPUT TYPE="CHECKBOX" NAME="uqadmin" id="uqadmin" $-UK>
+-   <label for="uqadmin" title="#-048">#-048</label></td></tr>
+-<tr><td><br>
+-  <input type="submit" name="Submit" value="#-008" title="#-008">
+-  <INPUT TYPE="HIDDEN" NAME="nav" VALUE="add_user"></td></tr>
++<tr><td colspan="3">&nbsp;</td></tr>
++<tr><td colspan="3"><B>#-008</B></td></tr>
++<tr><td colspan="3"><hr size="1" noshade></td></tr>
++<tr>
++    <td class="clsLabelR">#-020</td>
++    <td><INPUT TYPE="TEXT" NAME="eaddr" SIZE="30" VALUE="$-UA"></td>
++</tr>
++<tr>
++    <td class="clsLabelR">#-021</td>
++    <td><INPUT TYPE="PASSWORD" NAME="cpass" SIZE="30" VALUE="$-UO"></td>
++</tr>
++<tr>
++    <td class="clsLabelR">#-039</td>
++    <td><INPUT TYPE="TEXT" NAME="quota" SIZE="30" VALUE="$-UQ"></td>
++</tr>
++<tr>
++    <td class="clsLabelR">#-022</td>
++    <td><INPUT TYPE="TEXT" NAME="fname" SIZE="30" VALUE="$-UN"></td>
++</tr>
++<tr><td class="clsLabelR">#-051</td><td><input type="text" value="" size="30" disabled></td></tr>
++<tr><td class="clsLabelR">#-052</td><td><input type="text" value="" size="30" disabled></td></tr>
++<tr><td class="clsLabelR">#-035</td><td><input type="text" value="" size="50" disabled></td></tr>
++<tr><td colspan="3">&nbsp;</td></tr>
++<tr><td colspan="3"><B>#-040</B></td></tr>
++<tr><td colspan="3"><hr size="1" noshade></td></tr>
++<tr>
++    <td colspan="3" align="center">
++        <table border="0" cellspacing="2" cellpadding="0">
++            <tr>
++                <td>
++                <table border="0" cellspacing="0" cellpadding="0">
++                    <tr><td><input TYPE="checkbox" NAME="upop" id="upop" title="#-042" value="1"><label for="upop" title="#-042">#-042</label></td></tr>
++                    <tr><td><input TYPE="checkbox" NAME="uimap" id="uimap" title="#-044" value="1"><label for="uimap" title="#-044">#-044</label></td></tr>
++                    <tr><td><input TYPE="checkbox" NAME="udialup" id="udialup" title="#-049" value="1"><label for="udialup" title="#-049">#-049</label></td></tr>
++                    <tr><td><input TYPE="checkbox" NAME="upassc" id="upassc" title="#-045" value="1"><label for="upassc" title="#-045">#-045</label></td></tr>
++                    <tr><td><input TYPE="checkbox" NAME="uweb" id="uweb" title="#-043" value="1"><label for="uweb" title="#-043">#-043</label></td></tr>
++                    <tr><td><INPUT TYPE="checkbox" NAME="ubounce" id="ubounce" title="#-046" value="1"><label for="ubounce" title="#-046">#-046</label></td> </tr>
++                </table>
++                </td>
++                <td width="20">&nbsp;</td>
++                <td>
++                <table border="0" cellspacing="0" cellpadding="0">
++                    <tr><td><input TYPE="checkbox" NAME="urelay" id="urelay" title="#-047" value="1"><label for="urelay" title="#-047">#-047</label></td></tr>
++                    <tr><td><input TYPE="checkbox" NAME="uspam" id="uspam" title="#-069" value="1"><label for="uspam" title="#-069">#-069</label></td></tr>
++                    <tr><td><input TYPE="checkbox" NAME="usmtp" id="usmtp" title="#-070" value="1"><label for="usmtp" title="#-070">#-070</label></td></tr>
++                    <tr><td><input TYPE="checkbox" NAME="umaildrop" id="udisablemaildrop" title="#-072" value="1"><label for="udisablemaildrop" title="#-072">#-072</label></td></tr>
++                    <tr><td><input TYPE="checkbox" NAME="udeletespam" id="udeletespam" title="#-071" value="1"><label for="udeletespam" title="#-071">#-071</label></td></tr>
++                    <tr><td><INPUT TYPE="checkbox" NAME="uqadmin" id="uqadmin" title="#-048" value="1"><label for="uqadmin" title="#-048">#-048</label></td></tr>
++                </table>
++                </td>
++            </tr>
++        </table>
++    </td>
++</tr>
++<tr><td colspan="3">&nbsp;</td></tr>
++<tr><td colspan="3" align="center"><input TYPE="SUBMIT" NAME="Submit" VALUE="#-008"></td></tr>
+ </table>
+-
++<input TYPE="HIDDEN" NAME="nav" VALUE="add_user">
+ </FORM>
+ <hr size="1" noshade>
+-<a href="/cgi-bin/vqadmin/vqadmin.cgi">#-000</a><BR><BR>
++<a href="/cgi-bin/vqadmin/vqadmin.cgi" title="#-000">#-000</a><BR><BR>
+ %-V
+ </BODY></HTML>
+diff -ruN vqadmin-2.3.7-original/html/en vqadmin-2.3.7/html/en
+--- vqadmin-2.3.7-original/html/en	2020-06-24 19:23:11.000000000 +0300
++++ vqadmin-2.3.7/html/en	2023-02-18 08:31:50.000000000 +0300
+@@ -1,8 +1,8 @@
+ 000 VqAdmin Main Menu
+-001 Domains 
++001 Domains
+ 002 View Domain
+ 003 Add Domain
+-004 Delete Domain 
++004 Delete Domain
+ 005 Email Accounts
+ 006 View Email Account
+ 007 Show Users
+@@ -10,7 +10,7 @@
+ 009 Delete Email Account
+ 010 Domain Name
+ 011 Postmaster Password
+-012 Options
++012 Domain Limits
+ 013 Limit
+ 014 Unlimited
+ 015 Accounts
+@@ -32,23 +32,23 @@
+ 031 Error
+ 032 error occured while initiating the interface.
+ 033 Modify Domain
+-034 Users
+-035 Directory
++034 Accounts
++035 Mail Directory
+ 036 User ID
+ 037 Group ID
+ 038 Modify Email Account
+-039 Quota in bytes
++039 Quota in Mbytes
+ 040 Permissions
+ 041 List Domains
+-042 Disable pop access 
+-043 Disable web access
+-044 Disable imap access
++042 Disable POP access
++043 Disable webmail access
++044 Disable IMAP access
+ 045 Disable change password
+-046 Bounce email 
+-047 Disable email relay 
++046 Bounce email
++047 Disable email relay
+ 048 Domain Administrator
+ 049 Disable dialup access
+-050 0 disables this feature
++050 0 = disabled
+ 051 Last authentication time
+ 052 Last authentication ip
+ 053 List Domains
+@@ -62,7 +62,15 @@
+ 061 Qmail Control Files
+ 062 Modify Control File
+ 063 Modify File
+-067 user: 
++067 user:
+ 068 permission:
+-069 Disable SpamAssassin
+-
++069 Disable spamassassin
++070 Disable SMTP access
++071 Delete spam mails
++072 Disable maildrop
++073 Max Mail Count/Domain
++074 Quota/User (Mbytes)
++075 Mails/User
++076 Update
++077 Leave blank for defaults
++078 Domain Permissions
+diff -ruN vqadmin-2.3.7-original/html/en-us vqadmin-2.3.7/html/en-us
+--- vqadmin-2.3.7-original/html/en-us	2020-06-24 19:23:11.000000000 +0300
++++ vqadmin-2.3.7/html/en-us	2023-02-18 08:31:52.000000000 +0300
+@@ -1,8 +1,8 @@
+-000 Main VqAdmin Menu
+-001 Domains 
++000 VqAdmin Main Menu
++001 Domains
+ 002 View Domain
+ 003 Add Domain
+-004 Delete Domain 
++004 Delete Domain
+ 005 Email Accounts
+ 006 View Email Account
+ 007 Show Users
+@@ -10,7 +10,7 @@
+ 009 Delete Email Account
+ 010 Domain Name
+ 011 Postmaster Password
+-012 Options
++012 Domain Limits
+ 013 Limit
+ 014 Unlimited
+ 015 Accounts
+@@ -32,23 +32,23 @@
+ 031 Error
+ 032 error occured while initiating the interface.
+ 033 Modify Domain
+-034 Users
+-035 Directory
++034 Accounts
++035 Mail Directory
+ 036 User ID
+ 037 Group ID
+ 038 Modify Email Account
+-039 Quota in bytes
++039 Quota in Mbytes
+ 040 Permissions
+ 041 List Domains
+-042 Disable pop access 
+-043 Disable web access
+-044 Disable imap access
++042 Disable POP access
++043 Disable webmail access
++044 Disable IMAP access
+ 045 Disable change password
+-046 Bounce email 
+-047 Disable email relay 
++046 Bounce email
++047 Disable email relay
+ 048 Domain Administrator
+ 049 Disable dialup access
+-050 0 disables this feature
++050 0 = disabled
+ 051 Last authentication time
+ 052 Last authentication ip
+ 053 List Domains
+@@ -62,3 +62,15 @@
+ 061 Qmail Control Files
+ 062 Modify Control File
+ 063 Modify File
++067 user:
++068 permission:
++069 Disable spamassassin
++070 Disable SMTP access
++071 Delete spam mails
++072 Disable maildrop
++073 Max Mail Count/Domain
++074 Quota/User (Mbytes)
++075 Mails/User
++076 Update
++077 Leave blank for defaults
++078 Domain Permissions
+diff -ruN vqadmin-2.3.7-original/html/mod_domain.html vqadmin-2.3.7/html/mod_domain.html
+--- vqadmin-2.3.7-original/html/mod_domain.html	2020-06-24 19:23:11.000000000 +0300
++++ vqadmin-2.3.7/html/mod_domain.html	2023-02-18 12:40:52.000000000 +0300
+@@ -1,75 +1,114 @@
+ <HTML><HEAD><TITLE>#-033 %-U (%-G)</TITLE>
+       <link href="/images/vqadmin/vqadmin.css" rel="stylesheet" rev="stylesheet" type="text/css" media="all">
+ </HEAD>
+-<body onLoad="javascript:form1.ppass.focus();">
+-
++<body onLoad="javascript:form1.lusers.focus();">
+ 
+ <div align="center"><B>%-W</B></div>
+ <div align="center">#-033 %-U (%-G)</div>
+-<B>#-033</B>
+-<hr size="1" noshade>
++
+ <form action="/cgi-bin/vqadmin/vqadmin.cgi" method="post" name="form1" id="form1">
+ <table border="0" cellspacing="2" cellpadding="2">
++<tr><td colspan="3"><B>#-033</B> / <a href="/cgi-bin/vqadmin/vqadmin.cgi?dname=$-DN&nav=show_users"><B>#-007</B></a></td></tr>
++<tr><td colspan="3"><hr size="1" noshade></td></tr>
+ <tr>
+-  <td class="clsLabelR">#-010</td>
+-  <td><input type="text" name="dname" value="$-DN" size="30" readonly title="$-DN"></td>
++    <td class="clsLabelR" width="200">#-010</td>
++    <td colspan="2"><input type="text" value="$-DN" size="30" disabled></td>
+ </tr>
+ <tr>
+-  <td class="clsLabelR">#-034</td>
+-  <td>$-DS</td>
++    <td class="clsLabelR">#-011</td>
++    <td colspan="2"><input type="password" name="ppass" size="30" disabled>
++    <input type="checkbox" name="enable_pass" style="border: none;" onclick="Javascript: if(form1['enable_pass'].checked) form1['ppass'].disabled=false; else form1['ppass'].disabled=true;">#-076</td>
+ </tr>
+ <tr>
+-  <td class="clsLabelR">#-011</td>
+-  <td><input type="text" name="ppass" value="$-DP" size="30"></td>
++    <td class="clsLabelR">#-035</td>
++    <td colspan="2"><input type="text" value="$-DD" size="50" disabled></td>
+ </tr>
++<tr><td colspan="3">&nbsp;</td></tr>
++<tr><td colspan="3"><b>#-012 (#-034: $-DS)</b></td></tr>
++<tr><td colspan="3"><hr size="1" noshade></td>
+ <tr>
+-  <td class="clsLabelR">#-035</td>
+-  <td>$-DD</td>
++    <td class="clsLabelR">#-015</td>
++    <td><input type="text" name="lusers" value="$-MU" size="4" title="#-015"></td>
++    <td class="clsInfo">#-050</td>
+ </tr>
+-</table>
+-<table border="0" cellspacing="2" cellpadding="2">
+ <tr>
+-  <td class="clsLabelR">#-036</td>
+-  <td>$-DU</td>
++    <td class="clsLabelR">#-016</td>
++    <td><input type="text" name="lfor" value="$-MF" size="4" title="#-016"></td>
++    <td class="clsInfo">#-050</td>
+ </tr>
+ <tr>
+-  <td class="clsLabelR">#-037</td>
+-  <td>$-DG</td>
+-</tr>
+-<tr><td class="clsLabelR">#-015</td>
+-    <td><input type="text" name="lusers" value="$-MU" size="4" title="#-015"></td>
+-    <td class="clsInfo">#-050</td></tr>
+-<tr><td class="clsLabelR">#-016</td>
+-    <td><input type="text" name="lfor" value="$-MF" size="4" title="#-016"></td>
+-    <td class="clsInfo">#-050</td></tr>
+-<tr><td class="clsLabelR">#-017</td>
++    <td class="clsLabelR">#-017</td>
+     <td><input type="text" name="lalias" value="$-MA" size="4" title="#-017"></td>
+-    <td class="clsInfo">#-050</td></tr>
+-<tr><td class="clsLabelR">#-018</td>
++    <td class="clsInfo">#-050</td>
++</tr>
++<tr>
++    <td class="clsLabelR">#-018</td>
+     <td><input type="text" name="lresponder" value="$-MR" size="4" title="#-018"></td>
+-    <td class="clsInfo">#-050</td></tr>
+-<tr><td class="clsLabelR">#-019</td>
++    <td class="clsInfo">#-050</td>
++</tr>
++<tr>
++    <td class="clsLabelR">#-019</td>
+     <td><input type="text" name="llists" value="$-ML" size="4" title="#-019"></td>
+-    <td class="clsInfo">#-050</td></tr>
+-<tr><td class="clsLabelR">#-039</td>
+-    <td><input type="text" name="quota" value="$-MQ" size="10" title="#-039"></td></tr>
+-</table>
+-<table border="0" cellspacing="0" cellpadding="0">
+-<tr><td><input TYPE="checkbox" NAME="upop" id="upop"$-MP title="#-042"><label for="upop" title="#-042">#-042</label></td></tr>
+-<tr><td><input TYPE="checkbox" NAME="uimap" id="uimap" $-MI title="#-044"><label for="uimap" title="#-044">#-044</label></td></tr>
+-<tr><td><input TYPE="checkbox" NAME="udialup" id="udialup" $-MD title="#-049"><label for="udialup" title="#-049">#-049</label></td></tr>
+-<tr><td><input TYPE="checkbox" NAME="upassc" id="upassc" $-MC title="#-045"><label for="upassc" title="#-045">#-045</label></td></tr>
+-<tr><td><input TYPE="checkbox" NAME="uweb" id="uweb" $-MW title="#-043"><label for="uweb" title="#-043">#-043</label></td></tr>
+-<tr><td><input TYPE="checkbox" NAME="urelay" id="urelay"$-MS title="#-047"><label for="urelay" title="#-047">#-047</label></td></tr>
+-<tr><td><input TYPE="checkbox" NAME="uspam" id="uspam"$-MZ title="#-069"><label for="uspam" title="#-069">#-069</label></td></tr>
+-<tr>
+-<td><BR><INPUT TYPE="SUBMIT" NAME="Submit" VALUE="#-033">
+-<INPUT TYPE="HIDDEN" NAME="nav" VALUE="mod_domain">
+-</td>
++    <td class="clsInfo">#-050</td>
++</tr>
++<!-- README.quotas file in vpopmail disttribution says domain quotas are broken. Hide these options.
++<tr>
++    <td class="clsLabelR">#-039</td>
++    <td><input type="text" name="quota" value="$-MQ" size="10" title="#-039" disabled></td>
++    <td class="clsInfo">#-077</td>
++</tr>
++<tr>
++    <td class="clsLabelR">#-073</td>
++    <td><input type="text" name="maxmsgcount" value="$-ME" size="10" title="#-073" disabled></td>
++    <td class="clsInfo">#-077</td>
++</tr>
++-->
++<tr>
++    <td class="clsLabelR">#-074</td>
++    <td><input type="text" name="defaultquota" value="$-MB" size="10" title="#-074"></td>
++    <td class="clsInfo">#-077</td>
++</tr>
++<tr>
++    <td class="clsLabelR">#-075</td>
++    <td><input type="text" name="defaultmaxmsgcount" value="$-MG" size="10" title="#-075"></td>
++    <td class="clsInfo">#-077</td>
++</tr>
++<tr><td colspan="3">&nbsp;</td></tr>
++<tr><td colspan="3"><B>#-078</B></td></tr>
++<tr><td colspan="3"><hr size="1" noshade></td></tr>
++<tr>
++    <td colspan="3" align="center">
++	<table border="0" cellspacing="0" cellpadding="0">
++	    <tr>
++		<td>
++		<table border="0" cellspacing="0" cellpadding="0">
++		    <tr><td><input TYPE="checkbox" NAME="upop" id="upop" $-MP title="#-042" value="1"><label for="upop" title="#-042">#-042</label></td></tr>
++		    <tr><td><input TYPE="checkbox" NAME="uimap" id="uimap" $-MI title="#-044" value="1"><label for="uimap" title="#-044">#-044</label></td></tr>
++		    <tr><td><input TYPE="checkbox" NAME="udialup" id="udialup" $-MD title="#-049" value="1"><label for="udialup" title="#-049">#-049</label></td></tr>
++		    <tr><td><input TYPE="checkbox" NAME="upassc" id="upassc" $-MC title="#-045" value="1"><label for="upassc" title="#-045">#-045</label></td></tr>
++		    <tr><td><input TYPE="checkbox" NAME="uweb" id="uweb" $-MW title="#-043" value="1"><label for="uweb" title="#-043">#-043</label></td></tr>
++		</table>
++		</td>
++		<td width="20">&nbsp;</td>
++		<td>
++                <table border="0" cellspacing="0" cellpadding="0">
++		    <tr><td><input TYPE="checkbox" NAME="urelay" id="urelay" $-MS title="#-047" value="1"><label for="urelay" title="#-047">#-047</label></td></tr>
++		    <tr><td><input TYPE="checkbox" NAME="uspam" id="uspam" $-MZ title="#-069" value="1"><label for="uspam" title="#-069">#-069</label></td></tr>
++		    <tr><td><input TYPE="checkbox" NAME="usmtp" id="usmtp" $-MH title="#-070" value="1"><label for="usmtp" title="#-070">#-070</label></td></tr>
++		    <tr><td><input TYPE="checkbox" NAME="umaildrop" id="udisablemaildrop" $-MN title="#-072" value="1"><label for="udisablemaildrop" title="#-072">#-072</label></td></tr>
++		    <tr><td><input TYPE="checkbox" NAME="udeletespam" id="udeletespam" $-ML title="#-071" value="1"><label for="udeletespam" title="#-071">#-071</label></td></tr>
++		</table>
++		</td>
++	    </tr>
++	</table>
++    </td>
+ </tr>
++<tr><td colspan="3">&nbsp;</td></tr>
++<tr><td colspan="3" align="center"><input type="submit" value="#-033" title="#-003"></td></tr>
+ </table>
+-<br>
+-<a href="/cgi-bin/vqadmin/vqadmin.cgi?dname=$-DN&nav=show_users">Show Users</a>
++<input type="HIDDEN" name="dname" value="$-DN">
++<input type="HIDDEN" name="nav" value="mod_domain">
++</form>
+ <hr size="1" noshade>
+ <a href="/cgi-bin/vqadmin/vqadmin.cgi">#-000</a><BR><BR>
+ %-V
+diff -ruN vqadmin-2.3.7-original/html/mod_user.html vqadmin-2.3.7/html/mod_user.html
+--- vqadmin-2.3.7-original/html/mod_user.html	2023-02-18 11:44:02.000000000 +0300
++++ vqadmin-2.3.7/html/mod_user.html	2023-02-18 12:29:22.000000000 +0300
+@@ -1,57 +1,75 @@
+-<HTML><HEAD><TITLE>#-038 %-U (%-G)</TITLE>
+-      <link href="/images/vqadmin/vqadmin.css" rel="stylesheet" rev="stylesheet" type="text/css" media="all">
++<HTML>
++<HEAD>
++    <TITLE>#-038 %-U (%-G)</TITLE>
++    <link href="/images/vqadmin/vqadmin.css" rel="stylesheet" rev="stylesheet" type="text/css" media="all">
+ </HEAD>
+ <body onLoad="javascript:form1.eaddr.focus();">
+-
+-
+ <div align="center"><B>%-W</B></div>
+ <div align="center">#-038 %-U (%-G)</div>
+-<B>#-038</B>
+-<hr size="1" noshade>
++<br>
+ <form action="/cgi-bin/vqadmin/vqadmin.cgi" method="post" name="form1" id="form1">
+-<table>
+-<tr><td class="clsLabelR">#-020</td>
+-    <td><INPUT TYPE="TEXT" NAME="eaddr" SIZE="30" VALUE="$-UA"></td></tr>
+-<tr><td class="clsLabelR">#-021</td>
+-    <td><INPUT TYPE="TEXT" NAME="cpass" SIZE="30" VALUE="$-UO"></td></tr>
+-<tr><td class="clsLabelR">#-039</td>
+-    <td><INPUT TYPE="TEXT" NAME="quota" SIZE="30" VALUE="$-UQ"></td></tr>
+-<tr><td class="clsLabelR">#-022</td>
+-    <td><INPUT TYPE="TEXT" NAME="fname" SIZE="30" VALUE="$-UN"></td></tr>
+-</table>
+ <table border="0" cellspacing="2" cellpadding="2">
+-<tr><td class="clsLabelR">#-035</td> 
+-    <td >$-UD</td></tr>
+-<tr><td class="clsLabelR">#-051</td> 
+-    <td>$-UT</td></tr>
+-<tr><td class="clsLabelR">#-052</td> 
+-    <td>$-UZ</td></tr>
+-</table>
+-<BR><B>#-040</B>
+-<table border="0" cellspacing="0" cellpadding="0">
+-<tr><td><INPUT TYPE="CHECKBOX" NAME="udisable" id="udisable" $-UP title="#-042"><label for="udisable" title="#-042">#-042</label></td></tr>
+-<tr><td><INPUT TYPE="CHECKBOX" NAME="uweb" id="uweb" $-UW title="#-043"><label for="uweb" title="#-043">#-043</label></td></tr>
+-<tr><td><INPUT TYPE="CHECKBOX" NAME="uimap" id="uimap" $-UI title="#-044"><label for="uimap" title="#-044">#-044</label></td> </tr>
+-<tr><td><INPUT TYPE="CHECKBOX" NAME="ubounce" id="ubounce" $-UB title="#-046"><label for="ubounce" title="#-046">#-046</label></td> </tr>
+-<tr><td><INPUT TYPE="CHECKBOX" NAME="urelay" id="urelay" $-US title="#-047"><label for="urelay" title="#-047">#-047</label></td> </tr>
+-<tr><td><INPUT TYPE="CHECKBOX" NAME="uspam" id="uspam" $-UF title="#-069"><label for="uspam" title="#-069">#-069</label></td> </tr>
+-<tr><td><INPUT TYPE="CHECKBOX" NAME="uqadmin" id="uqadmin" $-UK title="#-048"><label for="uqadmin" title="#-048">#-048</label></td></tr>
++<tr><td colspan="3">&nbsp;</td></tr>
++<tr><td colspan="3"><B>#-038</B></td></tr>
++<tr><td colspan="3"><hr size="1" noshade></td></tr>
++<tr>
++    <td class="clsLabelR">#-020</td>
++    <td><INPUT TYPE="TEXT" SIZE="30" VALUE="$-UA" disabled></td>
+ </tr>
+-<tr><td>
+-    <BR>
+-    <INPUT TYPE="SUBMIT" NAME="Submit" VALUE="#-038">  </td></tr>
+-</table>
+-  <INPUT TYPE="HIDDEN" NAME="nav" VALUE="mod_user">
+-</FORM>
+-<FORM METHOD="POST" ACTION="/cgi-bin/vqadmin/vqadmin.cgi">
+-<table border="0" cellspacing="0" cellpadding="0">
+-<tr><td><INPUT TYPE="SUBMIT" NAME="Submit" VALUE="Delete user">
+-	<INPUT TYPE="HIDDEN" NAME="nav" VALUE="del_user">
+-	<INPUT TYPE="HIDDEN" NAME="eaddr" VALUE="$-UA"></td>
+-    <td>$-UA</td></tr>
++<tr>
++    <td class="clsLabelR">#-021</td>
++    <td><INPUT TYPE="PASSWORD" NAME="cpass" SIZE="30" VALUE="$-UO" disabled>
++    <input type="checkbox" name="enable_pass" onclick="Javascript: if(form1['enable_pass'].checked) form1['cpass'].disabled=false; else form1['cpass'].disabled=true;"> #-076</td>
++</tr>
++<tr>
++    <td class="clsLabelR">#-039</td>
++    <td><INPUT TYPE="TEXT" NAME="quota" SIZE="30" VALUE="$-UQ"></td>
++</tr>
++<tr>
++    <td class="clsLabelR">#-022</td>
++    <td><INPUT TYPE="TEXT" NAME="fname" SIZE="30" VALUE="$-UN"></td>
++</tr>
++<tr><td class="clsLabelR">#-051</td><td><input type="text" value="$-UT" size="30" disabled></td></tr>
++<tr><td class="clsLabelR">#-052</td><td><input type="text" value="$-UZ" size="30" disabled></td></tr>
++<tr><td class="clsLabelR">#-035</td><td><input type="text" value="$-UD" size="50" disabled></td></tr>
++<tr><td colspan="3">&nbsp;</td></tr>
++<tr><td colspan="3"><B>#-040</B></td></tr>
++<tr><td colspan="3"><hr size="1" noshade></td></tr>
++<tr>
++    <td colspan="3" align="center">
++        <table border="0" cellspacing="2" cellpadding="0">
++            <tr>
++                <td>
++                <table border="0" cellspacing="0" cellpadding="0">
++                    <tr><td><input TYPE="checkbox" NAME="upop" id="upop" $-MP title="#-042" value="1"><label for="upop" title="#-042">#-042</label></td></tr>
++                    <tr><td><input TYPE="checkbox" NAME="uimap" id="uimap" $-MI title="#-044" value="1"><label for="uimap" title="#-044">#-044</label></td></tr>
++                    <tr><td><input TYPE="checkbox" NAME="udialup" id="udialup" $-MD title="#-049" value="1"><label for="udialup" title="#-049">#-049</label></td></tr>
++                    <tr><td><input TYPE="checkbox" NAME="upassc" id="upassc" $-MC title="#-045" value="1"><label for="upassc" title="#-045">#-045</label></td></tr>
++                    <tr><td><input TYPE="checkbox" NAME="uweb" id="uweb" $-MW title="#-043" value="1"><label for="uweb" title="#-043">#-043</label></td></tr>
++                    <tr><td><INPUT TYPE="checkbox" NAME="ubounce" id="ubounce" $-MB title="#-046" value="1"><label for="ubounce" title="#-046">#-046</label></td> </tr>
++                </table>
++                </td>
++                <td width="20">&nbsp;</td>
++                <td>
++                <table border="0" cellspacing="0" cellpadding="0">
++                    <tr><td><input TYPE="checkbox" NAME="urelay" id="urelay" $-MS title="#-047" value="1"><label for="urelay" title="#-047">#-047</label></td></tr>
++                    <tr><td><input TYPE="checkbox" NAME="uspam" id="uspam" $-MZ title="#-069" value="1"><label for="uspam" title="#-069">#-069</label></td></tr>
++                    <tr><td><input TYPE="checkbox" NAME="usmtp" id="usmtp" $-MH title="#-070" value="1"><label for="usmtp" title="#-070">#-070</label></td></tr>
++                    <tr><td><input TYPE="checkbox" NAME="umaildrop" id="udisablemaildrop" $-MN title="#-072" value="1"><label for="udisablemaildrop" title="#-072">#-072</label></td></tr>
++                    <tr><td><input TYPE="checkbox" NAME="udeletespam" id="udeletespam" $-ML title="#-071" value="1"><label for="udeletespam" title="#-071">#-071</label></td></tr>
++                    <tr><td><INPUT TYPE="checkbox" NAME="uqadmin" id="uqadmin" $-MK title="#-048" value="1"><label for="uqadmin" title="#-048">#-048</label></td></tr>
++                </table>
++                </td>
++            </tr>
++        </table>
++    </td>
++</tr>
++<tr><td colspan="3">&nbsp;</td></tr>
++<tr><td colspan="3" align="center"><input TYPE="SUBMIT" NAME="Submit" VALUE="#-038"></td></tr>
+ </table>
+-
+-</FORM>
++<input TYPE="HIDDEN" NAME="eaddr" VALUE="$-UA">
++<input TYPE="HIDDEN" NAME="nav" VALUE="mod_user">
++</form>
+ <hr size="1" noshade>
+ <a href="/cgi-bin/vqadmin/vqadmin.cgi" title="#-000">#-000</a><BR><BR>
+ %-V
+diff -ruN vqadmin-2.3.7-original/user.c vqadmin-2.3.7/user.c
+--- vqadmin-2.3.7-original/user.c	2023-02-18 11:44:02.000000000 +0300
++++ vqadmin-2.3.7/user.c	2023-02-18 09:58:06.000000000 +0300
+@@ -116,15 +116,23 @@
+  static char domain[156];
+  char *gecos;
+  char *passwd;
+- char *shell;
+- char *udisable;
+- char *uweb;
++ char *uquota;
++
++ char *upop;
+  char *uimap;
++ char *udialup;
+  char *upassc;
++ char *uweb;
+  char *ubounce;
+  char *urelay;
+  char *uspam;
++ char *usmtp;
++ char *umaildrop;
++ char *udeletespam;
+  char *uqadmin;
++
++ char *formattedquota = NULL;
++ char qconvert[11];
+  int   ret;
+  int   i;
+  int   GidFlag = 0;
+@@ -138,24 +146,30 @@
+   eaddr = cgi_is_var("eaddr");
+   gecos = cgi_is_var("fname");
+   passwd = cgi_is_var("cpass");
+-  shell = cgi_is_var("quota");
+-  udisable = cgi_is_var("udisable");
+-  uweb = cgi_is_var("uweb");
++  uquota = cgi_is_var("quota");
++
++  upop = cgi_is_var("upop");
+   uimap = cgi_is_var("uimap");
++  udialup = cgi_is_var("udialup");
+   upassc = cgi_is_var("upassc");
++  uweb = cgi_is_var("uweb");
+   ubounce = cgi_is_var("ubounce");
++
+   urelay = cgi_is_var("urelay"); 
+   uspam = cgi_is_var("uspam"); 
++  usmtp = cgi_is_var("usmtp"); 
++  umaildrop = cgi_is_var("umaildrop"); 
++  udeletespam = cgi_is_var("udeletespam"); 
+   uqadmin = cgi_is_var("uqadmin");
+ 
+   if ( eaddr==NULL || strlen(eaddr)==0 ) {
+     global_warning("Modify Email Account: Failed: no email address given");
+     t_open("html/mod_user.html", 1);
+   }
+-
++ 
+   parse_email( eaddr, user, domain, 156);
+ 
+-  vpw = vauth_getpw(user,domain);
++  vpw = vauth_getpw(user, domain);
+   if (vpw == NULL) {
+     global_warning("Modify User: account does not exist");
+     t_open("html/mod_user.html", 1);
+@@ -179,32 +193,45 @@
+     vpw->pw_gecos = gecos;
+   }
+ 
+-  if ( shell!=NULL && strlen(shell)>0 ){
+-    vpw->pw_shell = shell;
++  // UPDATE USER QUOTA ("maildirsize" file will be created at the end, only if the update is successfull.
++  formattedquota="NOQUOTA"; // START WITH DEAFULT "NOQUOTA"
++  if (uquota!=NULL) { // QUOTA FIELD IS SET
++    if (strlen(uquota)==0 || strcmp(uquota, "NOQUOTA")==0 || strcmp(uquota, "BADQUOTA")==0) {  // RESET QUOTA
++      formattedquota = "NOQUOTA";
++    } else { // QUOTA IS REQUESTED, CONVERT bytes->Mbytes
++      if (quota_to_bytes(qconvert, uquota)) {
++        global_warning("Invalid quota string.");
++        t_open("html/mod_user.html", 1);
++      } else {
++        formattedquota = format_maildirquota(qconvert);
++      }
++    }
+   }
++  vpw->pw_shell = formattedquota;
+ 
+-  if (udisable!=NULL) GidFlag |= NO_POP;
+-  if (uweb!=NULL) GidFlag |= NO_WEBMAIL;
++  // UPDATE PERMISSIONS
++  if (upop!=NULL) GidFlag |= NO_POP;
+   if (uimap!=NULL) GidFlag |= NO_IMAP;
+-  if (ubounce!=NULL) GidFlag |= BOUNCE_MAIL;
++  if (udialup!=NULL) GidFlag |= NO_DIALUP;
+   if (upassc!=NULL) GidFlag |= NO_PASSWD_CHNG;
++  if (uweb!=NULL) GidFlag |= NO_WEBMAIL;
++  if (ubounce!=NULL) GidFlag |= BOUNCE_MAIL;
+   if (urelay!=NULL) GidFlag |= NO_RELAY;
+-#ifdef SPAMASSASSIN
++  if (usmtp!=NULL) GidFlag |= NO_SMTP;
+   if (uspam!=NULL) GidFlag |= NO_SPAMASSASSIN;
+-#endif
++  if (udeletespam!=NULL) GidFlag |= DELETE_SPAM;
++  if (umaildrop!=NULL) GidFlag |= NO_MAILDROP;
+   if (uqadmin!=NULL) GidFlag |= QA_ADMIN;
+ 
+   vpw->pw_gid = GidFlag;
+ 
+   ret = vauth_setpw(vpw, domain);
+   if ( ret != VA_SUCCESS ) {
+-    snprintf(WarningBuff, MAX_WARNING_BUFF, 
++   snprintf(WarningBuff, MAX_WARNING_BUFF,
+         "Modify Account %s error %s", eaddr, verror(ret));
+     global_warning(WarningBuff);
+   } else {
+-    snprintf(WarningBuff, MAX_WARNING_BUFF, 
+-        "Modify Account %s success", eaddr);
+-    global_warning(WarningBuff);
++    update_maildirsize(domain, vpw->pw_dir, formattedquota); // CREATE "maildirsize" file in user's Maildir.
+   }
+   post_email_info( eaddr, vpw, domain);
+ 
+@@ -214,6 +241,7 @@
+ 
+ void post_email_info( char *eaddr, struct vqpasswd *vpw, char *domain)
+ {
++ char qconvert[11];
+ #ifdef ENABLE_AUTH_LOGGING
+  time_t mytime;
+  char *authip;
+@@ -221,30 +249,36 @@
+ 
+   global_par("UA", eaddr);
+   global_par("UN", vpw->pw_gecos);
+-  global_par("UQ", vpw->pw_shell);
++
++// SHOW USER QUOTA IN MB
++  if (strncmp(vpw->pw_shell, "NOQUOTA", 2) != 0) {
++    if(quota_to_megabytes(qconvert, vpw->pw_shell)) {
++      global_par("UQ", "BADQUOTA");
++    }
++    else {
++      global_par("UQ", qconvert);
++    }
++  }
++
+   global_par("UD", vpw->pw_dir);
+ 
+ #ifdef CLEAR_PASS
+   global_par("UO", vpw->pw_clear_passwd);
+ #endif
+ 
+-  if (vpw->pw_gid & NO_PASSWD_CHNG) global_par("UC", "CHECKED");
+-
+-  if (vpw->pw_gid & NO_POP) global_par("UP", "CHECKED");
+-
+-  if (vpw->pw_gid & NO_WEBMAIL) global_par("UW", "CHECKED");
+-
+-  if (vpw->pw_gid & NO_IMAP) global_par("UI", "CHECKED");
+-
+-  if (vpw->pw_gid & BOUNCE_MAIL) global_par("UB", "CHECKED");
+-
+-  if (vpw->pw_gid & NO_RELAY) global_par("US", "CHECKED");
+-
+-#ifdef SPAMASSASSIN
+-  if (vpw->pw_gid & NO_SPAMASSASSIN) global_par("UF", "CHECKED");
+-#endif
+-
+-  if (vpw->pw_gid & QA_ADMIN) global_par("UK", "CHECKED");
++  if (vpw->pw_gid & NO_POP) global_par("MP", "CHECKED");
++  if (vpw->pw_gid & NO_IMAP) global_par("MI", "CHECKED");
++  if (vpw->pw_gid & NO_DIALUP) global_par("MD", "CHECKED");
++  if (vpw->pw_gid & NO_PASSWD_CHNG) global_par("MC", "CHECKED");
++  if (vpw->pw_gid & NO_WEBMAIL) global_par("MW", "CHECKED");
++  if (vpw->pw_gid & BOUNCE_MAIL) global_par("MB", "CHECKED");
++
++  if (vpw->pw_gid & NO_RELAY) global_par("MS", "CHECKED");
++  if (vpw->pw_gid & NO_SMTP) global_par("MH", "CHECKED");
++  if (vpw->pw_gid & NO_SPAMASSASSIN) global_par("MZ", "CHECKED");
++  if (vpw->pw_gid & DELETE_SPAM) global_par("ML", "CHECKED");
++  if (vpw->pw_gid & NO_MAILDROP) global_par("MN", "CHECKED");
++  if (vpw->pw_gid & QA_ADMIN) global_par("MK", "CHECKED");
+ 
+ #ifdef ENABLE_AUTH_LOGGING
+   mytime = vget_lastauth(vpw, domain);
+@@ -344,7 +378,7 @@
+     printf("<th><FONT face=%s color=\"%s\">Domain Administrator</FONT></th>\n",
+           face, fgcolor);
+     printf("<th><FONT face=%s color=\"%s\">Last Logon</FONT></th></tr><BR>\n",
+-	  face, fgcolor);
++  face, fgcolor);
+   }
+   count = 0;
+   while(vpw != NULL && count < 128000 ){
+@@ -472,7 +506,6 @@
+             *tmpstr = 0;
+                     while (*tmpstr!='/') --tmpstr;
+                     ++tmpstr;
+-   
+             printf("<FONT face=%s color=\"%s\">alias: %s</FONT><BR>\n", 
+             face, fgcolor, tmpstr);
+                 }
+@@ -530,14 +563,23 @@
+  static char domain[156];
+  char *gecos;
+  char *passwd;
+- char *shell;
+- char *udisable;
+- char *uweb;
++ char *uquota;
++
++ char *upop;
+  char *uimap;
++ char *udialup;
+  char *upassc;
++ char *uweb;
+  char *ubounce;
+  char *urelay;
++ char *uspam;
++ char *usmtp;
++ char *umaildrop;
++ char *udeletespam;
+  char *uqadmin;
++
++ char *formattedquota = NULL;
++ char qconvert[11];
+  int   ret;
+  int   GidFlag = 0;
+  struct vqpasswd *vpw;
+@@ -550,15 +592,23 @@
+   eaddr = cgi_is_var("eaddr");
+   gecos = cgi_is_var("fname");
+   passwd = cgi_is_var("cpass");
+-  shell = cgi_is_var("quota");
+-  udisable = cgi_is_var("udisable");
+-  uweb = cgi_is_var("uweb");
++  uquota = cgi_is_var("quota");
++
++  upop = cgi_is_var("upop");
+   uimap = cgi_is_var("uimap");
++  udialup = cgi_is_var("udialup");
+   upassc = cgi_is_var("upassc");
++  uweb = cgi_is_var("uweb");
+   ubounce = cgi_is_var("ubounce");
++
+   urelay = cgi_is_var("urelay"); 
++  uspam = cgi_is_var("uspam"); 
++  usmtp = cgi_is_var("usmtp"); 
++  umaildrop = cgi_is_var("umaildrop"); 
++  udeletespam = cgi_is_var("udeletespam"); 
+   uqadmin = cgi_is_var("uqadmin");
+ 
++
+   if ( eaddr==NULL || strlen(eaddr)==0 ) {
+     global_warning("Add Email Account: Failed: no email address given");
+     t_open("html/add_user.html", 1);
+@@ -592,24 +642,48 @@
+ 
+   vpw = vauth_getpw(user, domain);
+ 
+-  if (udisable!=NULL) GidFlag |= NO_POP;
+-  if (uweb!=NULL) GidFlag |= NO_WEBMAIL;
++  // UPDATE USER QUOTA ("maildirsize" file will be created at the end, only if the update is successfull.
++  formattedquota="NOQUOTA"; // START WITH DEAFULT "NOQUOTA"
++  if (uquota!=NULL) { // QUOTA FIELD IS SET
++    if (strlen(uquota)==0 || strcmp(uquota, "NOQUOTA")==0 || strcmp(uquota, "BADQUOTA")==0) {  // RESET QUOTA
++      formattedquota = "NOQUOTA";
++    } else { // QUOTA IS REQUESTED, CONVERT bytes->Mbytes
++      if (quota_to_bytes(qconvert, uquota)) {
++        global_warning("Invalid quota string.");
++        t_open("html/mod_user.html", 1);
++      } else {
++        formattedquota = format_maildirquota(qconvert);
++      }
++    }
++  }
++  vpw->pw_shell = formattedquota;
++
++  // USER PERMISSIONS
++  if (upop!=NULL) GidFlag |= NO_POP;
+   if (uimap!=NULL) GidFlag |= NO_IMAP;
+-  if (ubounce!=NULL) GidFlag |= BOUNCE_MAIL;
++  if (udialup!=NULL) GidFlag |= NO_DIALUP;
+   if (upassc!=NULL) GidFlag |= NO_PASSWD_CHNG;
++  if (uweb!=NULL) GidFlag |= NO_WEBMAIL;
++  if (ubounce!=NULL) GidFlag |= BOUNCE_MAIL;
+   if (urelay!=NULL) GidFlag |= NO_RELAY;
++  if (usmtp!=NULL) GidFlag |= NO_SMTP;
++  if (uspam!=NULL) GidFlag |= NO_SPAMASSASSIN;
++  if (udeletespam!=NULL) GidFlag |= DELETE_SPAM;
++  if (umaildrop!=NULL) GidFlag |= NO_MAILDROP;
+   if (uqadmin!=NULL) GidFlag |= QA_ADMIN;
+ 
+   vpw->pw_gid = GidFlag;
+-  if ( shell != NULL && strlen(shell) > 0 ) vpw->pw_shell = shell;
+ 
+   ret = vauth_setpw(vpw, domain);
+   if ( ret != VA_SUCCESS ) {
+     snprintf(WarningBuff, MAX_WARNING_BUFF, 
+         "Add Account: Failure:  %s set options", eaddr);
+     global_warning(WarningBuff);
++  } else {
++    update_maildirsize(domain, vpw->pw_dir, formattedquota); // CREATE "maildirsize" file in user's Maildir.
+   }
+-  post_email_info( eaddr, vpw, domain);
++
++  post_email_info(eaddr, vpw, domain);
+ 
+   t_open(T_MAIN, 1);
+ 

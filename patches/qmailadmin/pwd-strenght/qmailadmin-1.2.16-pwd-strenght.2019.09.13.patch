@@ -1,0 +1,172 @@
+v. 2019.09.13
+Provides password strenght check capabilities via javascript form validation.
+By Roberto Puzzanghera - http://notes.sagredo.eu
+
+=================================================================================================
+
+diff -ruN qmailadmin-1.2.16-original/Makefile.am qmailadmin-1.2.16-pwd-strenght/Makefile.am
+--- qmailadmin-1.2.16-original/Makefile.am	2011-02-22 15:45:48.000000000 +0100
++++ qmailadmin-1.2.16-pwd-strenght/Makefile.am	2015-04-26 18:25:26.582135494 +0200
+@@ -68,6 +68,7 @@
+ 	rm -rf                   $(DESTDIR)@htmllibdir@/html
+ 	$(mkinstalldirs)         $(DESTDIR)@htmllibdir@/html 
+ 	cp $(srcdir)/html/*.html $(DESTDIR)@htmllibdir@/html
++	cp $(srcdir)/html/*.js   $(DESTDIR)@htmllibdir@/html
+ 	cp $(srcdir)/html/colortable $(DESTDIR)@htmllibdir@/html
+ 	chmod 755                $(DESTDIR)@htmllibdir@/html
+ 	chmod 644                $(DESTDIR)@htmllibdir@/html/*
+diff -ruN qmailadmin-1.2.16-original/Makefile.in qmailadmin-1.2.16-pwd-strenght/Makefile.in
+--- qmailadmin-1.2.16-original/Makefile.in	2011-02-22 15:45:47.000000000 +0100
++++ qmailadmin-1.2.16-pwd-strenght/Makefile.in	2015-04-26 18:25:26.605134723 +0200
+@@ -702,6 +702,7 @@
+ 	rm -rf                   $(DESTDIR)@htmllibdir@/html
+ 	$(mkinstalldirs)         $(DESTDIR)@htmllibdir@/html 
+ 	cp $(srcdir)/html/*.html $(DESTDIR)@htmllibdir@/html
++	cp $(srcdir)/html/*.js   $(DESTDIR)@htmllibdir@/html
+ 	cp $(srcdir)/html/colortable $(DESTDIR)@htmllibdir@/html
+ 	chmod 755                $(DESTDIR)@htmllibdir@/html
+ 	chmod 644                $(DESTDIR)@htmllibdir@/html/*
+diff -ruN qmailadmin-1.2.16-original/html/add_user.html qmailadmin-1.2.16-pwd-strenght/html/add_user.html
+--- qmailadmin-1.2.16-original/html/add_user.html	2011-02-22 15:45:47.000000000 +0100
++++ qmailadmin-1.2.16-pwd-strenght/html/add_user.html	2015-04-26 18:25:26.605134723 +0200
+@@ -1,3 +1,4 @@
++ <script language="Javascript" type="text/javascript" src="/qmailadmin/html/pwd_strenght_chk.js"></script>
+  </head>
+  <body bgcolor="#ffffff" onload="init();">
+ 
+@@ -32,7 +33,7 @@
+         <!-- Form fields -->
+         <tr>
+          <td>
+-          <form method="post" name="logon" action="##C/com/addusernow?##&">
++          <form method="post" name="logon" action="##C/com/addusernow?##&" onsubmit="return validate_form(this,0)">
+            <table cellpadding="0" cellspacing="0" border="0">
+             <tr>
+              <td align=right><b>##X002:&nbsp;</b></td>
+diff -ruN qmailadmin-1.2.16-original/html/change_password.html qmailadmin-1.2.16-pwd-strenght/html/change_password.html
+--- qmailadmin-1.2.16-original/html/change_password.html	2011-02-22 15:45:47.000000000 +0100
++++ qmailadmin-1.2.16-pwd-strenght/html/change_password.html	2015-04-26 18:25:26.605134723 +0200
+@@ -1,8 +1,9 @@
++ <script language="Javascript" type="text/javascript" src="/qmailadmin/html/pwd_strenght_chk.js"></script>
+ </head>
+  <body bgcolor="#ffffff">
+ <CENTER>
+ <H2>##S</H2>
+-<FORM METHOD="POST" ACTION="##C/passwd/">
++<FORM METHOD="POST" ACTION="##C/passwd/" onsubmit="return validate_form(this,1)">
+ <TABLE BORDER=0>
+ <TR>
+   <TD ALIGN=RIGHT>##X013</TD>
+diff -ruN qmailadmin-1.2.16-original/html/header.html qmailadmin-1.2.16-pwd-strenght/html/header.html
+--- qmailadmin-1.2.16-original/html/header.html	2011-02-22 15:45:47.000000000 +0100
++++ qmailadmin-1.2.16-pwd-strenght/html/header.html	2015-04-26 18:25:26.605134723 +0200
+@@ -4,3 +4,11 @@
+   <title>QmailAdmin ##D</title>
+   <meta http-equiv="content-type" content="text/html; charset=##X000">
+   <meta name="robots" content="noindex,follow">
++  <style>
++        body {
++                font-family: Arial, Helvetica, sans-serif;
++                font-size: 12px;
++        }
++        a:link, a:visited {color: #000000; text-decoration: none;}
++        a:hover {color: #000000; text-decoration: underline;}
++  </style>
+diff -ruN qmailadmin-1.2.16-original/html/mod_user.html qmailadmin-1.2.16-pwd-strenght/html/mod_user.html
+--- qmailadmin-1.2.16-original/html/mod_user.html	2011-02-22 15:45:47.000000000 +0100
++++ qmailadmin-1.2.16-pwd-strenght/html/mod_user.html	2019-09-13 20:53:31.209640272 +0200
+@@ -1,3 +1,4 @@
++  <script language="Javascript" type="text/javascript" src="/qmailadmin/html/pwd_strenght_chk.js"></script>
+         </head>
+         <body bgcolor="#ffffff" onload="init();">
+ 
+@@ -75,7 +76,7 @@
+     <!-- Form fields -->
+     <tr>
+      <td>
+-      <form method="post" name="logon" action="##C/com/modusernow?##&">
++      <form method="post" name="logon" action="##C/com/modusernow?##&" onsubmit="return validate_form(this,0)">
+           <input type="hidden" name="modu" value="##A">
+       <table cellpadding="1" cellspacing="1" border="0">
+       <tr>
+@@ -106,7 +107,7 @@
+       <tr>
+         <td align="right" valign="top">##X260:</td>
+         <td align="left">
+-          <input type="radio" name="cforward"
++          <input type="radio" name="cforward" id="cforward"
+ onClick="document.forms[0].nforward.disabled=true;
+ document.forms[0].fsaved.disabled=true;
+ ##ts document.forms[0].spamcheck.disabled=false; ##tt"
+@@ -130,7 +131,7 @@
+         </td>
+       </tr>
+       </table><HR>
+-        <input type="checkbox" name="vacation"
++        <input type="checkbox" name="vacation" id="vacation"
+ onClick="document.forms[0].vsubject.select()
+ document.forms[0].vsubject.focus()"
+ value="on" ##i4> ##X212<BR>
+diff -ruN qmailadmin-1.2.16-original/html/pwd_strenght_chk.js qmailadmin-1.2.16-pwd-strenght/html/pwd_strenght_chk.js
+--- qmailadmin-1.2.16-original/html/pwd_strenght_chk.js	1970-01-01 01:00:00.000000000 +0100
++++ qmailadmin-1.2.16-pwd-strenght/html/pwd_strenght_chk.js	2019-09-13 21:24:50.319443464 +0200
+@@ -0,0 +1,59 @@
++var allowedSpecialChars = '! # $ % & ( ) * + , - . / : ; < = > ? @ [ ] ^ _ ` { } | ~ \' \"';
++var alertTooShort = 'The password must be at least 8 characters long!\n\nLa password deve contenere almeno 8 caratteri!'
++var alertNoDigit = 'You have to insert at least a digit 0-9 in your password!\n\nE\' necessario includere almeno un carattere numerico nella password!';
++var alertNoUpperCase = 'You have to insert at least an uppercase character in your password!\n\nE\' necessario includere almeno una lettera Maiuscola nella password!';
++var alertNoLowerCase = 'You have to insert at least a lowercase character in your password!\n\nE\' necessario includere almeno una lettera minuscola nella password!';
++var alertNoSpecial = "You have to insert at least a special character in your password!\nThe allowed characters follow below.\n\nE\' necessario includere almeno un carattere non alfanumerico nella nella password! I caratteri ammessi sono i seguenti.\n\n"+allowedSpecialChars;
++
++function testDigit(pwd)
++{
++	var patt = /[0-9]/;
++	return patt.test(pwd);
++}
++
++function testUpperCase(pwd)
++{
++	var patt = /[ABCDEFGHIJKMLNOPQRSTUVWXYZ]/;
++	return patt.test(pwd);
++}
++
++function testLowerCase(pwd)
++{
++	var patt = /[abcdefghijklmnopqrstuvwxyz]/;
++	return patt.test(pwd);
++}
++
++function testSpecialChar(pwd)
++{
++	var patt = /[!#$%&\(\)*+,-.\/:;<=>?@[\]^_`{|}~'"]/;
++	return patt.test(pwd);
++}
++
++function getPwdStrenght(pwd)
++{
++	//alert(pwd);
++	if (!testDigit(pwd)) {alert(alertNoDigit); return false;}
++	if (!testUpperCase(pwd)) {alert(alertNoUpperCase); return false;}
++	if (!testLowerCase(pwd)) {alert(alertNoLowerCase); return false;}
++	if (!testSpecialChar(pwd)) {alert(alertNoSpecial); return false;}
++}
++
++function validate_form(thisform,change)
++{
++	with (thisform)
++	{
++		var key = (change==0) ? 'password1' : 'newpass1';
++
++		// disable check if setting the autoresponder provided that the pwd remains intact
++                if (
++			(document.getElementById("cforward").checked==false || document.getElementById("vacation").checked==true)
++			&& eval(key).value.length==0
++		   ) return true;
++
++		if (eval(key).value.length<8) {alert(alertTooShort); eval(key).focus(); return false;}
++		if (getPwdStrenght(eval(key).value)==false) {eval(key).focus(); return false;}
++		else return true;
++	}
++}
++
++

@@ -1,0 +1,98 @@
+diff -ruN netqmail-1.06-original/chkuser.c netqmail-1.06/chkuser.c
+--- netqmail-1.06-original/chkuser.c	2022-12-17 13:03:41.063181896 +0100
++++ netqmail-1.06/chkuser.c	2023-03-27 14:46:53.539833646 +0200
+@@ -435,9 +435,11 @@
+ 	if (strncmp (domain->s, "xn--", 4) == 0) {
+ 		if (strstr (&domain->s[4], "--") != NULL)
+ 			return 0;
++/* allowing domains with hyphens like y--s.co.jp
+ 	} else {
+ 		if (strstr (domain->s, "--") != NULL)
+ 			return 0;
++*/
+ 	}
+         if (strstr (domain->s, ".-") != NULL) {
+                 return 0;
+diff -ruN netqmail-1.06-original/chkuser_settings.h netqmail-1.06/chkuser_settings.h
+--- netqmail-1.06-original/chkuser_settings.h	2022-12-17 14:31:05.145354477 +0100
++++ netqmail-1.06/chkuser_settings.h	2023-03-27 15:05:21.822633702 +0200
+@@ -114,7 +114,7 @@
+  * Defining it as "RELAYCLIENT" will avoid sender checking for authenticated/authorized users.
+  *	Senders will be logged anyway if CHKUSER_LOG_VALID_SENDER is defined.
+  */
+-#define CHKUSER_SENDER_NOCHECK_VARIABLE "RELAYCLIENT"
++/* #define CHKUSER_SENDER_NOCHECK_VARIABLE "RELAYCLIENT" */
+ 
+ /*
+  * Uncomment to enable usage of "#" and "+" characters within sender address
+diff -ruN netqmail-1.06-original/qmail-smtpd.c netqmail-1.06/qmail-smtpd.c
+--- netqmail-1.06-original/qmail-smtpd.c	2023-03-18 17:07:30.643116714 +0100
++++ netqmail-1.06/qmail-smtpd.c	2023-03-26 20:12:34.801870237 +0200
+@@ -116,10 +116,10 @@
+ void out(s) char *s; { substdio_puts(&ssout,s); }
+ 
+ void die_read(char *reason) { logit2("read failed", reason); flush(); _exit(1); }
+-void die_alarm() { qlogenvelope("rejected","alarmtimeout","","451"); logit("timeout"); out("451 timeout (#4.4.2)\r\n"); flush(); _exit(1); }
+-void die_nomem() { qlogenvelope("rejected","outofmemory","","421"); out("421 out of memory (#4.3.0)\r\n"); flush(); _exit(1); }
+-void die_control() { qlogenvelope("rejected","cannotreadcontrols","","421"); logit("unable to read controls"); out("421 unable to read controls (#4.3.0)\r\n"); flush(); _exit(1); }
+-void die_ipme() { qlogenvelope("rejected","unknownipme","","553"); logit("unable to figure out my IP addresses"); out("421 unable to figure out my IP addresses (#4.3.0)\r\n"); flush(); _exit(1); }
++void die_alarm() { qlogenvelope("rejected","alarmtimeout","","451"); out("451 timeout (#4.4.2)\r\n"); flush(); _exit(1); }
++void die_nomem() { qlogenvelope("rejected","out_of_memory","","421"); out("421 out of memory (#4.3.0)\r\n"); flush(); _exit(1); }
++void die_control() { qlogenvelope("rejected","cannot_read_controls","","421"); out("421 unable to read controls (#4.3.0)\r\n"); flush(); _exit(1); }
++void die_ipme() { qlogenvelope("rejected","unknown_ip_me","","553"); out("421 unable to figure out my IP addresses (#4.3.0)\r\n"); flush(); _exit(1); }
+ /* rbl: start */
+ /*
+ void die_dnsbl(arg)
+@@ -135,20 +135,19 @@
+ void err_maxrcpt()
+ {
+   out("553 max rcpt limit exceeded (#5.7.1)\r\n");
+-  logit("max rcpt limit exceeded (qmail-maxrcpt)");
+-  qlogenvelope("rejected","maxrcpt","","553");
++  qlogenvelope("rejected","max_rcpt_exceeded","","553");
+   flush();
+ }
+-void straynewline() { qlogenvelope("rejected","badnewlines","","451"); logit("bad newlines"); out("451 See http://pobox.com/~djb/docs/smtplf.html.\r\n"); flush(); _exit(1); }
++void straynewline() { qlogenvelope("rejected","bad_newlines","","451"); out("451 See http://pobox.com/~djb/docs/smtplf.html.\r\n"); flush(); _exit(1); }
+ void die_pre_greet() { qlogenvelope("rejected","pregreet","","554"); out("554 SMTP protocol violation\r\n"); flush(); _exit(1); }
+ 
+-void err_size() { qlogreceived("rejected","size","","552"); out("552 sorry, that message size exceeds my databytes limit (#5.3.4)\r\n"); }
++void err_size() { qlogreceived("rejected","databytes_limit_exceeded","","552"); out("552 sorry, that message size exceeds my databytes limit (#5.3.4)\r\n"); }
+ #ifndef TLS
+-void err_nogateway() { qlogenvelope("rejected","notinrcpthosts","","553"); out("553 sorry, that domain isn't in my list of allowed rcpthosts (#5.7.1)\r\n"); }
++void err_nogateway() { qlogenvelope("rejected","not_in_rcpthosts","","553"); out("553 sorry, that domain isn't in my list of allowed rcpthosts (#5.7.1)\r\n"); }
+ #else
+ void err_nogateway()
+ {
+-  qlogenvelope("rejected","notinrcpthosts","","553"); out("553 sorry, that domain isn't in my list of allowed rcpthosts");
++  qlogenvelope("rejected","not_in_rcpthosts","","553"); out("553 sorry, that domain isn't in my list of allowed rcpthosts");
+   tls_nogateway();
+   out(" (#5.7.1)\r\n");
+ }
+@@ -1864,11 +1863,10 @@
+   qmail_put(&qqt,rcptto.s,rcptto.len);
+  
+   qqx = qmail_close(&qqt);
+-  if (!*qqx) { acceptmessage(qp); logit("message accepted"); qlogreceived("accepted","queueaccept","","250"); return; }
++  if (!*qqx) { acceptmessage(qp); qlogreceived("accepted","queueaccept","","250"); return; }
+   if (hops) {
+     out("554 too many hops, this message is looping (#5.4.6)\r\n");
+-    logit("message looping");
+-    qlogreceived("rejected","mailloop","","554");
++    qlogreceived("rejected","message_loop","","554");
+     return;
+   }
+   if (databytes) if (!bytestooverflow) {
+@@ -1879,11 +1877,9 @@
+   if (*qqx == 'D') {
+     out("554 ");
+     qlogreceived("rejected","queuereject",qqx + 1,"554");
+-    logit2("message rejected", qqx + 1);
+   } else {
+     out("451 ");
+-    qlogreceived("rejected","queuedelay",qqx + 1,"451");
+-    logit2("message delayed", qqx + 1);
++    qlogreceived("rejected","queue_delay",qqx + 1,"451");
+   }
+   out(qqx + 1);
+   out("\r\n");

@@ -1,0 +1,90 @@
+vpopmail-sqmail-cdb patch for vpopmail-5.4.33 by Roberto Puzzanghera
+More info here https://notes.sagredo.eu/en/qmail-notes-185/installing-and-configuring-vpopmail-81.html
+
+==============================================================================================================
+
+Patch for s/qmail users who have the QMAILDIR/users/cdb moved to QMAILDIR/users/assign.cdb.
+You can enable for vpopmail to look for the correct cdb file at configure time:
+
+ --enable-sqmail-cdb                                                                                                                                                                                                                                                                                                                                                                   
+Default option is disabled
+
+==============================================================================================================
+
+diff -ruN ../vpopmail-5.4.33-original/configure.in vpopmail-5.4.33/configure.in
+--- ../vpopmail-5.4.33-original/configure.in	2011-02-28 18:00:45.000000000 +0100
++++ vpopmail-5.4.33/configure.in	2023-10-13 19:10:00.550225371 +0200
+@@ -381,6 +381,27 @@
+ AC_DEFINE_UNQUOTED(QMAILNEWMRH,"$qmailnewmrh","")
+ 
+ #----------------------------------------------------------------------
++AC_MSG_CHECKING(whether we have to deal with assign.cdb file)
++AC_ARG_ENABLE(sqmail-cdb,
++    [  --disable-sqmail-cdb       If using s/qmail, vpopmail looks for qmail/users/assign.cdb instead of qmail/users/cdb (default disabled).],
++    SQMAILCDB=$enableval,
++                [
++                        SQMAILCDB=n
++                ]
++)
++
++case $SQMAILCDB in
++  1*|y*|Y*)
++        AC_MSG_RESULT(yes)
++        SQMAILCDB=1
++        AC_DEFINE_UNQUOTED(SQMAILCDB,$SQMAILCDB,"")
++        ;;
++  *)
++        AC_MSG_RESULT(no)
++        ;;
++esac
++
++#----------------------------------------------------------------------
+ 
+ AC_MSG_CHECKING(for valid vpopmail user and group)
+ 
+@@ -1866,6 +1887,15 @@
+     ;;
+ esac
+ 
++case $SQMAILCDB in
++  1*|y*|Y*)
++    echo "        sqmail-cdb = ON  --enable-sqmail-cdb"
++    ;;
++  *)
++    echo "        sqmail-cdb = OFF --disable-sqmail-cdb"
++    ;;
++esac
++
+ echo "${CC} -O2" > cdb/conf-cc
+ echo "${CC} -s" > cdb/conf-ld
+ 
+diff -ruN ../vpopmail-5.4.33-original/doc/README.sqmail-cdb vpopmail-5.4.33/doc/README.sqmail-cdb
+--- ../vpopmail-5.4.33-original/doc/README.sqmail-cdb	1970-01-01 01:00:00.000000000 +0100
++++ vpopmail-5.4.33/doc/README.sqmail-cdb	2023-10-13 19:29:50.489556185 +0200
+@@ -0,0 +1,11 @@
++vpopmail-sqmail-cdb patch for vpopmail-5.4.33 by Roberto Puzzanghera
++More info here https://notes.sagredo.eu/en/qmail-notes-185/installing-and-configuring-vpopmail-81.html
++
++==============================================================================================================
++
++Patch for s/qmail users who have the QMAILDIR/users/cdb moved to QMAILDIR/users/assign.cdb.
++You can enable for vpopmail to look for the correct cdb file at configure time:
++
++--enable-sqmail-cdb
++
++Default option is disabled
+diff -ruN ../vpopmail-5.4.33-original/vpopmail.c vpopmail-5.4.33/vpopmail.c
+--- ../vpopmail-5.4.33-original/vpopmail.c	2011-02-28 18:00:45.000000000 +0100
++++ vpopmail-5.4.33/vpopmail.c	2023-10-13 17:48:22.683546115 +0200
+@@ -2992,7 +2992,11 @@
+   snprintf(cdb_key, sizeof(cdb_key), "!%s-", domain);
+   
+   /* work out the location of the cdb file */
++#ifdef SQMAILCDB
++  snprintf(cdb_file, sizeof(cdb_file), "%s/users/assign.cdb", QMAILDIR);
++#else
+   snprintf(cdb_file, sizeof(cdb_file), "%s/users/cdb", QMAILDIR);
++#endif
+ 
+   /* try to open the cdb file */
+   if ( (fs = fopen(cdb_file, "r")) == 0 ) {

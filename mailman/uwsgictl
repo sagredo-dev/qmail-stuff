@@ -1,0 +1,87 @@
+#!/bin/bash
+
+# uwsgi init script
+# Roberto Puzzanghera - https://notes.sagredo.eu
+
+BASEDIR=/usr/local/mailman
+DAEMON=$BASEDIR/bin/uwsgi
+NAME="uWSGI Server"
+INIFILE=$BASEDIR/etc/uwsgi.ini
+PIDFILE=$BASEDIR/var/locks/uwsgi.pid
+OPTIONS="-d --ini $INIFILE --safe-pidfile2 $PIDFILE"
+#export PYTHONPATH=$BASEDIR/etc/
+
+test -x $DAEMON || exit 1
+set -e
+
+if test -f $PIDFILE; then
+  running=yes
+else
+  running=no
+fi
+
+start() {
+    if test $running = no; then
+      echo -n "Starting $NAME"
+      $DAEMON $OPTIONS
+      # don't know why this file is created in daemon mode
+      if [ -r ./--ini ]; then
+        rm ./--ini
+      fi
+    else
+      echo "$NAME is already started."
+      exit 1
+    fi
+}
+
+stop() {
+    if test $running = yes; then
+      echo "Stopping $NAME"
+      $DAEMON --stop $PIDFILE
+      rm $PIDFILE
+      running=no
+    else
+      echo "$NAME is already stopped."
+      exit 1
+    fi
+}
+
+case "$1" in
+  start)
+    start
+    ;;
+  stop)
+    stop
+    ;;
+  reload)
+    if test $running = yes; then
+      echo "Reloading $NAME configuration"
+      $DAEMON --reload $PIDFILE
+    else
+      echo "$NAME isn't running."
+    fi
+    ;;
+  force-reload)
+    if test $running = yes; then
+      echo "Forcing the reload of $NAME"
+      kill -TERM `cat $PIDFILE`
+        else
+      echo "$NAME isn't running."
+    fi
+  ;;
+  restart)
+    if test $running = yes; then
+      stop
+      sleep 1
+    else
+      echo "$NAME isn't running."
+    fi
+    start
+    ;;
+  *)
+    echo "Usage: $0 {start|stop|restart|reload|force-reload}" >&2
+    exit 1
+    ;;
+esac
+
+exit 0

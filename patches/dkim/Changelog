@@ -1,0 +1,131 @@
+Feb 6, 2023
+-DKIM patch upgraded to v. 1.47
+ * fixed a bug which was preventing filterargs' wildcards to work properly on sender domain
+
+Jan 10, 2024
+-DKIM patch upgraded to v. 1.46
+ * dk-filter.sh has been dropped
+ * The ariables USE_FROM, USE_SENDER and DKIMDOMAIN have been dropped
+ * when signing at qmail-remote level qmail-dkim now has to be called directly by spawn-filter in the rc file.
+   man spawn-filter for more info
+ * In case of bounces the signature will be automatically based on the from: field.
+   This will solve issues of DMARC reject by google in case of sieve/vacation bounces.
+ * In case of ordinary bounces (mailbox not found, for instance) the bounce domain will be taken from
+   control/bouncehost and, if doesn't exist, from control/me
+ More info at https://notes.sagredo.eu/en/qmail-notes-185/configuring-dkim-for-qmail-92.html#signing_remote
+
+Jan 6, 2024
+-DKIM patch upgraded to v. 1.45
+ * if USE_SENDER is passed to dk-filter it will always retrieve the domain from _SENDER and not from the
+   From field
+
+Jan 4, 2024
+-DKIM patch upgraded to v. 1.44
+ * fixed an issue with filterargs where spawn-filter is trying to execute remote:env xxxxx.... dk-filter.
+   This issue happens when FILTERARGS environment variable is not defined in the qmail-send rc script.
+ * dkim.c fix: https://notes.sagredo.eu/en/qmail-notes-185/configuring-dkim-for-qmail-92.html#comment3668
+ * adjustments fo dk-filter and dknewkey man pages
+
+Nov 20, 2023
+- The patch now by default excludes X-Arc-Authentication-Results
+- dkim can additionally use the environment variable EXCLUDE_DKIMSIGN to include colon separated list of
+  headers to be excluded from signing (just like qmail-dkim). If -X option is used with dk-filter,
+  it overrides the value of EXCLUDE_DKIMSIGN.
+
+Sep 26, 2023
+-surblfilter logs the rejected URL in the qmail-smtpd log. It can now inspect both http and https URLs.
+-Improvements in man dkim.9, qmail-dkim.9 and surblfilter.9
+
+Sep 5, 2023
+-DKIM patch upgraded to v. 1.42
+ *dk-filter.sh: "source $envfn" has been replaced with ". $envfn" in oder to work for pure bourne shells
+ *minor corrections to the man pages
+
+Jun 30, 2023
+-patch upgraded to v. 1.41
+*dknewkey will allow domains in control/domainkey
+*Made a few adjustments to the man pages and dkimsign.cpp for DKIMDOMAIN to work with qmail-smtpd (in case some configures qmail-smtpd to sign instead of the usual dk-filter/qmail-remote)
+
+Apr 26, 2023
+-dkim patch updated to v. 1.40
+-qmail-dkim uses CUSTOM_ERR_FD as file descriptor for errors (more info here https://notes.sagredo.eu/en/qmail-notes-185/configuring-dkim-for-qmail-92.html#comment3076)
+
+Mar 18, 2023
+- bugfix in dkimverify.cpp: now it checks if k= tag is missing (tx Raisa for providing detailed info)
+
+Mar 14, 2023
+-The split_str() function in dknewkey was modified in order to work on debian 11
+ tx J https://notes.sagredo.eu/en/qmail-notes-185/configuring-dkim-for-qmail-92.html#comment2922
+
+2023.02.19 (v. 1.37 upgrade)
+- ed25519 support​ (RFC 8463)
+- multiple signatures/selectors via the enhanced control/dkimkeys or DKIMSIGN / DKIMSIGNEXTRA / DKIMSIGNOPTIONS  DKIMSIGNOPTIONSEXTRA variables
+- domainkey script replaced by dknewkey in order to create ed25519 keys and rsa keys with 1024/2048/4096 bit
+- dropped yahoo's domainkeys support (no longer need the libdomainkeys.a library)
+- man pages revised and enhanced
+- domainkeys directory moved to /var/qmail/control/domainkeys
+- the documentation in this page has been widely revised.
+
+2023.01.01
+-bug fix in dk-filter. It was calling a non existent function (tx Andreas).
+ More info here:
+ https://notes.sagredo.eu/en/qmail-notes-185/configuring-dkim-for-qmail-92.html#comment2721
+
+2022.10.01
+-dkim patch updated to v. 1.30
+* bug fix: it was returning an error in case of domains with no key.
+
+2022.09.29
+-bug fixed in the domainkey script: it wasn't creating the symbolic link of the selector name to the private key in case of a custom selector defined in the file control/dkimkeys
+
+2022.09.28
+-DKIM patch updated to v. 1.29
+-Custom selector via new control file /var/qmail/control/dkimkeys. More info here
+https://notes.sagredo.eu/en/qmail-notes-185/configuring-dkim-for-qmail-92.html#selector
+
+2020.04.10
+-DKIM patch updated to v. 1.28
+- outgoing messages from null sender ("<>") will be signed as well with the domain in env variable DKIMDOMAIN
+- declaring NODK env variable disables old domainkeys signature, while defining NODKIM disables DKIM.
+
+2020.03.31
+- added UNSIGNED_SUBJECT variable to the run file, which can be useful if one wants to allow messages without the sign of the subject
+
+2019.12.08
+- the domainkey script now can sign both 2048 and 1024 bit (thanks Tatsuya Yokota)
+
+2019.06.19
+- DKIM patch updated to v. 1.26
+* BUG - honor body length tag in verification
+
+2019.05.23
+- SIGSEGV - when the txt data for domainkeys is very large exposed a bug in the way realloc() was used incorrectly.
+- On 32 bit systems, variable defined as time_t overflows. Now qmail-dkim will skip expiry check in such conditions.
+
+2019.04-27
+- added a note concerning the signing with a 2048 long key here
+https://notes.sagredo.eu/en/qmail-notes-185/configuring-dkim-for-qmail-92.html#key2048
+
+2019.02.27
+patch updated to v. 1.24
+* bug fix: restored signaturedomains/nosignaturedomains functionalities.
+
+2018.08.25
+-patch updated to v. 1.23
+* fixed a bug where including round brackets in the From: field ouside the double quotes (From: "Name Surname (My Company)" <name.surname@company.com>) results in a
+DKIMContext structure invalid error (tx Mirko Buffoni).
+* qmail-dkim and dkim were issuing a failure for emails which had multiple signature with at least one good signature. Now qmail-dkim and dkim will issue a success if
+at least one good signature is found.
+
+2018-04-03
+-patch updated to v. 1.22
+* openssl 1.1.0 port
+* various improvements, bug fixes
+
+2017-05-14
+-patch updated to v. 1.20
+It now manages long TXT records, avoiding the rejection of some hotmail.com messages.
+
+2016-03-09
+Upgraded to v. 1.19: verification will not fail when a dkim signature does not include the subject provided that the UNSIGNED_SUBJECT environment variable is declared.
+More info here https://notes.sagredo.eu/en/qmail-notes-185/configuring-dkim-for-qmail-92.html#comment768

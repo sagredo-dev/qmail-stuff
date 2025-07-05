@@ -1,0 +1,88 @@
+v. 2011.10.06
+forcetls patch for netqmail-1.06
+by Roberto Puzzanghera - roberto dot puzzanghera at sagredo dot eu
+http://notes.sagredo.eu/node/8
+====================================================================
+
+= This patch has to be applied over the following:
+* netqmail-1.06 (http://qmail.org). Should work with 1.05 as well.
+* Erwin Hoffmann's qmail-authentication patch v. 0.701, released on 2010-08-05, which updates
+  the patches provided by Krysztof Dabrowski and Bjoern Kalkbrenner.
+  It provides cram-md5, login, plain authentication support.
+  (http://www.fehcom.de/qmail/smtpauth.html##PATCHES)
+* Frederik Vermeulen's qmail-tls patch v. 20110119
+  implements SSL or TLS encrypted and authenticated SMTP.
+  (http://inoa.net/qmail-tls/)
+
+By default the authentication will be denied if the client does not provide the STARTTLS command, and does not
+support the CRAM-MD5 auth, since the entire connection is TLS secured.
+If you want to allow connections without TLS, just export FORCETLS=0 in your run file. Values different from 0 or no
+declaration at all will force the TLS before the auth.
+If you want to allow the CRAM-MD5 auth you have to export CRAM_MD5=1 in your run file. Values different from 1 or no
+declaration at all will deny the CRAM-MD5 auth mechanism.
+
+= Disclaimer
+This patch comes with the usual warranty: it works for me, it may not work for you,
+use at your own risk etc. etc. :-)
+
+= Comments, suggestions, criticisms are always welcome!
+
+===================================================================
+
+
+diff -ruN netqmail-1.06-original/qmail-smtpd.c netqmail-1.06/qmail-smtpd.c
+--- netqmail-1.06-original/qmail-smtpd.c	2011-07-27 19:12:27.000000000 +0200
++++ netqmail-1.06/qmail-smtpd.c	2011-07-27 18:54:10.000000000 +0200
+@@ -362,7 +362,12 @@
+   out("\r\n250-PIPELINING\r\n250-8BITMIME\r\n");
+   out("250-SIZE "); out(size); out("\r\n");
+ #ifdef CRAM_MD5
+-  out("250 AUTH LOGIN PLAIN CRAM-MD5\r\n");
++/* forcetls patch */
++  char *cram_md5=env_get("CRAM_MD5");
++  if (!cram_md5 || (cram_md5 && strcmp(cram_md5, "1")!=0))
++    out("250 AUTH LOGIN PLAIN\r\n");
++  else out("250 AUTH LOGIN PLAIN CRAM-MD5\r\n");
++/* END forcetls patch */
+ #else
+   out("250 AUTH LOGIN PLAIN\r\n");
+ #endif
+@@ -674,6 +679,15 @@
+ #ifdef CRAM_MD5
+ int auth_cram()
+ {
++/* forcetls patch */
++  char *cram_md5=env_get("CRAM_MD5");
++  if (!cram_md5 || (cram_md5 && strcmp(cram_md5, "1")!=0))
++  {
++    out("504 auth type unimplemented (#5.5.1) \r\n");
++    return;
++  }
++/* END forcetls patch */
++
+   int i, r;
+   char *s;
+ 
+@@ -726,6 +740,22 @@
+ void smtp_auth(arg)
+ char *arg;
+ {
++
++/* forcetls patch */
++#ifdef TLS
++  char *forcetls=env_get("FORCETLS");
++  if (!forcetls || (forcetls && strcmp(forcetls, "0")!=0))
++  {
++    if (!ssl)
++    {
++      out("538 auth not available without TLS (#5.3.3)\r\n");
++      flush();
++      die_read();
++    }
++  }
++#endif
++/* END forcetls patch */
++
+   int i;
+   char *cmd = arg;
+

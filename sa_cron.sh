@@ -1,0 +1,132 @@
+#!/bin/bash
+#
+# sa-learn and sa report script by Roberto Puzzanghera https://notes.sagredo.eu
+# more info here
+# https://notes.sagredo.eu/en/qmail-notes-185/setting-up-a-spamassassin-cronjob-script-for-the-learning-and-reporting-systems-249.html
+#
+# If you want to test for a single admin user you can run in the following way:
+#
+# sa_cron.sh username@domain.net
+#
+# otherwise, if you run it without passing any user, the job will be done for all users
+# having .Junk.TeachSpam and .Junk.TeachNotSpam dirs in their Maildirs.
+#
+# The script is intended to be run as a cronjob.
+#
+
+DOMAINS_DIR=~vpopmail/domains
+JUNK_DIR=.Junk.TeachSpam
+HAM_DIR=.Junk.TeachNotSpam
+
+# Set this to 1 if you want to log debug msg
+DEBUG=1
+
+# Set this to 1 if you want the spam be removed after the run
+DELETE_TEACH_DATA=1
+
+# spamassassin settings
+SA_LEARN_CMD=/usr/local/bin/sa-learn
+SA_LEARN_LOGFILE=/var/log/spamassassin/sa_learn.log
+SA_CMD=/usr/local/bin/spamassassin
+SA_LOGFILE=/var/log/spamassassin/spamassassin.log
+
+
+################### you should not modify anything below this line
+
+echo
+echo '################ sa_cron'
+date
+echo
+
+# sed path
+SED=""
+for f in /bin/sed /usr/bin/sed /sbin/sed /usr/sbin/sed /usr/local/bin/sed /usr/local/sbin/sed
+do
+    if test -x $f
+    then
+        SED=$f
+        break
+    fi
+done
+if [[ $SED == "" ]]; then
+        echo "sed binary not found."
+        exit 1;
+fi
+
+# Check if the program has to be run just for an admin account
+if [ "$1" = "" ]; then
+# if not it will run for all users
+	PROCESS_ALL_USERS=1
+else
+	PROCESS_ALL_USERS=0
+        USER=$(echo $1 | $SED -e "s/^\(.*\)@.*/\1/")
+        DOMAIN=$(echo $1 | $SED -e "s/^.*@\(.*\)/\1/")
+fi
+
+
+run()
+{
+	SPAMPATH=${1}/${JUNK_DIR}
+	HAMPATH=${1}/${HAM_DIR}
+
+	if [ $DEBUG ]; then
+		D="-D"
+	else
+		D=""
+	fi
+
+	if [ -e ${SPAMPATH}/new ] || [ -e ${SPAMPATH}/cur ]; then
+		echo "processing spam via ${SPAMPATH}...";
+		$SA_LEARN_CMD $D --no-sync --spam --username=${USER}@${DOMAIN} ${SPAMPATH}/{cur,new} >> $SA_LEARN_LOGFILE 2>&1
+	        for mail in ${SPAMPATH}/{cur,new}/*; do
+		{
+			if [ -e $mail ]; then
+				#echo processing: $mail
+				$SA_CMD $D --nocreate-prefs --report < $mail >> $SA_LOGFILE 2>&1
+			fi
+		};
+		done;
+	fi
+
+	if [ -e ${HAMPATH}/new ] || [ -e ${HAMPATH}/cur ]; then
+		echo "processing  ham via ${HAMPATH}...";
+                $SA_LEARN_CMD $D --no-sync --ham --username=${USER}@${DOMAIN} ${HAMPATH}/{cur,new} >> $SA_LEARN_LOGFILE 2>&1
+                for mail in ${HAMPATH}/{cur,new}/*; do
+                {
+			if [ -e $mail ]; then
+				$SA_CMD $D --nocreate-prefs --revoke < $mail >> $SA_LOGFILE 2>&1
+			fi
+		};
+                done;
+	fi
+
+	if [ "$DELETE_TEACH_DATA" -eq 1 ]; then
+		rm -f ${SPAMPATH}/new/* ${SPAMPATH}/cur/*
+		# Is it good to delete the ham as well? Not sure here...
+    #	rm -f ${HAMPATH}/new/* ${HAMPATH}/cur/*
+	fi
+	echo
+}
+
+if [ "$PROCESS_ALL_USERS" -eq 1 ]; then
+	for maildir in `ls -d ${DOMAINS_DIR}/*/*/Maildir 2>/dev/null`; do
+	{
+		DOMAIN=$(echo $maildir | $SED -e "s|^${DOMAINS_DIR}/\(.*\)/.*/Maildir|\1|")
+		  USER=$(echo $maildir | $SED -e "s|^${DOMAINS_DIR}/.*/\(.*\)/Maildir|\1|")
+		run $maildir
+	};
+	done;
+elif [ -e ${DOMAINS_DIR}/${DOMAIN}/${USER}/Maildir ]; then
+	run ${DOMAINS_DIR}/${DOMAIN}/${USER}/Maildir
+fi
+
+
+echo
+echo "syncing...";
+$SA_LEARN_CMD --sync
+
+echo
+echo "current status:"
+$SA_LEARN_CMD --dump magic
+
+exit 0;

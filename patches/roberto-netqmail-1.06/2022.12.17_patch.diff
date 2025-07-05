@@ -1,0 +1,44 @@
+diff -ruN netqmail-1.06-original/chkuser_settings.h netqmail-1.06/chkuser_settings.h
+--- netqmail-1.06-original/chkuser_settings.h	2022-12-17 10:25:13.645876787 +0100
++++ netqmail-1.06/chkuser_settings.h	2022-12-17 14:31:05.145354477 +0100
+@@ -380,7 +380,7 @@
+  *		should be invoked to handle exceptions.
+  *
+  */
+-#define CHKUSER_DISABLE_VARIABLE "RELAYCLIENT"
++/* #define CHKUSER_DISABLE_VARIABLE "RELAYCLIENT" */
+ 
+ 
+ /*
+diff -ruN netqmail-1.06-original/qmail-smtpd.c netqmail-1.06/qmail-smtpd.c
+--- netqmail-1.06-original/qmail-smtpd.c	2022-09-28 17:16:57.501045673 +0200
++++ netqmail-1.06/qmail-smtpd.c	2022-12-17 14:04:02.832250863 +0100
+@@ -1484,6 +1484,13 @@
+         return;
+       }
+     }
++    if (spp_val == 1) {
++        if (!allowed) { err_nogateway(); return; }
++    }
++
++  } // if (!relayclient)
++
++  spp_rcpt_accepted();
+ 
+     if (!flagvrt) {
+       switch (chkuser_realrcpt (&mailfrom, &addr)) {
+@@ -1557,14 +1564,6 @@
+       }
+     }
+ 
+-    if (spp_val == 1) {
+-    	if (!allowed) { err_nogateway(); return; }
+-}
+-
+-  } // if (!relayclient)
+-
+-  spp_rcpt_accepted();
+-
+   /* rcptcheck */
+   if ( (rcptcheck[0]) && (!relayclient || rcptcheckrelayclient) ) { // if RCPTCHECK is not defined, addrvalid returns 1 (rcpt ok),check before calling
+     strerr_warn5(title.s,"rcptcheck: checking <",addr.s,"> at ",remoteip,0);

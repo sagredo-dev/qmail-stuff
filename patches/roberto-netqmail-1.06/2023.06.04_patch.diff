@@ -1,0 +1,145 @@
+diff -ruN netqmail-1.06-original/Makefile netqmail-1.06/Makefile
+--- netqmail-1.06-original/Makefile	2023-02-19 18:29:14.959842009 +0100
++++ netqmail-1.06/Makefile	2023-06-05 20:37:23.756661833 +0200
+@@ -1,7 +1,6 @@
+ # Don't edit Makefile! Use conf-* for configuration.
+ 
+-VPOPMAIL_HOME=/home/vpopmail
+-VPOPMAIL_LIBS=`head -1 $(VPOPMAIL_HOME)/etc/lib_deps` `cat dns.lib`
++VPOPMAIL_LIBS=`head -1 $(shell ./auto-dir `head -9 conf-users | tail -1`)/etc/lib_deps` `cat dns.lib`
+ 
+ SMTPD_CHKUSER_OBJ=chkuser.o dns.o
+ 
+@@ -34,6 +33,10 @@
+ 	echo LD=\'`head -1 conf-ld`\' \
+ 	) > auto-ccld.sh
+ 
++auto-dir: \
++load auto-dir.o substdio.a error.a str.a
++	./load auto-dir substdio.a error.a str.a
++
+ auto-gid: \
+ load auto-gid.o substdio.a error.a str.a fs.a
+ 	./load auto-gid substdio.a error.a str.a fs.a 
+@@ -127,8 +130,10 @@
+ 	&&./auto-uid auto_uidq `head -6 conf-users | tail -1` \
+ 	&&./auto-uid auto_uidr `head -7 conf-users | tail -1` \
+ 	&&./auto-uid auto_uids `head -8 conf-users | tail -1` \
++	&&./auto-uid auto_uidv `head -9 conf-users | tail -1` \
+ 	&&./auto-gid auto_gidq `head -1 conf-groups` \
+ 	&&./auto-gid auto_gidn `head -2 conf-groups | tail -1` \
++	&&./auto-gid auto_gidv `head -3 conf-groups | tail -1` \
+ 	) > auto_uids.c.tmp && mv auto_uids.c.tmp auto_uids.c
+ 
+ auto_uids.o: \
+@@ -328,6 +333,7 @@
+ 	./compile chkspawn.c
+ 
+ chkuser.o: \
++auto-dir \
+ compile chkuser.c chkuser.h chkuser_settings.h
+ 	./compile chkuser.c
+diff -ruN netqmail-1.06-original/TARGETS netqmail-1.06/TARGETS
+--- netqmail-1.06-original/TARGETS	2023-02-18 13:26:58.761863168 +0100
++++ netqmail-1.06/TARGETS	2023-06-03 16:53:02.006159059 +0200
+@@ -168,6 +168,8 @@
+ auto-gid
+ auto_uids.c
+ auto_uids.o
++auto-dir.o
++auto-dir
+ qmail-lspawn
+ qmail-getpw.o
+ qmail-newmvrt.o
+diff -ruN netqmail-1.06-original/auto-dir.c netqmail-1.06/auto-dir.c
+--- netqmail-1.06-original/auto-dir.c	1970-01-01 01:00:00.000000000 +0100
++++ netqmail-1.06/auto-dir.c	2023-06-04 15:20:19.610035325 +0200
+@@ -0,0 +1,34 @@
++#include <stdio.h>
++#include <sys/types.h>
++#include <pwd.h>
++#include "subfd.h"
++#include "substdio.h"
++#include "readwrite.h"
++#include "exit.h"
++
++char buf1[256];
++substdio ss1 = SUBSTDIO_FDBUF(write,1,buf1,sizeof(buf1));
++
++void main(argc,argv)
++int argc;
++char **argv;
++{
++  char *name;
++  struct passwd *pw;
++
++  name = argv[1];
++  if (!name) _exit(100);
++
++  pw = getpwnam(name);
++  if (!pw) {
++    substdio_puts(subfderr,"fatal: unable to find user ");
++    substdio_puts(subfderr,name);
++    substdio_puts(subfderr,"\n");
++    substdio_flush(subfderr);
++    _exit(111);
++  }
++
++  if (substdio_flush(&ss1) == -1) _exit(111);
++
++  printf("%s", pw->pw_dir);
++}
+diff -ruN netqmail-1.06-original/auto_uids.h netqmail-1.06/auto_uids.h
+--- netqmail-1.06-original/auto_uids.h	1998-06-15 12:53:16.000000000 +0200
++++ netqmail-1.06/auto_uids.h	2023-06-04 09:53:27.346658060 +0200
+@@ -9,8 +9,10 @@
+ extern int auto_uidq;
+ extern int auto_uidr;
+ extern int auto_uids;
++extern int auto_uidv;
+ 
+ extern int auto_gidn;
+ extern int auto_gidq;
++extern int auto_gidv;
+ 
+ #endif
+diff -ruN netqmail-1.06-original/hier.c netqmail-1.06/hier.c
+--- netqmail-1.06-original/hier.c	2023-04-02 11:24:24.832148219 +0200
++++ netqmail-1.06/hier.c	2023-06-01 20:11:01.664016971 +0200
+@@ -37,7 +37,7 @@
+   h(auto_qmail,auto_uido,auto_gidq,0755);
+ 
+   d(auto_qmail,"control",auto_uido,auto_gidq,0755);
+-  d(auto_qmail,"control/cache",89,89,0755);
++  d(auto_qmail,"control/cache",auto_uidv,auto_gidv,0755);
+   d(auto_qmail,"users",auto_uido,auto_gidq,0755);
+   d(auto_qmail,"bin",auto_uido,auto_gidq,0755);
+   d(auto_qmail,"boot",auto_uido,auto_gidq,0755);
+diff -ruN netqmail-1.06-original/update_tmprsadh.sh netqmail-1.06/update_tmprsadh.sh
+--- netqmail-1.06-original/update_tmprsadh.sh	2022-09-28 17:16:57.507045657 +0200
++++ netqmail-1.06/update_tmprsadh.sh	2023-06-06 08:50:21.586467516 +0200
+@@ -5,6 +5,10 @@
+ #
+ # Slightly modified by Roberto Puzzanghera
+ # to chown the .pem files to vpopmail
++#
++# rsa files will be assigned to vpopmail:vchkpw by Makefile.
++# Manually change this file if you are running qmail-smtpd
++# as a different user.
+ 
+ umask 0077 || exit 0
+ 
+@@ -12,11 +16,11 @@
+ 
+ openssl genrsa -out QMAIL/control/rsa4096.new 4096 &&
+ chmod 600 QMAIL/control/rsa4096.new &&
+-chown vpopmail:vchkpw QMAIL/control/rsa4096.new &&
++chown UGQMAILD QMAIL/control/rsa4096.new &&
+ mv -f QMAIL/control/rsa4096.new QMAIL/control/rsa4096.pem
+ 
+ openssl dhparam -2 -out QMAIL/control/dh4096.new 4096 &&
+ chmod 600 QMAIL/control/dh4096.new &&
+-chown vpopmail:vchkpw QMAIL/control/dh4096.new &&
++chown UGQMAILD QMAIL/control/dh4096.new &&
+ mv -f QMAIL/control/dh4096.new QMAIL/control/dh4096.pem
+ 

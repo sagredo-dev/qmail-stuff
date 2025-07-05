@@ -1,0 +1,14 @@
+jms umask patch
+https://qmail.jms1.net/simscan/index.shtml#umask
+
+diff -ruN simscan-1.4.0-factory/simscan.c simscan-1.4.0-patched/simscan.c
+--- simscan-1.4.0-factory/simscan.c	2007-10-29 10:15:05.000000000 -0400
++++ simscan-1.4.0-patched/simscan.c	2007-11-23 01:33:48.000000000 -0500
+@@ -283,6 +283,7 @@
+   }
+ 
+   /* create the working directory, allow group access too */
++  umask ( 027 ) ;
+   if ( mkdir(workdir, 0750) == -1 ) {
+     if ( DebugFlag > 0 ) {
+       fprintf(stderr, "simscan: error making work dir, exit 400, errno: %d\n",

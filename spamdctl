@@ -1,0 +1,66 @@
+#!/bin/bash
+
+# Spamd init script
+#
+# August, 2th 2003
+# Martin Ostlund, nomicon
+# Modified slightly by Troy Belding for Qmailrocks - February 23, 2004
+#
+# Modified by Roberto Puzzanghera - September 02, 2014
+# November 17, 2020: moved log file to /var/log/spamassassin/spamd.log
+
+# The IPs that are allowed to query the spamd server
+IP=127.0.0.1,::1,1.2.3.4,10.0.0.0/24
+
+DAEMON=/usr/local/bin/spamd
+NAME=spamd
+SNAME=spamdctl
+DESC="SpamAssassin Mail Filter Daemon"
+LOGFILE=/var/log/spamassassin/spamd.log
+PIDFILE="/var/run/${NAME}.pid"
+PNAME="spamd"
+LISTEN_IP=0.0.0.0
+# comment out to disable debug
+#DEBUG="-D"
+# comment out to disable sql user prefs. Use with -x
+#USER_PREFS="-q"
+
+DOPTIONS="${DEBUG} ${USER_PREFS} -x -u spamd -A ${IP} -i ${LISTEN_IP} -s /var/log/spamassassin/spamd.log -H /home/spamd -d --pidfile=$PIDFILE"
+
+KILL="/bin/kill"
+KILLALL="/bin/killall"
+
+# Defaults - don't touch, edit /etc/mail/spamassassin/local.cf
+ENABLED=0
+OPTIONS=""
+
+set -e
+
+case "$1" in
+start)
+echo -n "Starting $DESC: "
+$DAEMON $OPTIONS $DOPTIONS
+
+echo "$NAME."
+;;
+stop)
+echo -n "Stopping $DESC: "
+$KILL -9 `cat $PIDFILE`
+/bin/rm $PIDFILE
+echo "$NAME."
+;;
+restart|force-reload)
+echo -n "Restarting $DESC: "
+$0 stop
+$0 start
+
+echo "$NAME."
+;;
+*)
+ME=/usr/local/bin/$SNAME
+echo "Usage: $ME {start|stop|restart|force-reload}" >&2
+exit 1
+;;
+esac
+
+exit 0

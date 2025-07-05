@@ -1,0 +1,63 @@
+Patch by Manvendra Bhangui (www.indimail.org) to Cristophe Saout's qmail-SPF patch
+(http://www.saout.de/misc/spf/) to get spf check IPv6-mapped IPv4 addresses compliant.
+It should be used in conjunction with a compatible tcpserver. See
+http://notes.sagredo.eu/sites/notes.sagredo.eu/files/qmail/patches/tcpserver-ipv6mapped_ipv4.patch
+for details.
+
+
+
+diff -ruN ../24_auth-081/netqmail-1.06/qmail-smtpd.c netqmail-1.06/qmail-smtpd.c
+--- ../24_auth-081/netqmail-1.06/qmail-smtpd.c  2013-03-30 17:14:35.000000000 +0100
++++ netqmail-1.06/qmail-smtpd.c 2013-07-31 14:06:04.000000000 +0200
+@@ -45,6 +45,10 @@
+ #include "tls.h"
+ #include "ssl_timeoutio.h"
+ 
++/* spf ipv6 fix */
++char *remoteip4;
++/* end spf ipv6 fix */
++
+ void tls_init();
+ int tls_verify();
+ void tls_nogateway();
+@@ -188,6 +192,11 @@
+  
+   protocol = "SMTP";
+ 
++  /* spf ipv6 fix */
++  if (!(remoteip4 = env_get("TCPREMOTEIP")))
++      remoteip4 = "unknown";
++  /* end spf ipv6 fix */
++
+   if (control_readint(&spfbehavior,"control/spfbehavior") == -1)
+     die_control();
+   x = env_get("SPFBEHAVIOR");
+@@ -530,7 +539,7 @@
+   flagbarfspf = 0;
+   if (spfbehavior && !relayclient)
+    { 
+-    switch(r = spfcheck()) {
++    switch(r = spfcheck(remoteip4)) {
+     case SPF_OK: env_put2("SPFRESULT","pass"); break;
+     case SPF_NONE: env_put2("SPFRESULT","none"); break;
+     case SPF_UNKNOWN: env_put2("SPFRESULT","unknown"); break;
+diff -ruN ../24_auth-081/netqmail-1.06/spf.c netqmail-1.06/spf.c
+--- ../24_auth-081/netqmail-1.06/spf.c  2013-03-30 16:51:10.000000000 +0100
++++ netqmail-1.06/spf.c 2013-08-02 13:00:18.000000000 +0200
+@@ -57,7 +57,6 @@
+ 
+ extern stralloc addr;
+ extern stralloc helohost;
+-extern char *remoteip;
+ extern char *local;
+ 
+ extern stralloc spflocal;
+@@ -817,7 +816,7 @@
+        return r;
+ }
+ 
+-int spfcheck()
++int spfcheck(char *remoteip)
+ {
+        stralloc domain = {0};
+        int pos;

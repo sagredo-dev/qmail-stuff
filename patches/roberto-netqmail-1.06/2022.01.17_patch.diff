@@ -1,0 +1,35 @@
+diff -ruN netqmail-1.06-original/TARGETS netqmail-1.06/TARGETS
+--- netqmail-1.06-original/TARGETS	2019-06-26 16:45:45.017718421 +0200
++++ netqmail-1.06/TARGETS	2022-01-17 18:26:15.752527462 +0100
+@@ -465,4 +465,4 @@
+ dktest.8
+ time_t_size.h
+ channels.h
+-
++qmail-spp.o
+diff -ruN netqmail-1.06-original/qmail-smtpd.c netqmail-1.06/qmail-smtpd.c
+--- netqmail-1.06-original/qmail-smtpd.c	2021-12-19 14:00:41.497391146 +0100
++++ netqmail-1.06/qmail-smtpd.c	2022-01-17 18:20:36.287701251 +0100
+@@ -2099,11 +2099,11 @@
+ {
+   int i;
+   char *cmd = arg;
+-  if (!smtpauth || !*childargs) { out("503 auth not available (#5.3.3)\r\n"); return; }
++  if (!smtpauth || !*childargs) { out("503 auth not available (#5.3.3)\r\n"); logit("reject (auth not available)"); return; }
+   if (seenauth) { err_authd(); return; }
+   if (seenmail) { err_authmail(); return; }
+ #ifdef TLS
+-  if (forcetls && !ssl) { out("538 auth not available without TLS (#5.3.3)\r\n"); return; }
++  if (forcetls && !ssl) { out("538 auth not available without TLS (#5.3.3)\r\n"); logit("reject (auth not available without TLS)"); return; }
+ #endif
+ 
+   if (!stralloc_copys(&user,"")) die_nomem();
+@@ -2155,7 +2155,7 @@
+ void smtp_tls(char *arg)
+ {
+   if (ssl || disabletls) err_unimpl();
+-  else if (*arg) out("501 Syntax error (no parameters allowed) (#5.5.4)\r\n");
++  else if (*arg) {out("501 Syntax error (no parameters allowed) (#5.5.4)\r\n"); logit("reject (Syntax error, no parameters allowed)");}
+   else tls_init();
+ }
+ 

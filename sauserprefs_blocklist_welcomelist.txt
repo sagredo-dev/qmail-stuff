@@ -1,0 +1,16 @@
+#!/usr/bin/php
+<?php
+/************************************************************************************************
+  Finds and replaces deprecated strings blacklist_from/whitelist_from in spamassassin.userpref
+  db table to blocklist_from/welcomelist_from respectively.
+ ************************************************************************************************/
+
+$host = "localhost";
+$database = "spamassassin";
+$user = "spamassassin";
+$password = "xxxxxxxxxxxxxxxxxx";
+
+$link = mysqli_connect($host, $user, $password, $database) or exit;
+$query ="UPDATE userpref SET preference = REPLACE(REPLACE(preference, 'whitelist_from', 'welcomelist_from'), 'blacklist_from', 'blocklist_from')";
+mysqli_query($link, $query) or die(mysqli_error($link));
+print "job done\n";

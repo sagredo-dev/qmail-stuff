@@ -1,0 +1,85 @@
+Patch for vpopmail-5.4.33 by Roberto Puzzanghera https://notes.sagredo.eu
+
+It gets vpopmail to compile with gcc-10
+
+=========================================================================================
+
+diff -ruN ../vpopmail-5.4.33-original/vmysql.c vpopmail-5.4.33/vmysql.c
+--- ../vpopmail-5.4.33-original/vmysql.c	2011-02-28 18:00:45.000000000 +0100
++++ vpopmail-5.4.33/vmysql.c	2020-12-04 18:36:16.226607555 +0100
+@@ -96,6 +96,20 @@
+ void vcreate_lastauth_table();
+ #endif
+ 
++char *MYSQL_READ_SERVER;
++int MYSQL_READ_PORT;
++char *MYSQL_READ_SOCKET;
++char *MYSQL_READ_USER;
++char *MYSQL_READ_PASSWD;
++char *MYSQL_READ_DATABASE;
++
++char *MYSQL_UPDATE_SERVER;
++int MYSQL_UPDATE_PORT;
++char *MYSQL_UPDATE_SOCKET;
++char *MYSQL_UPDATE_USER;
++char *MYSQL_UPDATE_PASSWD;
++int MYSQL_UPDATE_VPORT;
++char *MYSQL_UPDATE_DATABASE;
+ 
+ /************************************************************************/
+ /* 
+diff -ruN ../vpopmail-5.4.33-original/vmysql.h vpopmail-5.4.33/vmysql.h
+--- ../vpopmail-5.4.33-original/vmysql.h	2011-02-28 18:00:45.000000000 +0100
++++ vpopmail-5.4.33/vmysql.h	2021-04-18 13:12:32.820111576 +0200
+@@ -41,21 +41,6 @@
+    
+  */
+ 
+-char *MYSQL_READ_SERVER;
+-int MYSQL_READ_PORT;
+-char *MYSQL_READ_SOCKET;
+-char *MYSQL_READ_USER;
+-char *MYSQL_READ_PASSWD;
+-char *MYSQL_READ_DATABASE;
+-
+-char *MYSQL_UPDATE_SERVER;
+-int MYSQL_UPDATE_PORT;
+-char *MYSQL_UPDATE_SOCKET;
+-char *MYSQL_UPDATE_USER;
+-char *MYSQL_UPDATE_PASSWD;
+-int MYSQL_UPDATE_VPORT;
+-char *MYSQL_UPDATE_DATABASE;
+-
+ /* defaults - no need to change */
+ #define MYSQL_DEFAULT_TABLE "vpopmail"
+ #define MYSQL_DOT_CHAR '_'
+diff -ruN ../vpopmail-5.4.33-original/vpgsql.c vpopmail-5.4.33/vpgsql.c
+--- ../vpopmail-5.4.33-original/vpgsql.c	2011-02-28 18:00:45.000000000 +0100
++++ vpopmail-5.4.33/vpgsql.c	2020-12-04 18:36:16.227607546 +0100
+@@ -392,10 +392,10 @@
+ #endif
+ 
+ #ifdef ENABLE_SQL_LOGGING
+-    qnprintf( sqlBufUpdate, SQL_BUF_SIZE,
++    qnprintf( SqlBufUpdate, SQL_BUF_SIZE,
+        "delete from vlog where domain = '%s'", domain );
+     pgres=PQexec(pgc, SqlBufUpdate);
+-    if( !pgres || PGresultStatus(pgres)!=PGRES_COMMAND_OK) {
++    if( !pgres || PQresultStatus(pgres)!=PGRES_COMMAND_OK) {
+       return(-1);
+     }
+ #endif
+@@ -445,11 +445,11 @@
+ #endif
+ 
+ #ifdef ENABLE_SQL_LOGGING
+-    qnprintf( sqlBufUpdate, SQL_BUF_SIZE,
++    qnprintf( SqlBufUpdate, SQL_BUF_SIZE,
+         "delete from vlog where domain = '%s' and user='%s'", 
+        domain, user );
+     pgres=PQexec(pgc, SqlBufUpdate);
+-    if( !pgres || PGresultStatus(pgres)!=PGRES_COMMAND_OK) {
++    if( !pgres || PQresultStatus(pgres)!=PGRES_COMMAND_OK) {
+       err = -1;
+     }
+ #endif

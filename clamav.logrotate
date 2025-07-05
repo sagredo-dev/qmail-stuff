@@ -1,0 +1,10 @@
+/var/log/clamd/freshclam.log /var/log/clamd/clamav.log {
+    daily
+    notifempty
+    missingok
+    postrotate
+        /usr/bin/killall -HUP freshclam 2> /dev/null || true
+        /usr/bin/killall -HUP clamd 2> /dev/null || true
+    endscript
+}
+

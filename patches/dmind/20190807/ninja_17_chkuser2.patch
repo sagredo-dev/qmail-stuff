@@ -1,0 +1,126 @@
+Index: netqmail-ninja-1.06/chkuser.c
+===================================================================
+--- netqmail-ninja-1.06.orig/chkuser.c
++++ netqmail-ninja-1.06/chkuser.c
+@@ -141,6 +141,10 @@ static stralloc alias_path = {0};
+   static int maxrcpt_limit_reached = 0;
+ #endif
+ 
++#if defined CHKUSER_DISABLE_VARIABLE
++  static char *chkuser_disable_variable = 0;
++#endif
++
+ #if defined CHKUSER_WRONGRCPT_LIMIT_VARIABLE
+   static char *maxwrongrcpt_string = 0;
+   static int maxwrongrcpt_limit = 0;
+@@ -153,6 +157,7 @@ static stralloc alias_path = {0};
+ #endif
+ 
+   static unsigned int sender_nocheck = 0;
++  static char *sender_nocheck_variable = 0;
+ 
+ #if defined CHKUSER_SENDER_FORMAT || defined CHKUSER_SENDER_MX
+ static stralloc sender_user = {0};
+@@ -489,10 +494,16 @@ static void first_time_init (void) {
+ #endif
+ 
+ #if defined CHKUSER_DISABLE_VARIABLE 
+-	if (env_get (CHKUSER_DISABLE_VARIABLE)) { 
++        chkuser_disable_variable = env_get("CHKUSER_DISABLE_VARIABLE");
++        if (chkuser_disable_variable) {
++          if (env_get (chkuser_disable_variable)) {
++            starting_value = -1;
++          }
++        }
++	else if (env_get (CHKUSER_DISABLE_VARIABLE)) { 
+ 		starting_value = -1; 
+ 	} 
+-#endif 
++#endif
+ 
+ #if defined CHKUSER_EXTRA_MUSTAUTH_VARIABLE
+         if (env_get (CHKUSER_EXTRA_MUSTAUTH_VARIABLE)) {
+@@ -542,11 +553,20 @@ static void first_time_init (void) {
+ #endif
+ 
+ #if defined CHKUSER_SENDER_NOCHECK_VARIABLE
+-
+-        if (env_get (CHKUSER_SENDER_NOCHECK_VARIABLE)) {
+-		sender_nocheck = 1;
++        sender_nocheck_variable = env_get("CHKUSER_SENDER_NOCHECK_VARIABLE");
++        if (sender_nocheck_variable) {
++          if (env_get (sender_nocheck_variable)) {
++            sender_nocheck = 1;
++          }
++          else {
++            sender_nocheck = 0;
++          }
+         } else {
+-		sender_nocheck = 0;
++          if (env_get (CHKUSER_SENDER_NOCHECK_VARIABLE)) {
++  		sender_nocheck = 1;
++          } else {
++  		sender_nocheck = 0;
++          }
+         }
+ #endif
+ 
+@@ -698,10 +718,12 @@ static int realrcpt (stralloc *sender, s
+ 	case 2:
+ 
+ #if defined CHKUSER_RCPT_FORMAT
++              if (!env_get ("CHKUSER_RCPT_FORMAT_NOCHECK")) {
+                 if (check_rcpt_address_format (&user, &domain) == 0) {
+                         retstat = CHKUSER_ERR_RCPT_FORMAT;
+                         break;
+                 }
++              }
+ #endif
+ 
+ 	case 3:
+@@ -709,6 +731,7 @@ static int realrcpt (stralloc *sender, s
+                 if (!addrallowed()) {
+ 
+ #if defined CHKUSER_RCPT_MX
++                      if  (!env_get ("CHKUSER_RCPT_MX_NOCHECK")) {
+ 			switch (chkuser_mx_lookup(&domain)) {
+ 
+ 				case DNS_HARD:
+@@ -723,6 +746,7 @@ static int realrcpt (stralloc *sender, s
+ 			if (retstat != CHKUSER_KO) {
+ 				break;
+ 			}
++                      }
+ #endif
+   			if (relayclient) {
+ 				retstat = CHKUSER_RELAYING;
+@@ -1218,17 +1242,18 @@ int count;
+         if (!stralloc_0 (&sender_domain)) DIE_NOMEM();
+ 
+ #if defined CHKUSER_SENDER_FORMAT
++      if (!env_get ("CHKUSER_SENDER_FORMAT_NOCHECK")) {
+         if (check_sender_address_format (&sender_user, &sender_domain) == 0) {
+                 chkuser_commonlog (sender->s, "", "rejected sender", "invalid sender address format");
+ 		CHKUSER_SENDER_DELAY_ANY();
+ 		out(CHKUSER_SENDERFORMAT_STRING);
+ 	        return CHKUSER_ERR_SENDER_FORMAT;
+         }
+-
++      }
+ #endif
+ 
+ #if defined CHKUSER_SENDER_MX
+-
++      if (!env_get ("CHKUSER_SENDER_MX_NOCHECK")) {
+ 	switch (chkuser_mx_lookup(&sender_domain)) {
+ 
+ 		case DNS_HARD:
+@@ -1245,7 +1270,7 @@ int count;
+ 			return CHKUSER_ERR_SENDER_MX_TMP;
+ 			break;
+ 	}
+-
++     }
+ #endif
+ #endif
+ 

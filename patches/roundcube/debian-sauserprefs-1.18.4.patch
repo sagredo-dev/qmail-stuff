@@ -1,0 +1,11 @@
+--- sauserprefs.php.orig        2023-01-31 16:01:39.462253239 -0500
++++ sauserprefs.php     2023-01-31 16:02:04.238359718 -0500
+@@ -581,7 +581,7 @@
+             return;
+         }
+ 
+-        $this->global_prefs = $this->_load_prefs($this->rcube->config->get('sauserprefs_global_userid', '\$GLOBAL'));
++//        $this->global_prefs = $this->_load_prefs($this->rcube->config->get('sauserprefs_global_userid', '\$GLOBAL'));
+        $this->global_prefs = $this->rcube->config->get('sauserprefs_default_prefs');
+ 
+         // extract score prefs

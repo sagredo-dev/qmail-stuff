@@ -1,0 +1,44 @@
+#!/usr/bin/env python3
+#
+# Written by Thomas Schneider <qsuscs@qsuscs.de>
+# This script is placed in public domain.  If this is not applicable, consider
+# it licensed under the CC-0:
+# <https://creativecommons.org/publicdomain/zero/1.0/>
+
+try:
+    import os
+    import sys
+    import smtplib
+
+    lmtp_host = sys.argv[3] if len(sys.argv) > 3 else 'localhost'
+    lmtp = smtplib.LMTP(lmtp_host, int(sys.argv[1]))
+
+    try:
+        # Unfortunately qmail sends to local bare LF for end line, while
+        # SMTP requires CRLF, so normalize to that. Error message without this:
+        # "Line too long (see RFC5321 4.5.3.1.6)"
+        # https://gitlab.com/mailman/mailman/-/issues/1133
+        content = sys.stdin.buffer.read()
+        content = content.replace(b'\r\n', b'\n').replace(b'\r', b'\n').replace(b'\n', b'\r\n')
+
+        # See <https://qmail.notqmail.org/qmail-manual-html/man8/qmail-command.html>
+        # for qmail command docs and supplied environment variables.
+        # We need to replace "1" with an empty string, as qmail only supports EXT,
+        # EXT2, EXT3, EXT4.
+        arg_ext = sys.argv[2] if sys.argv[2] != "1" else ""
+        lmtp.sendmail(
+            os.environ['SENDER'],
+            os.environ['EXT' + arg_ext] + "@" + os.environ['HOST'],
+            #sys.stdin.buffer.read()
+            content
+        )
+    except smtplib.SMTPResponseException as e:
+        if 400 <= e.smtp_code < 500:
+            exit(111)
+        # otherwise, it's either a 5xx aka permanent error or something else
+        # is already b0rked, thus raise -> exit(100) -> have qmail return a
+        # 5xx error
+        else:
+            raise
+except:
+    exit(100)

@@ -1,0 +1,18 @@
+--- qmail-remote.c.orig	2016-12-02 12:59:15.068498175 +0100
++++ qmail-remote.c	2016-12-02 13:01:03.232231994 +0100
+@@ -761,7 +761,6 @@
+   } else {
+ #endif
+ 
+-  if (smtpcode() != 250) {
+     substdio_puts(&smtpto,"HELO ");
+     substdio_put(&smtpto,helohost.s,helohost.len);
+     substdio_puts(&smtpto,"\r\n");
+@@ -769,7 +768,6 @@
+     code = smtpcode();
+     if (code >= 500) quit("DConnected to "," but my name was rejected");
+     if (code != 250) quit("ZConnected to "," but my name was rejected");
+-  }
+ 
+ #ifdef EHLO
+   }

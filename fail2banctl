@@ -1,0 +1,78 @@
+#!/bin/sh
+#
+# Copyright (c) 2008-2018, Nishant Limbachia, Hoffman Estates, IL, USA
+# <nishant _AT_ mnspace _DOT_ net>
+# /etc/rc.d/rc.fail2ban
+#
+# start|stop|restart|reload|status|ping fail2ban server
+#
+# To start fail2ban automatically at boot, make this file executable:
+# chmod 755 /etc/rc.d/rc.fail2ban
+# you must also add this to rc.local for fail2ban to start during boot.
+
+# default socket file is /var/run/fail2ban/fail2ban.sock which can be
+# changed via the config file: /etc/fail2ban/fail2ban.conf
+
+F2B=/usr/local/bin/fail2ban-client
+
+fail2ban_start() {
+  if [ -x $F2B ]; then
+	printf "Starting fail2ban\n"
+	### using -x option to remove any stale socket file
+	$F2B -x start
+  fi
+}
+
+fail2ban_stop() {
+	printf "Stopping fail2ban\n"
+	$F2B stop
+}
+
+fail2ban_reload() {
+	printf "Reloading fail2ban\n"
+	$F2B reload
+}
+fail2ban_status() {
+  printf "fail2ban Status\n"
+  $F2B status
+}
+
+fail2ban_stats() {
+	printf "fail2ban Stats\n"
+	$F2B stats
+}
+
+fail2ban_ping() {
+	printf "Pinging fail2ban\n"
+	$F2B ping
+}
+
+case "$1" in
+'start')
+	fail2ban_start
+  ;;
+'stop')
+	fail2ban_stop
+  ;;
+'restart')
+	fail2ban_stop
+	sleep 5
+	fail2ban_start
+;;
+'reload')
+	fail2ban_reload
+  ;;
+'status')
+	fail2ban_status
+  ;;
+'stats')
+  fail2ban_stats
+  ;;
+'ping')
+	fail2ban_ping
+  ;;
+*)
+	echo "USAGE: $0 start|stop|restart|reload|stats|status|ping"
+	exit 1
+  ;;
+esac

@@ -1,0 +1,29 @@
+This patch
+* fixes typo in parameter usage when help printed
+* Uses qmailctl in the $stop/startqmail commands instead of svc
+
+diff -ruN qmhandle-1.3.2-original/qmHandle qmhandle-1.3.2/qmHandle
+--- qmhandle-1.3.2-original/qmHandle	2007-07-20 07:03:45.000000000 +0200
++++ qmhandle-1.3.2/qmHandle	2024-02-17 17:32:29.502916984 +0100
+@@ -26,8 +26,10 @@
+ # ### Be sure to uncomment only ONE of each variable declarations ###
+ 
+ # For instance, this is if you have DJB's daemontools
+-my ($stopqmail) = '/usr/local/bin/svc -d /service/qmail-deliver';
+-my ($startqmail) = '/usr/local/bin/svc -u /service/qmail-deliver';
++# my ($stopqmail) = '/usr/local/bin/svc -d /service/qmail-deliver';
++# my ($startqmail) = '/usr/local/bin/svc -u /service/qmail-deliver';
++my ($stopqmail)  = '/usr/local/bin/qmailctl stop';
++my ($startqmail) = '/usr/local/bin/qmailctl start';
+ 
+ # While this is if you have a Debian GNU/Linux with its qmail package
+ #my ($stopqmail) = '/etc/init.d/qmail stop';
+@@ -828,7 +830,7 @@
+     print "  -mN      : display message number N\n";
+     print "  -dN      : delete message number N\n";
+     print "  -fsender : delete message from sender\n";
+-    print "  -f're'   : delete message from senders matching regular expression re\n";
++    print "  -F're'   : delete message from senders matching regular expression re\n";
+     print "  -Stext   : delete all messages that have/contain text as Subject\n";
+     print "  -h're'   : delete all messages with headers matching regular expression re (case insensitive)\n";
+     print "  -b're'   : delete all messages with body matching regular expression re (case insensitive)\n";

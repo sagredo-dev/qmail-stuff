@@ -1,0 +1,97 @@
+--- multi_driver_original.txt	2020-07-15 14:51:46.000000000 +0200
++++ multi_driver.php	2021-04-20 21:28:59.077866167 +0200
+@@ -14,23 +14,24 @@
+  *
+  * @version 0.2
+  * @author Philip Weir
+- */
++ *
++ * Modified by Roberto Puzzanghera to make it markasjunk compliant
++ **/
+ 
+-class markasjunk2_multi_driver
++class markasjunk_multi_driver
+ {
+ 	public $is_error = false;
+ 	// In this example we want to run the drivers in different orders when making as ham/spam
+ 	// so there is no need to define them here, but if the order wass static we could put something
+ 	// like:
+-	// private $drivers = array('sa_blacklist', 'cmd_learn');
+-	private $drivers = array();
++	private $drivers = array('sa_blacklist', 'cmd_learn');
+ 
+ 	public function spam(&$uids, $mbox)
+ 	{
+ 		// Define the driver list in the correct order for the mark as spam action
+ 		// We always want the original message to be processed by cmd_learn so when marking as
+ 		// spam cmd_learn should be run first. edit_headers can then alter the message
+-		$this->drivers = array('cmd_learn', 'edit_headers');
++		// $this->drivers = array('cmd_learn', 'edit_headers');
+ 		$this->_call_drivers($uids, $mbox, true);
+ 	}
+ 
+@@ -40,7 +41,7 @@
+ 		// We always want the original message to be processed by cmd_learn so when marking as
+ 		// ham edit_headers should be run first, restoring the message to normal then cmd_learn
+ 		// can be run
+-		$this->drivers = array('edit_headers', 'cmd_learn');
++		// $this->drivers = array('edit_headers', 'cmd_learn');
+ 		$this->_call_drivers($uids, $mbox, false);
+ 	}
+ 
+@@ -49,8 +50,8 @@
+ 		$rcmail = rcube::get_instance();
+ 
+ 		foreach ($this->drivers as $driver) {
+-			$driver_file = slashify(RCUBE_PLUGINS_DIR) .'/markasjunk2/drivers/'. $driver .'.php';
+-			$class = 'markasjunk2_' . $driver;
++			$driver_file = slashify(RCUBE_PLUGINS_DIR) .'/markasjunk/drivers/'. $driver .'.php';
++			$class = 'markasjunk_' . $driver;
+ 
+ 			if (!is_readable($driver_file)) {
+ 				rcube::raise_error(array(
+@@ -58,7 +59,7 @@
+ 					'type' => 'php',
+ 					'file' => __FILE__,
+ 					'line' => __LINE__,
+-					'message' => "MarkasJunk2 plugin - multi_driver: Unable to open driver file $driver_file"
++					'message' => "MarkasJunk plugin - multi_driver: Unable to open driver file $driver_file"
+ 					), true, false);
+ 
+ 				$rcmail->output->command('display_message', $rcmail->gettext('internalerror'), 'error');
+@@ -66,7 +67,7 @@
+ 				return;
+ 			}
+ 
+-			include_once $driver_file;
++			require_once $driver_file;
+ 
+ 			if (!class_exists($class, false) || !method_exists($class, 'spam') || !method_exists($class, 'ham')) {
+ 				rcube::raise_error(array(
+@@ -74,7 +75,7 @@
+ 					'type' => 'php',
+ 					'file' => __FILE__,
+ 					'line' => __LINE__,
+-					'message' => "MarkasJunk2 plugin - multi_driver: Broken driver: $driver_file"
++					'message' => "MarkasJunk plugin - multi_driver: Broken driver: $driver_file"
+ 					), true, false);
+ 
+ 				$rcmail->output->command('display_message', $rcmail->gettext('internalerror'), 'error');
+@@ -84,9 +85,9 @@
+ 
+ 			$object = new $class;
+ 			if ($spam)
+-				$object->spam($uids, $mbox);
++				$object->spam($uids, $mbox, null);
+ 			else
+-				$object->ham($uids, $mbox);
++				$object->ham($uids, $mbox, null);
+ 
+ 			if ($object->is_error) {
+ 				$this->is_error = true;
+@@ -97,5 +98,3 @@
+ 	}
+ }
+ 
+-?>
+-

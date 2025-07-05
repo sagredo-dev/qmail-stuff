@@ -1,0 +1,17 @@
+diff -ruN netqmail-1.06-old/qmail-smtpd.c netqmail-1.06/qmail-smtpd.c
+--- netqmail-1.06-old/qmail-smtpd.c	2022-01-17 18:20:36.287701251 +0100
++++ netqmail-1.06/qmail-smtpd.c	2022-02-13 15:53:45.386236334 +0100
+@@ -2347,13 +2347,18 @@
+   /* renegotiation should include certificate request */
+   SSL_CTX_set_options(ctx, SSL_OP_NO_SESSION_RESUMPTION_ON_RENEGOTIATION);
+ 
++  /* Disables all renegotiation in TLSv1.2 and earlier (TLS Renegotiation vulnerability) */
++#ifdef SSL_OP_NO_RENEGOTIATION
++  SSL_CTX_set_options(ctx, SSL_OP_NO_RENEGOTIATION);
++#endif
++
+   /* never bother the application with retries if the transport is blocking */
+   SSL_CTX_set_mode(ctx, SSL_MODE_AUTO_RETRY);
+ 
+   /* relevant in renegotiation */
+   SSL_CTX_set_session_cache_mode(ctx, SSL_SESS_CACHE_OFF);

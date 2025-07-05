@@ -1,0 +1,13 @@
+#!/bin/sh
+#
+# Simple script to rotate files including the archive of qmail-smtpd qlog lines
+# by Luca Franceschini (www.digitalmind.it)
+#
+# You should modify your qmail-smtpd/run file as foolows:
+# LOGUSER="qmaill"
+# LOGDIR="/var/log/qmail/smtpd"
+# LOGDIRQLOG="/var/log/qmail/smtpd/qlog"
+# exec setuidgid $LOGUSER multilog t n5 s10000000 $LOGDIR \
+#    n5 s10000000 '-*' '+* qlog*' !/usr/local/bin/archive_qmail_qlog $LOGDIRQLOG
+#
+tai64nlocal >> /var/log/qmail/qmail-smtpd.log

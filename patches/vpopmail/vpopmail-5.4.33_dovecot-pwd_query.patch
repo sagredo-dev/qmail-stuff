@@ -1,0 +1,363 @@
+v. 2022.03.17
+vpopmail-dovecot-pwd_query patch for vpopmail-5.4.33 by Roberto Puzzanghera
+More info here https://notes.sagredo.eu/en/qmail-notes-185/installing-and-configuring-vpopmail-81.html
+
+==================================================================================================================
+
+If you want to use the dovecot's sql auth driver with one table for each domain (--disable-many-domains) you have
+to heavily customize your password query.
+With this patch vpopmail installs the sql procedure and functions in the database when you create a new domain.
+The procedure can be called by dovecot to perform the auth.
+The sql stuff supports aliasdomains and mysql limits and will be loaded from ~/vpopmail/etc/pwd-query_disable-many-domains.sql.
+You can customize the sql procedure editing this file.
+Be aware that the aliasdomains support requires that you patched your vpopmail accordingly with my
+sql-aliasdomains patch.
+
+Read the reference above for more info.
+
+=================================================================================================================
+
+== Settings
+
+This patch must be installed over the "sql-aliasdomains" patch
+
+An autoreconf is needed as I modified the original configure.in and Makefile.am files.
+
+Configure as follows:
+
+autoreconf -f -i
+./configure \
+        --disable-many-domains \
+        --enable-sql-aliasdomains \
+        --enable-mysql-limits \
+        --enable-mysql-bin=PATH
+
+================================================================================================================
+
+diff -ruN ../vpopmail-5.4.33-original/Makefile.am vpopmail-5.4.33/Makefile.am
+--- ../vpopmail-5.4.33-original/Makefile.am	2011-02-28 18:00:45.000000000 +0100
++++ vpopmail-5.4.33/Makefile.am	2022-03-17 20:57:15.062230835 +0100
+@@ -19,6 +19,7 @@
+ MYSQLCONF=$(DESTDIR)@vpopmaildir@/etc/vpopmail.mysql
+ VLIMITS=$(DESTDIR)@vpopmaildir@/etc/vlimits.default
+ VUSAGECCONF=$(DESTDIR)@vpopmaildir@/etc/vusagec.conf
++DOVECOT_SQL=$(DESTDIR)@vpopmaildir@/etc/pwd-query_disable-many-domains.sql
+ 
+ noinst_LIBRARIES=libvpopmail.a
+ 
+@@ -149,6 +150,13 @@
+ 	echo "-L@vpopmaildir@/lib -lvpopmail @auth_libs@ @LIBS@" > \
+ 	 $(DESTDIR)@vpopmaildir@/etc/lib_deps
+ 
++	if test @MANY_DOMAINS@ = 0; then \
++		if test ! -r $(DOVECOT_SQL); then \
++			$(INSTALL) -o root -m 0644 \
++			dovecot/pwd-query_disable-many-domains.sql $(DOVECOT_SQL); \
++		fi \
++	fi
++
+ 	if test ! -r $(VUSAGECCONF); then \
+ 		$(INSTALL) -o @vpopuser@ -m 0644 -g @vpopgroup@ \
+ 		vusagec.conf $(VUSAGECCONF); \
+diff -ruN ../vpopmail-5.4.33-original/configure.in vpopmail-5.4.33/configure.in
+--- ../vpopmail-5.4.33-original/configure.in	2011-02-28 18:00:45.000000000 +0100
++++ vpopmail-5.4.33/configure.in	2022-03-17 20:57:15.063230827 +0100
+@@ -1482,6 +1482,58 @@
+         ;;
+ esac
+ 
++ #----------------------------------------------------------------------
++ 
++# MySQL binary is needed because we have to create the procedure calling an sql file via command line
++# This is only with --disable-many-domains and --enable-sql-aliasdomains
++AC_SUBST(MANY_DOMAINS)
++
++if test $MANY_DOMAINS = 0 && test $SQL_ALIASDOMAINS = 1
++then
++
++  AC_MSG_CHECKING(whether we can locate the MySQL binary)
++  # default MySQL binary
++  mysqlbin=""
++  for f in /usr/bin/mysql /usr/local/mysql/bin/mysql /usr/local/bin/mysql
++  do
++      if test -x $f
++      then
++          mysqlbin=$f
++      fi
++  done
++
++  # AC_ARG_ENABLE (feature, help-string, [action-if-given], [action-if-not-given])
++  AC_ARG_ENABLE(mysql-bin,
++      [  --enable-mysql-bin=PATH      Full path to your MySQL binary. Only with --disable-many-domains.],
++      binmysql=$enableval,
++      [
++          if test "$mysqlbin" = ""
++          then
++              AC_MSG_RESULT(no)
++              AC_MSG_ERROR([Unable to find your MySQL binary, specify --enable-mysql-bin=PATH.])
++          fi
++      ]
++  )
++
++  if test ! $binmysql = "yes"
++  then
++      if test ! -x $binmysql
++      then
++         AC_MSG_RESULT(no)
++         AC_MSG_ERROR([Unable to find your MySQL binary, specify --enable-mysql-bin=PATH.])
++      else
++         mysqlbin=$binmysql
++      fi
++  fi
++
++  AC_MSG_RESULT(yes)
++  AC_DEFINE_UNQUOTED(MYSQLBIN,"$mysqlbin","")
++
++else
++  AC_DEFINE_UNQUOTED(MYSQLBIN,"","")
++
++fi
++
+ #----------------------------------------------------------------------
+ 
+ AC_MSG_CHECKING(whether any discontinued --enable commands have been used)
+diff -ruN ../vpopmail-5.4.33-original/doc/README.dovecot-pwd-query vpopmail-5.4.33/doc/README.dovecot-pwd-query
+--- ../vpopmail-5.4.33-original/doc/README.dovecot-pwd-query	1970-01-01 01:00:00.000000000 +0100
++++ vpopmail-5.4.33/doc/README.dovecot-pwd-query	2022-03-17 20:57:15.063230827 +0100
+@@ -0,0 +1,29 @@
++v. 2021.07.08
++vpopmail-dovecot-pwd_query patch for vpopmail-5.4.33 by Roberto Puzzanghera
++More info here https://notes.sagredo.eu/en/qmail-notes-185/installing-and-configuring-vpopmail-81.html
++
++==================================================================================================================
++
++If you want to use the dovecot's sql auth driver with one table for each domain (--disable-many-domains) you have
++to heavily customize your password query.
++With this patch vpopmail installs the sql procedure and functions in the database when you create a new domain.
++The procedure can be called by dovecot to perform the auth.
++The sql stuff supports aliasdomains and mysql limits and will be loaded from ~/vpopmail/etc/pwd-query_disable-many-domains.sql.
++You can customize the sql procedure editing this file.
++Be aware that the aliasdomains support requires that you patched your vpopmail accordingly with my
++sql-aliasdomains patch.
++
++Read the reference above for more info.
++
++=================================================================================================================
++
++== Settings
++
++This patch must be installed over the "sql-aliasdomains" patch.
++
++An autoreconf is needed as I modified the original configure.in and Makefile.am files.
++
++Configure as follows:
++
++autoreconf -f -i
++./configure --disable-many-domains --enable-sql-aliasdomains --enable-mysql-bin=PATH
+diff -ruN ../vpopmail-5.4.33-original/dovecot/pwd-query_disable-many-domains.sql vpopmail-5.4.33/dovecot/pwd-query_disable-many-domains.sql
+--- ../vpopmail-5.4.33-original/dovecot/pwd-query_disable-many-domains.sql	1970-01-01 01:00:00.000000000 +0100
++++ vpopmail-5.4.33/dovecot/pwd-query_disable-many-domains.sql	2022-03-17 20:57:15.063230827 +0100
+@@ -0,0 +1,141 @@
++/************************************************************************************************
++  password_query procedure for dovecot's sql auth in case of --disable-many-domains.
++  It supports aliasdomains and mysql-limits.
++
++  More info here
++  https://notes.sagredo.eu/en/qmail-notes-185/dovecot-vpopmail-auth-driver-removal-migrating-to-the-sql-driver-241.html
++
++  By Roberto Puzzanghera
++
++######  auth-sql.conf.ext
++
++passdb {
++  driver = sql
++  args = /usr/local/dovecot/etc/dovecot/dovecot-sql.conf.ext
++}
++
++userdb {
++  driver = prefetch
++}
++
++# This is for LDA.
++userdb {
++  driver = static
++  args = uid=89 gid=89 home=/home/vpopmail/domains/%d/%n
++}
++}
++
++##### dovecot-sql.conf.ext
++
++password_query = CALL dovecot_password_query_disable_many_domains('%n','%d','127.0.0.1','%r','%a')
++
++ ***************************************************************************************************/
++
++
++/****************************************************************
++  Returns the domain table
++ ****************************************************************/
++DROP FUNCTION IF EXISTS `get_domain_table`;
++
++DELIMITER $$
++CREATE FUNCTION `get_domain_table`(`d` VARCHAR(100)) RETURNS varchar(100) CHARSET latin1
++BEGIN
++
++   DECLARE domain_table varchar(100);
++   SET domain_table = dot2underscore(get_real_domain(d));
++
++   RETURN domain_table;
++
++END$$
++DELIMITER ;
++
++
++/****************************************************************
++  Replaces dots and "-" with undescores in domain name
++ ****************************************************************/
++DROP FUNCTION IF EXISTS `dot2underscore`;
++
++DELIMITER $$
++CREATE FUNCTION `dot2underscore`(`d` VARCHAR(100)) RETURNS varchar(100) CHARSET latin1
++BEGIN
++
++   RETURN REPLACE(REPLACE(d, ".", "_"), "-", "_");
++
++END$$
++DELIMITER ;
++
++
++/*******************************************************************
++  Returns the real domain given an alias domain or the domain name
++  if it's not an alias.
++ *******************************************************************/
++DROP FUNCTION IF EXISTS `get_real_domain`;
++
++DELIMITER $$
++CREATE FUNCTION `get_real_domain`(`d` VARCHAR(100)) RETURNS varchar(100) CHARSET latin1
++BEGIN
++   DECLARE real_domain varchar(100);
++
++   IF NOT
++      (SELECT 1 FROM INFORMATION_SCHEMA.TABLES
++      WHERE TABLE_SCHEMA=DATABASE() AND TABLE_NAME=dot2underscore(d))
++   IS NULL THEN
++      SET real_domain = d;
++
++   ELSEIF NOT
++      (SELECT 1 FROM aliasdomains WHERE alias=d)
++   IS NULL THEN
++      SELECT domain INTO real_domain FROM aliasdomains WHERE alias=d;
++
++   ELSE
++   SET real_domain = NULL;
++
++   END IF;
++
++   RETURN real_domain;
++
++END$$
++DELIMITER ;
++
++
++/**************************************************************************
++  Stored procedure for password_query in case of "disabled many domains"
++ **************************************************************************/
++DROP PROCEDURE IF EXISTS `dovecot_password_query_disable_many_domains`;
++
++DELIMITER $$
++CREATE PROCEDURE `dovecot_password_query_disable_many_domains`(IN `name` VARCHAR(255), IN `domain` VARCHAR(255), IN `webmail_ip` VARCHAR(255), IN `remote_ip` VARCHAR(255), IN `port` INT)
++BEGIN
++DECLARE vpopmail varchar(256);
++SET vpopmail = get_domain_table(domain);
++
++IF (vpopmail) IS NULL THEN
++   SET @SQL = "SELECT NULL";
++ELSE
++	SET @SQL = CONCAT("SELECT CONCAT(",vpopmail,".pw_name, '@', '",domain,"') AS user,",
++	vpopmail,".pw_passwd AS password,",
++	vpopmail,".pw_dir AS userdb_home,
++	89 AS userdb_uid,
++	89 AS userdb_gid,
++	CONCAT('*:bytes=', REPLACE(SUBSTRING_INDEX(",vpopmail,".pw_shell, 'S', 1), 'NOQUOTA', '0')) AS userdb_quota_rule
++	FROM ",vpopmail,"
++	LEFT JOIN limits ON limits.domain='",get_real_domain(domain),"'
++	WHERE ",vpopmail,".pw_name='",name,"'
++	AND
++	('",port,"'!='995' OR !(",vpopmail,".pw_gid & 2))
++	AND
++	('",remote_ip,"'!='",webmail_ip,"' OR !(",vpopmail,".pw_gid & 4))
++	AND
++	('",remote_ip,"'='",webmail_ip,"' OR '",port,"'!='993' OR !(",vpopmail,".pw_gid & 8))
++	AND
++	('",remote_ip,"'!='",webmail_ip,"' OR COALESCE(disable_webmail,0)!=1)
++	AND
++	('",remote_ip,"'='",webmail_ip,"' OR COALESCE(disable_imap,0)!=1)");
++END IF;
++
++PREPARE sql_code FROM @SQL;
++EXECUTE sql_code;
++DEALLOCATE PREPARE sql_code;
++
++END$$
++DELIMITER ;
+diff -ruN ../vpopmail-5.4.33-original/vmysql.c vpopmail-5.4.33/vmysql.c
+--- ../vpopmail-5.4.33-original/vmysql.c	2011-02-28 18:00:45.000000000 +0100
++++ vpopmail-5.4.33/vmysql.c	2022-03-17 20:58:45.488516887 +0100
+@@ -356,6 +356,9 @@
+ int vauth_adddomain( char *domain )
+ {
+ #ifndef MANY_DOMAINS
++#ifdef SQL_ALIASDOMAINS
++  vcreate_pwd_query_proc();
++#endif
+   vset_default_domain( domain );
+   return (vauth_create_table (vauth_munch_domain( domain ), TABLE_LAYOUT, 1));
+ #else
+@@ -1859,6 +1862,7 @@
+ #endif
+ 
+ 
++
+ /************************************************************************/
+ int vauth_crypt(char *user,char *domain,char *clear_pass,struct vqpasswd *vpw)
+ {
+@@ -1866,3 +1870,31 @@
+ 
+   return(strcmp(crypt(clear_pass,vpw->pw_passwd),vpw->pw_passwd));
+ }
++
++ /************************************************************************/
++#ifndef MANY_DOMAINS
++#ifdef SQL_ALIASDOMAINS
++int vcreate_pwd_query_proc()
++{
++  char sql_file[256], command[256];
++  FILE *sql;
++
++  /* retrieve the file with the sql stuff */
++  snprintf(sql_file, sizeof(sql_file), "%s/etc/pwd-query_disable-many-domains.sql",VPOPMAILDIR);
++  sql = fopen(sql_file, "r");
++  if( sql == NULL )
++  {
++     printf("\nERROR: Missing %s/etc/pwd-query_disable-many-domains.sql file.\n",VPOPMAILDIR);
++     exit(EXIT_FAILURE);
++  }
++
++  /* build the shell command which runs the query */
++  snprintf(command, sizeof command, "%s -h %s -P %d -D %s -u %s -p%s < %s",
++        MYSQLBIN, MYSQL_UPDATE_SERVER, MYSQL_UPDATE_PORT, MYSQL_UPDATE_DATABASE,
++        MYSQL_UPDATE_USER, MYSQL_UPDATE_PASSWD, sql_file);
++  system(command);
++
++  fclose(sql);
++}
++#endif
++#endif
+diff -ruN ../vpopmail-5.4.33-original/vmysql.h vpopmail-5.4.33/vmysql.h
+--- ../vpopmail-5.4.33-original/vmysql.h	2011-02-28 18:00:45.000000000 +0100
++++ vpopmail-5.4.33/vmysql.h	2022-03-17 20:57:15.064230819 +0100
+@@ -306,3 +306,5 @@
+       perm_defaultquota        TINYINT(2) NOT NULL DEFAULT 0"
+ #endif
+ 
++int vcreate_pwd_query_proc();
++

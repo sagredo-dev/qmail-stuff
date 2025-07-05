@@ -1,0 +1,43 @@
+More info here
+https://notes.sagredo.eu/en/qmail-notes-185/installing-and-configuring-vpopmail-81.html#comment2514
+
+diff -ruN vpopmail-5.4.33-original/vpopmail.c vpopmail-5.4.33/vpopmail.c
+--- vpopmail-5.4.33-original/vpopmail.c	2022-08-09 14:04:47.330812965 +0200
++++ vpopmail-5.4.33/vpopmail.c	2022-09-12 15:30:31.684471905 +0200
+@@ -4023,9 +4023,6 @@
+ 	return email;
+ }
+ 
+-/* escape these characters out of strings: ', \, " */
+-#define ESCAPE_CHARS "'\"\\"
+-
+ /* qnprintf - Custom version of snprintf for creating SQL queries with escaped
+  *            strings.
+  *
+@@ -4152,8 +4149,24 @@
+ 
+ 			}
+ 			while (*s != '\0') {
+-				if (strchr (ESCAPE_CHARS, *s) != NULL) {
+-					if (++printed < (int)size) *b++ = '\\';
++				/*
++				  Standard SQL literal string requires '(single quote) escape. e.g. It's => It''s
++				  Standard SQL identifier string requires "(double quote) escape. e.g. It"s => It""s
++				  Original qnprintf() was using #define ESCAPE_CHARS "'\"" and escape meta by '\\' which is invalid and useless for standard SQL.
++				  Since qnprintf() may be used for SQL identifers, both ' and " are escaped as literal/identifier for better mitigation.
++				  MySQL may escape ' by \, so \ is escaped as well. This is the reason why database specific escape function must be used.
++				*/
++				switch (*s) {
++					case '\'':
++						if (++printed < (int)size) *b++ = '\'';
++						break;
++					case '"':
++						if (++printed < (int)size) *b++ = '"';
++						break;
++					case '\\':
++						if (++printed < (int)size) *b++ = '\\';
++						break;
++					default:
+ 				}
+ 				if (++printed < (int)size) *b++ = *s;
+ 				s++;

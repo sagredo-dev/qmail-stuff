@@ -1,0 +1,14 @@
+diff -ruN netqmail-1.06-old/qmail-smtpd.c netqmail-1.06/qmail-smtpd.c
+--- netqmail-1.06-old/qmail-smtpd.c	2022-02-26 14:11:48.158763892 +0100
++++ netqmail-1.06/qmail-smtpd.c	2022-02-25 16:29:28.449527113 +0100
+@@ -432,7 +432,9 @@
+ /* rejectrelaytest: end */
+ 
+ /* rejectnullsenders: start */
+-  if (control_readint(&rejnsmf,"control/rejectnullsenders") == -1) die_control();
++  x = env_get("REJECTNULLSENDERS");
++  if (x) { scan_ulong(x,&u); rejnsmf = u; }
++  else if (control_readint(&rejnsmf,"control/rejectnullsenders") == -1) die_control();
+ /* rejectnullsenders: end */
+  
+   if (control_readint(&databytes,"control/databytes") == -1) die_control();

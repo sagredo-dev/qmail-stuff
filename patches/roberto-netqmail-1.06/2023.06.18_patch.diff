@@ -1,0 +1,129 @@
+diff -ruN netqmail-1.06-original/Makefile netqmail-1.06/Makefile
+--- netqmail-1.06-original/Makefile	2023-02-19 18:29:14.959842009 +0100
++++ netqmail-1.06/Makefile	2023-06-17 20:02:21.164371985 +0200
+@@ -1,7 +1,6 @@
+ # Don't edit Makefile! Use conf-* for configuration.
+ 
+-VPOPMAIL_HOME=/home/vpopmail
+-VPOPMAIL_LIBS=`head -1 $(VPOPMAIL_HOME)/etc/lib_deps` `cat dns.lib`
++VPOPMAIL_LIBS=`head -1 $(shell /bin/sh vpopmail-dir.sh)/etc/lib_deps` `cat dns.lib`
+ 
+ SMTPD_CHKUSER_OBJ=chkuser.o dns.o
+ 
+@@ -127,8 +126,10 @@
+ 	&&./auto-uid auto_uidq `head -6 conf-users | tail -1` \
+ 	&&./auto-uid auto_uidr `head -7 conf-users | tail -1` \
+ 	&&./auto-uid auto_uids `head -8 conf-users | tail -1` \
++	&&./auto-uid auto_uidv `head -9 conf-users | tail -1` \
+ 	&&./auto-gid auto_gidq `head -1 conf-groups` \
+ 	&&./auto-gid auto_gidn `head -2 conf-groups | tail -1` \
++	&&./auto-gid auto_gidv `head -3 conf-groups | tail -1` \
+ 	) > auto_uids.c.tmp && mv auto_uids.c.tmp auto_uids.c
+ 
+ auto_uids.o: \
+diff -ruN netqmail-1.06-original/auto_uids.h netqmail-1.06/auto_uids.h
+--- netqmail-1.06-original/auto_uids.h	1998-06-15 12:53:16.000000000 +0200
++++ netqmail-1.06/auto_uids.h	2023-06-04 09:53:27.346658060 +0200
+@@ -9,8 +9,10 @@
+ extern int auto_uidq;
+ extern int auto_uidr;
+ extern int auto_uids;
++extern int auto_uidv;
+ 
+ extern int auto_gidn;
+ extern int auto_gidq;
++extern int auto_gidv;
+ 
+ #endif
+diff -ruN netqmail-1.06-original/conf-cc netqmail-1.06/conf-cc
+--- netqmail-1.06-original/conf-cc	2022-09-28 17:16:57.488045708 +0200
++++ netqmail-1.06/conf-cc	2023-06-16 19:48:46.352201636 +0200
+@@ -1,3 +1,3 @@
+-cc -O2 -g -DEXTERNAL_TODO -DTLS=20200107 -I/usr/local/ssl/include -I/home/vpopmail/include
++cc -O2 -g -DEXTERNAL_TODO -DTLS=20200107 -I/usr/local/ssl/include -I`/bin/sh ./vpopmail-dir.sh`/include
+ 
+ This will be used to compile .c files.
+diff -ruN netqmail-1.06-original/hier.c netqmail-1.06/hier.c
+--- netqmail-1.06-original/hier.c	2023-04-02 11:24:24.832148219 +0200
++++ netqmail-1.06/hier.c	2023-06-17 20:07:57.777402075 +0200
+@@ -37,7 +37,7 @@
+   h(auto_qmail,auto_uido,auto_gidq,0755);
+ 
+   d(auto_qmail,"control",auto_uido,auto_gidq,0755);
+-  d(auto_qmail,"control/cache",89,89,0755);
++  d(auto_qmail,"control/cache",auto_uidv,auto_gidv,0755);
+   d(auto_qmail,"users",auto_uido,auto_gidq,0755);
+   d(auto_qmail,"bin",auto_uido,auto_gidq,0755);
+   d(auto_qmail,"boot",auto_uido,auto_gidq,0755);
+diff -ruN netqmail-1.06-original/update_tmprsadh.sh netqmail-1.06/update_tmprsadh.sh
+--- netqmail-1.06-original/update_tmprsadh.sh	2022-09-28 17:16:57.507045657 +0200
++++ netqmail-1.06/update_tmprsadh.sh	2023-06-06 19:26:42.788877101 +0200
+@@ -4,7 +4,10 @@
+ # Frederik Vermeulen 2004-05-31 GPL
+ #
+ # Slightly modified by Roberto Puzzanghera
+-# to chown the .pem files to vpopmail
++#
++# rsa files will be assigned to vpopmail:vchkpw by Makefile.
++# Manually change this file if you are running qmail-smtpd
++# as a different user.
+ 
+ umask 0077 || exit 0
+ 
+@@ -12,11 +15,11 @@
+ 
+ openssl genrsa -out QMAIL/control/rsa4096.new 4096 &&
+ chmod 600 QMAIL/control/rsa4096.new &&
+-chown vpopmail:vchkpw QMAIL/control/rsa4096.new &&
++chown UGQMAILD QMAIL/control/rsa4096.new &&
+ mv -f QMAIL/control/rsa4096.new QMAIL/control/rsa4096.pem
+ 
+ openssl dhparam -2 -out QMAIL/control/dh4096.new 4096 &&
+ chmod 600 QMAIL/control/dh4096.new &&
+-chown vpopmail:vchkpw QMAIL/control/dh4096.new &&
++chown UGQMAILD QMAIL/control/dh4096.new &&
+ mv -f QMAIL/control/dh4096.new QMAIL/control/dh4096.pem
+ 
+diff -ruN netqmail-1.06-original/vpopmail-dir.sh netqmail-1.06/vpopmail-dir.sh
+--- netqmail-1.06-original/vpopmail-dir.sh	1970-01-01 01:00:00.000000000 +0100
++++ netqmail-1.06/vpopmail-dir.sh	2023-07-03 18:47:15.775185278 +0200
+@@ -0,0 +1,39 @@
++#!/bin/sh
++#
++# Extracts the vpopmail installation dir from the /etc/passwd file
++# Roberto Puzzanghera - https://notes.sagredo.eu
++
++PASSWD="/etc/passwd"
++
++if [ ! -f $PASSWD ]; then
++  if [ -d "/home/vpopmail" ]; then
++    echo "/home/vpopmail"
++  else
++    echo "/vpopmail/not/found"
++    exit 1
++  fi
++else
++  # extract the vpopmail user from conf-users
++  VUSR=`head -9 conf-users | tail -1`
++
++  # sed path
++  SED=""
++  for f in /bin/sed /usr/bin/sed /sbin/sed /usr/sbin/sed /usr/local/bin/sed /usr/local/sbin/sed
++  do
++    if test -x $f
++    then
++      SED=$f
++      break
++    fi
++  done
++  if [ "$SED" = "" ]; then
++    echo "/sed/binary/not/found"
++    exit 1;
++  fi
++
++  # extract the vpopmail dir from /etc/passwd
++  # vpopmail:x:89:89::/home/vpopmail:/bin/bash
++  echo $($SED -n "/#/! s/^${VUSR}:.*:.*:.*::\(.*\):.*/\1/p" $PASSWD)
++fi
++
++exit 0

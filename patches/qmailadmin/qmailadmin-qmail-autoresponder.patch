@@ -1,0 +1,93 @@
+diff -Naur qmailadmin-1.2.16/autorespond.c patched/autorespond.c
+--- qmailadmin-1.2.16/autorespond.c	2011-02-22 09:45:47.000000000 -0500
++++ patched/autorespond.c	2015-10-04 03:10:01.720104261 -0400
+@@ -169,7 +169,7 @@
+   /*
+     * Make the autoresponder message file
+    */
+-  sprintf(TmpBuf, "%s/message", TmpBuf2);
++  sprintf(TmpBuf, "%s/message.txt", TmpBuf2);
+   if ( (fs = fopen(TmpBuf, "w")) == NULL ) ack("150", TmpBuf);
+   fprintf(fs, "From: %s@%s\n", ActionUser,Domain);
+   fprintf(fs, "Subject: %s\n", Alias);
+@@ -196,8 +196,8 @@
+     sprintf(TmpBuf, "&%s", Newu);
+     valias_insert (ActionUser, Domain, TmpBuf);
+   } 
+-  sprintf(TmpBuf, "|%s/autorespond 10000 5 %s/%s/message %s/%s",
+-    AUTORESPOND_PATH, RealDir, TmpBuf2, RealDir, TmpBuf2);
++  sprintf(TmpBuf, "|%s/qmail-autoresponder %s/%s",
++    AUTORESPOND_PATH, RealDir, TmpBuf2);
+   valias_insert (ActionUser, Domain, TmpBuf);
+ 
+   /*
+@@ -308,8 +308,8 @@
+    * Make the autoresponder .qmail file
+    */
+   valias_delete (ActionUser, Domain);
+-  sprintf(TmpBuf, "|%s/autorespond 10000 5 %s/%s/message %s/%s",
+-    AUTORESPOND_PATH, RealDir, TmpBuf2, RealDir, TmpBuf2);
++  sprintf(TmpBuf, "|%s/qmail-autoresponder %s/%s",
++    AUTORESPOND_PATH, RealDir, TmpBuf2);
+   valias_insert (ActionUser, Domain, TmpBuf);
+   if ( strlen(Newu) > 0 ) {
+     sprintf(TmpBuf, "&%s", Newu);
+@@ -319,7 +319,7 @@
+   /*
+    * Make the autoresponder message file
+    */
+-  sprintf(TmpBuf, "%s/message", TmpBuf2);
++  sprintf(TmpBuf, "%s/message.txt", TmpBuf2);
+   if ( (fs = fopen(TmpBuf, "w")) == NULL ) ack("150", TmpBuf);
+   fprintf(fs, "From: %s@%s\n", ActionUser,Domain);
+   fprintf(fs, "Subject: %s\n", Alias);
+diff -Naur qmailadmin-1.2.16/command.c patched/command.c
+--- qmailadmin-1.2.16/command.c	2011-02-22 09:45:48.000000000 -0500
++++ patched/command.c	2015-10-04 03:10:01.720104261 -0400
+@@ -30,6 +30,7 @@
+ #include <vpopmail.h>
+ #include <vauth.h>
+ 
++#include "config.h"
+ #include "alias.h"
+ #include "autorespond.h"
+ #include "cgi.h"
+diff -Naur qmailadmin-1.2.16/user.c patched/user.c
+--- qmailadmin-1.2.16/user.c	2011-02-22 09:45:48.000000000 -0500
++++ patched/user.c	2015-10-04 03:10:01.720104261 -0400
+@@ -727,11 +727,11 @@
+   snprintf (fn, sizeof(fn), "%s/vacation", dir);
+   mkdir (fn, 0750);
+ 
+-  fprintf (d, "| %s/autorespond 86400 3 %s/vacation/message %s/vacation\n",
+-    AUTORESPOND_PATH, dir, dir );
++  fprintf (d, "| %s/qmail-autoresponder %s/vacation\n",
++    AUTORESPOND_PATH, dir );
+       
+   /* set up the message file */
+-  snprintf(fn, sizeof(fn), "%s/vacation/message", dir);
++  snprintf(fn, sizeof(fn), "%s/vacation/message.txt", dir);
+   GetValue(TmpCGI, Message, "vmessage=", sizeof(Message));
+ 
+   if ( (f = fopen(fn, "w")) == NULL ) {
+@@ -906,7 +906,7 @@
+     while (dotqmailline) {
+       if ( (*dotqmailline == '|') &&
+           (strstr (dotqmailline, "/true delete") == NULL) &&
+-          (strstr (dotqmailline, "/autorespond ") == NULL) &&
++          (strstr (dotqmailline, "/qmail-autoresponder ") == NULL) &&
+           (strstr (dotqmailline, SPAM_COMMAND) == NULL) ) {
+         fprintf (fs, "%s\n", dotqmailline);
+         emptydotqmail = 0;
+@@ -1056,9 +1056,9 @@
+             if (strstr (linebuf, "/true delete") != NULL)
+               dotqmail_flags |= DOTQMAIL_BLACKHOLE;
+               
+-            else if (strstr (linebuf, "/autorespond ") != NULL) {
++            else if (strstr (linebuf, "/qmail-autoresponder ") != NULL) {
+               dotqmail_flags |= DOTQMAIL_VACATION;
+-              snprintf (fn, sizeof(fn), "%s/vacation/message", vpw->pw_dir);
++              snprintf (fn, sizeof(fn), "%s/vacation/message.txt", vpw->pw_dir);
+               fs2 = fopen (fn, "r");
+             }
+             

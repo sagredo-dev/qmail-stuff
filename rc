@@ -1,0 +1,19 @@
+#!/bin/sh
+
+QMAILDIR=/var/qmail
+
+# Comment out DKIM_ON=1 to disable dkim sign at qmail-remote level
+# You have to define your variables in control/filterargs (DKIM page for more info)
+# echo "*:remote:/var/qmail/bin/qmail-dkim:DKIMQUEUE=/bin/cat,DKIMSIGN=/var/qmail/control/domainkeys/%/default,DKIMSIGNOPTIONS=-z 2" > /var/qmail/control/filterargs
+
+# DKIM_ON=1
+
+if [ -r $QMAILDIR/control/filterargs ] && [ -n "$DKIM_ON" ]; then
+  exec env - PATH="$QMAILDIR/bin:$PATH" \
+  QMAILREMOTE=$QMAILDIR/bin/spawn-filter \
+  qmail-start "`cat $QMAILDIR/control/defaultdelivery`"
+else
+  # Use this if you are signing at qmail-smtpd level or you don't want to sign at all
+  exec env - PATH="$QMAILDIR/bin:$PATH" \
+  qmail-start "`cat $QMAILDIR/control/defaultdelivery`"
+fi

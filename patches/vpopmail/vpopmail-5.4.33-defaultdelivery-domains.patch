@@ -1,0 +1,145 @@
+v. 2021.03.27
+
+vpopmail-defaultdelivery patch for vpopmail-5.4.33 by Roberto Puzzanghera
+More info here https://notes.sagredo.eu/en/qmail-notes-185/installing-and-configuring-vpopmail-81.html
+
+==================================================================================================================
+
+Normally vpopmail copies its delivery agent vdelivermail into the .qmail-default file of newly created domains.
+This patch makes vpopmail to copy your favourite delivery agent, stored in QMAILDIR/control/defauldelivery.
+
+== Settings
+
+An autoreconf is needed as I modified the original configure.in file.
+
+Configure as follows:
+
+autoreconf -f -i
+./configure --enable-defaultdelivery (default OFF)
+
+=================================================================================================================
+
+diff -ruN vpopmail-5.4.33-original/configure.in vpopmail-5.4.33/configure.in
+--- vpopmail-5.4.33-original/configure.in	2011-02-28 18:00:45.000000000 +0100
++++ vpopmail-5.4.33/configure.in	2021-03-27 11:56:12.451899177 +0100
+@@ -1456,6 +1456,29 @@
+ 
+ #----------------------------------------------------------------------
+ 
++AC_MSG_CHECKING(whether defaultdelivery is enabled)
++AC_ARG_ENABLE(defaultdelivery,
++        [  --enable-defaultdelivery   Copy the content of control/defaultdelivery to .qmail-default on domain creation.],
++        DEFAULT_DELIVERY=$enableval,
++                [
++                        DEFAULT_DELIVERY=n
++                ]
++)
++
++case $DEFAULT_DELIVERY in
++  1*|y*|Y*)
++        AC_MSG_RESULT(yes)
++        DEFAULT_DELIVERY=1
++        AC_DEFINE_UNQUOTED(DEFAULT_DELIVERY,$DEFAULT_DELIVERY,"")
++        ;;
++  *)
++        AC_MSG_RESULT(no)
++        ;;
++esac
++
++
++#----------------------------------------------------------------------
++
+ AC_MSG_CHECKING(whether many-domains is enabled)
+ AC_ARG_ENABLE(many-domains,
+         [  --disable-many-domains     Creates a table for each virtual domain instead of storing all users in a single table. Only valid for MySQL and PostgreSQL],
+@@ -1837,6 +1860,16 @@
+     ;;
+ esac
+ 
++
++case $DEFAULT_DELIVERY in
++  1*|y*|Y*)
++    echo "   defaultdelivery = ON  --enable-defaultdelivery"
++    ;;
++  *)
++    echo "   defaultdelivery = OFF --disable-defaultdelivery (default)"
++    ;;
++esac
++
+ 
+ if test "$USE_SQL" = 1
+ then
+diff -ruN vpopmail-5.4.33-original/doc/README.defaultdelivery vpopmail-5.4.33/doc/README.defaultdelivery
+--- vpopmail-5.4.33-original/doc/README.defaultdelivery	1970-01-01 01:00:00.000000000 +0100
++++ vpopmail-5.4.33/doc/README.defaultdelivery	2021-03-27 11:56:12.451899177 +0100
+@@ -0,0 +1,17 @@
++v. 2021.02.26
++vpopmail-defaultdelivery patch for vpopmail-5.4.33 by Roberto Puzzanghera
++More info here https://notes.sagredo.eu/en/qmail-notes-185/installing-and-configuring-vpopmail-81.html
++
++==================================================================================================================
++
++Normally vpopmail copies its delivery agent vdelivermail into the .qmail-default file of newly created domains.
++This patch makes vpopmail to copy your favourite delivery agent, stored in QMAILDIR/control/defauldelivery.
++
++== Settings
++
++An autoreconf is needed as I modified the original configure.in and Makefile.am files.
++
++Configure as follows:
++
++autoreconf -f -i
++./configure --enable-defaultdelivery (default OFF)
+diff -ruN vpopmail-5.4.33-original/vpopmail.c vpopmail-5.4.33/vpopmail.c
+--- vpopmail-5.4.33-original/vpopmail.c	2011-02-28 18:00:45.000000000 +0100
++++ vpopmail-5.4.33/vpopmail.c	2021-03-27 12:13:40.936401009 +0100
+@@ -147,7 +147,16 @@
+  char Dir[MAX_BUFF];
+  int call_dir;
+  string_list aliases;
+- 
++ char ch, defaultdelivery_file[MAX_BUFF];
++ FILE *defaultdelivery;
++ int default_delivery_option;
++
++#ifdef DEFAULT_DELIVERY
++ default_delivery_option = 1;
++#else
++ default_delivery_option = 0;
++#endif
++
+ #ifdef ONCHANGE_SCRIPT
+   /*  Don't execute any implied onchange in called functions  */
+   allow_onchange = 0;
+@@ -269,10 +278,27 @@
+     dec_dir_control(dir_control_for_uid, uid, gid);
+     fchdir(call_dir); close(call_dir);
+     return(VA_COULD_NOT_OPEN_QMAIL_DEFAULT);
+-  } else {
+-    fprintf(fs, "| %s/bin/vdelivermail '' bounce-no-mailbox\n", VPOPMAILDIR);
+-    fclose(fs);
+-  }
++  } else if ( default_delivery_option == 1 ) {
++
++    /* Copy the content of control/defaultdelivery into .qmail-default */
++
++      snprintf(defaultdelivery_file, sizeof(defaultdelivery_file), "%s/control/defaultdelivery", QMAILDIR);
++      defaultdelivery = fopen(defaultdelivery_file, "r");
++      if( defaultdelivery == NULL )
++      {
++	printf("\nERROR: Missing %s/control/defaultdelivery file.\n", QMAILDIR);
++	printf("To create a %s/control/defaultdelivery type:\n", QMAILDIR);
++	printf("echo \"| %s/bin/vdelivermail '' delete\" > %s/control/defaultdelivery\n\n", VPOPMAILDIR, QMAILDIR);
++	exit(EXIT_FAILURE);
++      }
++
++      while ( ( ch = fgetc(defaultdelivery) ) != EOF ) fputc(ch, fs);
++
++      fclose(defaultdelivery);
++   } else {
++      fprintf(fs, "| %s/bin/vdelivermail '' delete\n", VPOPMAILDIR);
++   }
++   fclose(fs);
+ 
+   /* create an entry in the assign file for our new domain */
+   snprintf(tmpbuf, sizeof(tmpbuf), "%s/%s/%s", dir, DOMAINS_DIR, DomainSubDir);

@@ -1,0 +1,49 @@
+diff -ruN netqmail-1.06-original/hier.c netqmail-1.06/hier.c
+--- netqmail-1.06-original/hier.c	2023-06-17 20:07:57.777402075 +0200
++++ netqmail-1.06/hier.c	2023-08-20 09:56:04.761398937 +0200
+@@ -1,8 +1,10 @@
++#include <unistd.h>
+ #include "auto_qmail.h"
+ #include "auto_split.h"
+ #include "auto_uids.h"
+ #include "fmt.h"
+ #include "fifo.h"
+ 
+ #include <stdio.h>
+ #include "channels.h"
+@@ -33,6 +35,7 @@
+ void hier()
+ {
+   int cc;
++  char tmpbuf[300];
+ 
+   h(auto_qmail,auto_uido,auto_gidq,0755);
+ 
+@@ -61,6 +64,11 @@
+   d(auto_qmail,"queue/bounce",auto_uids,auto_gidq,0700);
+ 
+   d(auto_qmail,"plugins",auto_uido,auto_gidq,0755);
++  // install control/smtpplugins file if not existent (unable to read control crash otherwise)
++  snprintf(tmpbuf, sizeof(tmpbuf), "%s/control/smtpplugins", auto_qmail);
++  if (!access(tmpbuf, F_OK)==0) {
++    c(auto_qmail,"control","smtpplugins",auto_uido,auto_gidq,0644);
++  }
+ 
+   dsplit("queue/mess",auto_uidq,0750);
+   dsplit("queue/todo",auto_uidq,0750);
+diff -ruN netqmail-1.06-original/smtpplugins netqmail-1.06/smtpplugins
+--- netqmail-1.06-original/smtpplugins	1970-01-01 01:00:00.000000000 +0100
++++ netqmail-1.06/smtpplugins	2023-08-20 09:30:28.652301909 +0200
+@@ -0,0 +1,12 @@
++# smtpplugins sample file
++[connection]
++
++[auth]
++
++[helo]
++
++[mail]
++
++[rcpt]
++
++[data]

@@ -1,0 +1,79 @@
+#!/bin/sh
+
+QMAILDIR=/var/qmail
+QMAILDUID=`id -u vpopmail`
+NOFILESGID=`id -g vpopmail`
+MAXSMTPD=`cat $QMAILDIR/control/concurrencyincoming`
+SOFTLIMIT=`cat $QMAILDIR/control/softlimit`
+LOCAL=`head -1 $QMAILDIR/control/me`
+TCPRULES_DIR=/var/qmail/control
+
+#export REJECTNULLSENDERS=1
+#export SMTPAUTH="!cram"
+
+# qmail-spp plugins
+#export ENABLE_SPP=1
+#export HELO_DNS_CHECK=PLRIV
+
+# enable greetdelay for qmail-smtpd
+export SMTPD_GREETDELAY=20
+export DROP_PRE_GREET=1
+
+# greylisting
+#export JGREYLIST_DIR="$QMAILDIR/jgreylist"
+#export JGREYLIST_LOG_SMTP=1
+
+# enable chkuser
+export CHKUSER_START=ALWAYS
+
+################### DKIM - SURBL configuration #################################
+# DKIMQUEUE and SURBLQUEUE are front-ends of qmail-queue
+export SURBL=1 # Comment out to enable SURBL filtering
+
+# If simscan is not installed yet, do not assign QMAILQUEUE
+# so that the installation works at the beginning stage as well
+if [ -x $QMAILDIR/bin/simscan ]; then
+  export QMAILQUEUE=$QMAILDIR/bin/surblqueue # executes surblfilter
+  export SURBLQUEUE=$QMAILDIR/bin/simscan    # executes simscan after SURBL
+  #export QMAILQUEUE=$QMAILDIR/bin/simscan # do not execute SURBL nor DKIM filtering
+
+  #### qmail-dkim disabled => no dkim verification
+  #### to have verification active export SURBLQUEUE=$QMAILDIR/bin/qmail-dkim. Othewise the following will be ignored
+  #export SURBLQUEUE=$QMAILDIR/bin/qmail-dkim # executes qmail-dkim after surblfilter
+
+  export DKIMQUEUE=$QMAILDIR/bin/simscan     # simscan is executed after qmail-dkim
+
+  # DKIM verification. Use carefully
+  export DKIMVERIFY="FGHKLMNOQRTVWp"
+  # allow msg without "subject" in the h= list
+  export UNSIGNED_SUBJECT=1
+  # avoid verification of outgoing messages
+  export RELAYCLIENT_NODKIMVERIFY=1
+fi
+################################################################################
+
+# turn off TLS on port 25
+#export DISABLETLS="1"
+
+# require that authenticated user and 'mail from' are identical
+export FORCEAUTHMAILFROM="1"
+
+# rcptcheck-overlimit. Limits the number of emails sent by relayclients
+if [ -x $QMAILDIR/bin/rcptcheck-overlimit.sh ]; then
+  export RCPTCHECK=$QMAILDIR/bin/rcptcheck-overlimit.sh
+  export RCPTCHECKRELAYCLIENT="1"
+fi
+
+# enable simscan debug
+#export SIMSCAN_DEBUG=4
+#export SIMSCAN_DEBUG_FILES=2
+
+exec /usr/local/bin/softlimit -m "$SOFTLIMIT" \
+    /usr/local/bin/tcpserver -v -R -l "$LOCAL" \
+    -x $TCPRULES_DIR/tcp.smtp.cdb -c "$MAXSMTPD" \
+    -u "$QMAILDUID" -g "$NOFILESGID" 0 25 \
+    $QMAILDIR/bin/qmail-smtpd /bin/true 2>&1
+
+# /usr/local/bin/recordio \
+# $QMAILDIR/bin/jgreylist \
+# $QMAILDIR/bin/qmail-smtpd /bin/true 2>&1

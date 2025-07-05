@@ -1,0 +1,2 @@
+#!/bin/sh
+exec ~vpopmail/bin/vusaged 2>&1

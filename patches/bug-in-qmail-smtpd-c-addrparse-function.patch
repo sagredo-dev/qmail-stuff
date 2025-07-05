@@ -1,0 +1,20 @@
+http://qmail.cr.yp.narkive.com/kBry6GJl/bug-in-qmail-smtpd-c-addrparse-function
+
+There is a nasty bug in qmail-smtpd.c addrparse function which
+allows "MAIL FROM" commands without a ":", but fails to parse
+the address and assumes a null sender (bounce) or recipient.
+The bug is a logic error in the pointer juggling code doing the
+line parsing. However, this is a functional bug and not exploitable
+for any kind of malicous code execution nor can it crash in any way.
+
+The patch is really simple:
+
+--- qmail-smtpd.c Mon Jun 15 12:53:16 1998
++++ qmail-smtpd.c.new Wed Oct 1 10:48:07 2003
+@@ -155,6 +155,7 @@
+terminator = ' ';
+arg += str_chr(arg,':');
+if (*arg == ':') ++arg;
++ if (*arg == '\0') return 0;
+while (*arg == ' ') ++arg;
+}

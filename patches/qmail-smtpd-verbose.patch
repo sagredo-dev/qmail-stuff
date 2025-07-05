@@ -1,0 +1,69 @@
+--- ../qmail-1.03-orig/qmail-smtpd.c	Fri Sep  8 14:41:49 2000
++++ qmail-smtpd.c	Thu Sep 14 16:29:01 2000
+@@ -42,7 +42,10 @@
+ }
+ 
+ char ssoutbuf[512];
++char sslogbuf[512];
++char strnum[FMT_ULONG];
+ substdio ssout = SUBSTDIO_FDBUF(safewrite,1,ssoutbuf,sizeof ssoutbuf);
++substdio sslog = SUBSTDIO_FDBUF(safewrite,2,sslogbuf,sizeof sslogbuf);
+ 
+ void flush() { substdio_flush(&ssout); }
+ void out(s) char *s; { substdio_puts(&ssout,s); }
+@@ -56,7 +59,16 @@
+ void straynewline() { out("451 See http://pobox.com/~djb/docs/smtplf.html.\r\n"); flush(); _exit(1); }
+ 
+ void err_bmf() { out("553 sorry, your envelope sender is in my badmailfrom list (#5.7.1)\r\n"); }
+-void err_nogateway() { out("553 sorry, that domain isn't in my list of allowed rcpthosts (#5.7.1)\r\n"); }
++void err_nogateway(stralloc *mailfrom, stralloc *rcptto) {
++  out("553 sorry, that domain isn't in my list of allowed rcpthosts (#5.7.1)\r\n");
++  substdio_puts(&sslog, "relaying denied: pid ");
++  substdio_puts(&sslog, strnum);
++  substdio_puts(&sslog, " from <");
++  substdio_puts(&sslog, mailfrom->s);
++  substdio_puts(&sslog, "> to <");
++  substdio_puts(&sslog, rcptto->s);
++  substdio_putsflush(&sslog, ">\r\n");
++}
+ void err_unimpl() { out("502 unimplemented (#5.5.1)\r\n"); }
+ void err_syntax() { out("555 syntax error (#5.5.4)\r\n"); }
+ void err_wantmail() { out("503 MAIL first (#5.5.1)\r\n"); }
+@@ -138,6 +150,7 @@
+   if (!remotehost) remotehost = "unknown";
+   remoteinfo = env_get("TCPREMOTEINFO");
+   relayclient = env_get("RELAYCLIENT");
++  strnum[fmt_uint(strnum,(unsigned int) getpid())] = 0;
+   dohelo(remotehost);
+ }
+ 
+@@ -266,14 +279,13 @@
+     if (!stralloc_0(&addr)) die_nomem();
+   }
+   else
+-    if (!addrallowed()) { err_nogateway(); return; }
++    if (!addrallowed()) { err_nogateway(&mailfrom, &addr); return; }
+   if (!stralloc_cats(&rcptto,"T")) die_nomem();
+   if (!stralloc_cats(&rcptto,addr.s)) die_nomem();
+   if (!stralloc_0(&rcptto)) die_nomem();
+   out("250 ok\r\n");
+ }
+ 
+-
+ int saferead(fd,buf,len) int fd; char *buf; int len;
+ {
+   int r;
+@@ -372,6 +384,13 @@
+   accept_buf[fmt_ulong(accept_buf,qp)] = 0;
+   out(accept_buf);
+   out("\r\n");
++  substdio_puts(&sslog, "mail recv: pid ");
++  substdio_puts(&sslog, strnum);
++  substdio_puts(&sslog, " from <");
++  substdio_puts(&sslog, mailfrom.s);
++  substdio_puts(&sslog, "> qp ");
++  substdio_puts(&sslog, accept_buf);
++  substdio_putsflush(&sslog, "\r\n");
+ }
+ 
+ void smtp_data() {

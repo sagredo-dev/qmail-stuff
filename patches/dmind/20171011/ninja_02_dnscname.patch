@@ -1,0 +1,23 @@
+= Digitalmind remove cname check (2017-08-27)
+* Removed dns_cname call in qmail-remote.c instead of changing the funcion in dns.c,
+  in case another patch requires dns_cname()
+* References:
+* https://lists.gt.net/qmail/users/138190
+* https://bugs.launchpad.net/ubuntu/+source/netqmail/+bug/1390979
+--- a/qmail-remote.c
++++ b/qmail-remote.c
+@@ -843,13 +843,7 @@ int flagcname;
+   if (!stralloc_cats(saout,"@")) temp_nomem();
+  
+   if (!stralloc_copys(&canonhost,s + j + 1)) temp_nomem();
+-  if (flagcname)
+-    switch(dns_cname(&canonhost)) {
+-      case 0: *flagalias = 0; break;
+-      case DNS_MEM: temp_nomem();
+-      case DNS_SOFT: temp_dnscanon();
+-      case DNS_HARD: ; /* alias loop, not our problem */
+-    }
++  if (flagcname) *flagalias = 0;
+ 
+   if (!stralloc_cat(saout,&canonhost)) temp_nomem();
+ }

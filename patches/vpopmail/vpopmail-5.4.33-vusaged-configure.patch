@@ -1,0 +1,36 @@
+vpopmail-5.4.33-vusaged-configure patch by Roberto Puzzanghera
+
+It seems that at least on Debian 11 vusaged refuses to run the configure successfully, as the
+mysql libraries are not linked.
+After some inspection, I noticed that avoiding the break of the configure command, the
+following make command will find libmysqlclient and compile with no problems, and the
+program works as expected.
+
+NB an "autoreconf -f -i" is needed before configuring, as the configure.ac was modified as follows.
+
+=====================================================================================================
+
+diff -ruN vpopmail-5.4.33-original/vusaged/configure.ac vpopmail-5.4.33/vusaged/configure.ac
+--- vpopmail-5.4.33-original/vusaged/configure.ac	2011-02-28 18:00:45.000000000 +0100
++++ vpopmail-5.4.33/vusaged/configure.ac	2021-09-02 21:17:50.126695915 +0200
+@@ -392,17 +392,17 @@
+ 
+ if test x"$ac_cv_lib_vpopmail_vauth_getpw" = xno
+ then
+-   AC_MSG_ERROR([No vauth_getpw in libvpopmail])
++   AC_MSG_RESULT([No vauth_getpw in libvpopmail])
+ fi
+ 
+ if test x"$ac_cv_lib_vpopmail_vauth_getall" = xno
+ then
+-   AC_MSG_ERROR([No vauth_getall in libvpopmail])
++   AC_MSG_RESULT([No vauth_getall in libvpopmail])
+ fi
+ 
+ if test x"$ac_cv_lib_vpopmail_get_domain_entries" = xno
+ then
+-   AC_MSG_ERROR([No get_domain_entires in libvpopmail])
++   AC_MSG_RESULT([No get_domain_entires in libvpopmail])
+ fi
+ 
+ if test x"$ac_cv_lib_vpopmail_client_query_quick" = xno

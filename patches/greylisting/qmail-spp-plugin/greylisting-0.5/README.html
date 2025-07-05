@@ -1,0 +1,102 @@
+<pre>
+What is greylisting?
+See http://www.greylisting.org/, http://projects.puremagic.com/greylisting/
+
+REQUIREMENTS
+============
+This version requires MySQL 5.6 and above.
+
+Compiling
+=========
+gcc -std=c99 -o greylisting greylisting.c -I/usr/include -I/usr/include/mysql -I/usr/local/include/mysql -L/usr/lib/mysql -L/usr/local/lib/mysql -lmysqlclient
+strip greylisting
+
+Greylisting configuration
+=========================
+Configuration file must be placed at &lt;qmaildir&gt;/control/greylisting
+Example file is included in this package and has to be renamed accordingly
+You can override all settings by using environment variables (see below)
+A row must not exceed MAXCONFIGLINESIZE(=1024) characters!
+
+mysql_default_file ... read mysql options from this file
+block_expire ......... minutes until email is accepted
+record_expire ........ minutes until record expires
+record_expire_good ... days until record expires after accepting email
+loglevel ............. loglevel (0=off, 1=fatal, 2=error, 3=warn, 4=info, 5=debug)
+explicit ............. instead of being enabled for all incoming connections, enable
+                       greylisting only for domains listed in greylisting_lists.
+                       this mixes the usage of greylisting_lists (white-/blacklist
+                       for IPs, enable/disable for domains). Thus it's NOT recommended
+
+Enviroment variables
+====================
+- GREYLISTING
+  _MUST_ be defined in order to start greylisting. Define in tcp-environ
+  (e.g. :allow,GREYLISTING="")
+- GLMYSQLDEFAULTFILE, GLBLOCKEXPIRE, GLRECORDEXPIRE, GLRECORDEXPIREGOOD,
+  GLLOGLEVEL, GLEXPLICIT
+  See configuration notes above
+
+Example qmail-spp configuration
+===============================
+[rcpt]
+plugins/ifauthskip
+plugins/greylisting
+
+ifauthskip skips remaining plugins if user is authed and is recommended
+This plugin is available at http://xs3.b92.net/tomislavr/qmail.html
+
+Cleanup
+=======
+This packages includes a simple shell script (greylisting_cleanup.sh) which
+cleans expired entries. You should run this hourly (e.g. via cron).
+
+History
+=======
+2015-05-19 (0.5)
+* substituted all mysql_* configuration options with mysql_default_file
+* minor code cleanup
+2014-05-19 (0.4)
+* NEW REQUIREMENT: MySQL 5.6.3 or above required!
+* this update modifies the sql schema and the triggers. see below for more details
+  &gt;&gt;&gt; run "upgrade_to_0.4.sql" to upgrade your data and triggers &lt;&lt;&lt;
+  Note: check your queries if you run your own!
+* implemented IPv6 support which requires MySQL 5.6.3 or above
+  Note: In order to store IPv6 adresses the columns "ipaddr_start" and "ipaddr_end"
+    are both converted from integer to binary.
+    Additional "relay_ip" is stored as binary too.
+* use UTC instead of local time to avoid problems with DST (daylight saving time).
+  Note: The type of the columns "create_time" and "last_update" are still
+    timestamps and thus displayed in your local time
+* dropped support for MySQL 5.5 and below
+* added support for explicit-mode (see configuration above)
+* minor code cleanup
+2011-06-14 (0.3)
+* add support for BATV (supported schema: prvs=HASH=user@domain.tld + prvs=user/HASH@domain.tld)
+* fix a few minor compiler warnings
+2009-09-23 (0.2.5, 0.1.5)
+* fixed printing CRLF instead of LF to stdout (captured by qmail-spp) which
+  results in printing CRCRLF to the sender. As far as we know only Novell
+  Groupwise has troubles with this sequence but it's incorrect anyway.
+  Thanks to Frank Koehlert for pointing this out
+2008-01-04 (0.2.2)
+* fixed segfault if rcpt_to doesn't contain a domain
+* GLLOGLEVEL from environment now precedes loglevel from config file
+2007-12-03 (0.2.1, 0.1.1)
+* fixed wrong operator precedence in white-/blacklist query
+  causes record_expires-field to be ignored if entry is recipient/domain based
+2007-11-30
+* fixed/swapped ip-match comments/documentation in check_greylisted()
+  /24-subnet-matching is still default. updated both versions
+2007-11-14
+* fixed small typo. updated both versions
+2006-12-14 (0.2)
+* support for CIDR notations
+* new sql scheme for white-/blacklists
+* MySQL 5.0 is now recommended in order to use triggers (see NOTES)
+* new loglevel support, removed obsolete debug variable
+2006-12-7 (0.1)
+* rewrote for qmail-spp compatibility
+* configuration file support
+* various improvements (mysql, ipv6, ...)
+</pre>

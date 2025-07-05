@@ -1,0 +1,83 @@
+Nov 11, 2023
+- defauldelivery patch: vmakedotqmail won't create users' .qmail if control/defaultdelivery already has vdelivermail.
+
+Oct 23, 2023
+- defauldelivery patch: .qmail file won't be created if control/defaultdelivery already has vdelivermail.
+
+Oct 13, 2023
+- added "s/qmail cdb" patch
+  it allows vpopmail to locate correctly the qmail assign.cdb for s/qmail users
+
+Sep 5, 2023
+- changed configuration option --enable-logging=e (was p). Now failed attempts will be logged with no password shown.
+
+Aug 27, 2023
+- the logic of the defaultdelivery patch/feature has been revised. if configured with --enable-defauldelivery
+  vpopmail will save control/defauldelivery in the user's .qmail and vdelivermail LDA in the domain's
+  .qmail-default file. This will achieve multiple benefit: you have qmail forwards and sieve together and
+  valias available. The valias table scheme was changed as well.
+  More info here
+  https://notes.sagredo.eu/en/qmail-notes-185/sql-valias-with-sieve-solution-for-qmail-new-patches-and-roundcube-plugin-301.html
+
+Mar 02, 2023
+- patched vuserinfo.c to introduce a newline when users' infos belonging a specific domain are displayed (vuserinfo -D domain) to improve legibility.
+  https://notes.sagredo.eu/files/qmail/patches/vpopmail/vuserinfo-D_newline.patch
+
+Feb 18, 2023
+- Added a patch to fix the following issues (tx Ali Erturk TURKER):
+  1- vdelivermail.c checks spamassassin permissions, instead of maildrop permissions.
+  2- vopen_smtp_relay() return values corrected, so that open_smtp_relay() can detect and report database connection errors (vmysql.c, voracle.pc, vpgsql.c )
+  3- vdel_limits() core-dumps if a database connection is not available beforehand. (vmysql.c, voracle.pc )
+  https://notes.sagredo.eu/files/qmail/patches/vpopmail/vpopmail_fixes_20230217_1524.patch
+
+Aug 09, 2022
+- dovecot-pwd_query patch: added a procedure for user_query needed for LDA
+- dovecot-pwd_query patch renamed to dovecot-sql-procedures
+diff here https://notes.sagredo.eu/files/qmail/patches/vpopmail/2022.08.09.diff
+
+Mar 17, 2022
+- fixed a compilation break in vmysql.c with Debian 11 / gcc-10
+
+Oct 30, 2021
+- fixed a compilation break in vrcptcheck.c caused by a missing link to direntry.h. It's now linked to dirent.h.
+  (tx Wouter De Geus)
+
+Oct 29, 2021
+- vusaged-configure patch added
+  solves a configure break that I've seen on a debian 11, provided that the configure file is rebuilt with:
+  autoreconf -f -i
+
+Sep 23, 2021
+- recipient check patch added
+  It is a recipient check for e.h. s/qmail. look ar doc/README.vrcptcheck for more info
+
+July 8, 2021
+- minor fixes to the dovecot-pwd_query patch
+
+April 18, 2021
+- code cleanup
+
+March 27, 2021
+- bug fixes in the defaultdelivery patch: increased the buffer for the .qmail-default file path, as in particular cases of long path/domain names it will result truncated. Fixed another bug where the .qmail.default file where opened twice.
+- now if vdelivermail is installed the "delete" option will be used instead of "bounce-no-mailbox", which is not reasonable anymore
+
+March 9, 2021
+- the vpopmail patch now installs the sql code needed for "one table per domain" (--disable-many-domains) in ~/vpopmail/etc/pwd-query_disable-many-domains.sql and creates the sql procedure if needed. Of course this add-on to vpopmail will be completely transparent when you compile with the default option --enable-many-domains
+
+March 2, 2021
+- added mysql-limits support. See changes in dovecot-sql password_query as well.
+
+February 26, 2021
+- added a "defaultdelivery patch" to the package of patches. configure --enable-defaultdelivery to enable it.
+
+February 15, 2021
+- fix in the configure file. An autoreconf is needed as I modified the configure.in and Makefile.am files
+
+February 10, 2021
+- a C program vsavealiasdomains can now save all the existing domain aliases to MySQL. It can be useful in case of migrations to the dovecot's sql auth driver.
+
+February 5, 2021
+- sql-aliasdomains patch added and combined patch released
+
+December 12, 2020
+- patch to get vpopmail compatible with gcc-10

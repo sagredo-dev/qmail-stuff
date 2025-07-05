@@ -1,0 +1,51 @@
+tx Mirko Buffoni
+https://notes.sagredo.eu/en/qmail-notes-185/patching-qmail-82.html#comment1132
+
+--- qmail-smtpd.c.orig 2018-08-20 16:34:55.000000000 +0200
++++ qmail-smtpd.c 2018-08-20 17:23:49.000000000 +0200
+@@ -1096,19 +1096,19 @@
+ if (!stralloc_copys(&log_buf, "qmail-smtpd: ")) die_nomem();
+ if (!stralloc_cats(&log_buf, message)) die_nomem();
+ if (!stralloc_catb(&log_buf, ": ", 2)) die_nomem();
+- if (mailfrom.s) {
++ if (mailfrom.s && mailfrom.len) {
+ if (!stralloc_catb(&log_buf, mailfrom.s, mailfrom.len-1)) die_nomem();
+ } else
+ if (!stralloc_catb(&log_buf, "(null)", 6)) die_nomem();
+ if (!stralloc_catb(&log_buf, " from ", 6)) die_nomem();
+ if (!stralloc_cats(&log_buf, remoteip)) die_nomem();
+ if (!stralloc_catb(&log_buf, " to ", 4)) die_nomem();
+- if (addr.s) {
++ if (addr.s && addr.len) {
+ if (!stralloc_catb(&log_buf, addr.s, addr.len-1)) die_nomem();
+ } else
+ if (!stralloc_catb(&log_buf, "(null)", 6)) die_nomem();
+ if (!stralloc_catb(&log_buf, " helo ", 6)) die_nomem();
+- if (helohost.s) {
++ if (helohost.s && helohost.len) {
+ if (!stralloc_catb(&log_buf, helohost.s, helohost.len-1)) die_nomem();
+ } else
+ if (!stralloc_catb(&log_buf, "(null)", 6)) die_nomem();
+@@ -1125,19 +1125,19 @@
+ if (!stralloc_cats(&log_buf, " (")) die_nomem();
+ if (!stralloc_cats(&log_buf, reason)) die_nomem();
+ if (!stralloc_cats(&log_buf, "): ")) die_nomem();
+- if (mailfrom.s) {
++ if (mailfrom.s && mailfrom.len) {
+ if (!stralloc_catb(&log_buf, mailfrom.s, mailfrom.len-1)) die_nomem();
+ } else
+ if (!stralloc_catb(&log_buf, "(null)", 6)) die_nomem();
+ if (!stralloc_cats(&log_buf," from ")) die_nomem();
+ if (!stralloc_cats(&log_buf, remoteip)) die_nomem();
+ if (!stralloc_cats(&log_buf, " to ")) die_nomem();
+- if (addr.s) {
++ if (addr.s && addr.len) {
+ if (!stralloc_catb(&log_buf, addr.s, addr.len-1)) die_nomem();
+ } else
+ if (!stralloc_catb(&log_buf, "(null)", 6)) die_nomem();
+ if (!stralloc_cats(&log_buf, " helo ")) die_nomem();
+- if (helohost.s) {
++ if (helohost.s && helohost.len) {
+ if (!stralloc_catb(&log_buf, helohost.s, helohost.len-1)) die_nomem();
+ } else
+ if (!stralloc_catb(&log_buf, "(null)", 6)) die_nomem();

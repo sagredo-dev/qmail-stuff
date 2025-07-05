@@ -1,0 +1,48 @@
+diff -ruN qmailmrtg7-4.2-original/checkq.c qmailmrtg7-4.2/checkq.c
+--- qmailmrtg7-4.2-original/checkq.c	2004-02-29 10:54:02.000000000 +0100
++++ qmailmrtg7-4.2/checkq.c	2024-02-26 21:07:21.036001195 +0100
+@@ -21,6 +21,7 @@
+ #include <sys/stat.h>
+ #include <unistd.h>
+ #include <dirent.h>
++#include <string.h>
+ 
+ int main(int argc, char *argv)
+ {
+diff -ruN qmailmrtg7-4.2-original/qmailmrtg7.c qmailmrtg7-4.2/qmailmrtg7.c
+--- qmailmrtg7-4.2-original/qmailmrtg7.c	2004-11-05 17:37:11.000000000 +0100
++++ qmailmrtg7-4.2/qmailmrtg7.c	2024-02-26 21:15:53.058903228 +0100
+@@ -23,6 +23,7 @@
+ #include <sys/types.h>
+ #include <sys/stat.h>
+ #include <dirent.h>
++#include <stdlib.h>
+ #include "qmailmrtg7.h"
+ 
+ #define MAX_BUFF 1000
+@@ -55,6 +56,7 @@
+ void process_file( char *file_name); 
+ void usage();
+ int get_size(char *dir);
++int count_files(char *diri);
+ 
+ char TheType;
+ 
+@@ -383,7 +385,7 @@
+   printf("for q option dir is the qmail queue dir\n");
+ }
+ 
+-get_size(diri)
++int get_size(diri)
+  char *diri;
+ {
+  DIR *mydir;
+@@ -398,7 +400,7 @@
+   return(count);
+ }
+ 
+-count_files(char *diri)
++int count_files(char *diri)
+ {
+  DIR *mydir;
+  int count;

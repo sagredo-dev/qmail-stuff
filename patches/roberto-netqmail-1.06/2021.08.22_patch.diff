@@ -1,0 +1,34 @@
+diff -ruN netqmail-1.06-original/qmail-smtpd.c netqmail-1.06/qmail-smtpd.c
+--- netqmail-1.06-original/qmail-smtpd.c	2021-06-11 17:48:14.033909906 +0200
++++ netqmail-1.06/qmail-smtpd.c	2021-08-22 18:33:52.184823415 +0200
+@@ -2096,6 +2096,9 @@
+   for (i = 0;authcmds[i].text;++i)
+     if (case_equals(authcmds[i].text,cmd)) break;
+ 
++  if (!env_unset("SMTPAUTHMETHOD")) die_read("SMTPAUTHMETHOD");
++  if (!env_put2("SMTPAUTHMETHOD", authcmds[i].text)) die_nomem();
++
+   switch (authcmds[i].fun(arg)) {
+     case 0:
+       seenauth = 1;
+@@ -2106,18 +2109,16 @@
+       if (!env_put2("TCPREMOTEINFO",remoteinfo)) die_nomem();
+       if (!env_put2("RELAYCLIENT",relayclient)) die_nomem();
+ 
+-      if (!env_unset("SMTPAUTHMETHOD")) die_read("SMTPAUTHMETHOD");
+-      if (!env_put2("SMTPAUTHMETHOD", authcmds[i].text)) die_nomem();
+       if (!env_unset("SMTPAUTHUSER")) die_read("SMTPAUTHUSER");
+       if (!env_put2("SMTPAUTHUSER",user.s)) die_nomem();
+       if (!env_unset("SMTP_AUTH_USER")) die_read("SMTP_AUTH_USER");
+       if (!env_put2("SMTP_AUTH_USER",user.s)) die_nomem();
+ 
+-      strerr_warn4(title.s,"auth: auth-success type=login user=<",user.s,">",0);
++      strerr_warn6(title.s,"auth: auth-success type=",authcmds[i].text," user=<",user.s,">",0);
+       out("235 ok, go ahead (#2.0.0)\r\n");
+       break;
+     case 1:
+-      strerr_warn4(title.s,"auth: auth-failed type=login user=<",user.s,">",0);
++      strerr_warn6(title.s,"auth: auth-failed type=",authcmds[i].text," user=<",user.s,">",0);
+       err_authfail(user.s,authcmds[i].text);
+   }
+ }

@@ -1,0 +1,56 @@
+nullenvsender-recipcount.patch by Charles Cazabon <qmail@discworld.dyndns.org>
+version 1.5
+Placed into the public domain by the author.
+
+Purpose:  With this patch, qmail-smtpd is modified to refuse messages from
+the null envelope sender if they have more than one envelope recipient.
+Bounce messages and other notifications-to-sender are required to be sent
+to the envelope sender only, and therefore should never have more than a
+single envelope recipient.
+
+Thanks to Russell Nelson for valuable feedback.
+
+
+diff -ur qmail-1.03.orig/qmail-smtpd.c qmail-1.03/qmail-smtpd.c
+--- qmail-1.03.orig/qmail-smtpd.c	Mon Jun 15 04:53:16 1998
++++ qmail-1.03/qmail-smtpd.c	Fri Dec  7 14:02:17 2001
+@@ -51,6 +51,7 @@
+ 
+ void err_bmf() { out("553 sorry, your envelope sender is in my badmailfrom list (#5.7.1)\r\n"); }
+ void err_nogateway() { out("553 sorry, that domain isn't in my list of allowed rcpthosts (#5.7.1)\r\n"); }
++void err_badbounce() { out("550 sorry, bounce messages should have a single envelope recipient (#5.7.1)\r\n"); }
+ void err_unimpl() { out("502 unimplemented (#5.5.1)\r\n"); }
+ void err_syntax() { out("555 syntax error (#5.5.4)\r\n"); }
+ void err_wantmail() { out("503 MAIL first (#5.5.1)\r\n"); }
+@@ -221,6 +229,7 @@
+ int flagbarf; /* defined if seenmail */
+ stralloc mailfrom = {0};
+ stralloc rcptto = {0};
++int recipcount;
+ 
+ void smtp_helo(arg) char *arg;
+ {
+@@ -245,6 +254,7 @@
+   if (!stralloc_copys(&rcptto,"")) die_nomem();
+   if (!stralloc_copys(&mailfrom,addr.s)) die_nomem();
+   if (!stralloc_0(&mailfrom)) die_nomem();
++  recipcount = 0;
+   out("250 ok\r\n");
+ }
+ void smtp_rcpt(arg) char *arg; {
+@@ -261,6 +271,7 @@
+   if (!stralloc_cats(&rcptto,"T")) die_nomem();
+   if (!stralloc_cats(&rcptto,addr.s)) die_nomem();
+   if (!stralloc_0(&rcptto)) die_nomem();
++  recipcount++;
+   out("250 ok\r\n");
+ }
+ 
+@@ -372,6 +383,7 @@
+  
+   if (!seenmail) { err_wantmail(); return; }
+   if (!rcptto.len) { err_wantrcpt(); return; }
++  if (mailfrom.len == 1 && recipcount > 1) { err_badbounce(); return; }
+   seenmail = 0;
+   if (databytes) bytestooverflow = databytes + 1;
+   if (qmail_open(&qqt) == -1) { err_qqt(); return; }

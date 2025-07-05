@@ -1,0 +1,142 @@
+# ------------------------------------------------------------------------
+Patch: bouncecontrol
+For: qmail-1.03
+From: Klaus Reimer <kay@debian.org>
+Date: 09 Feb 2001
+
+This patch modifies qmail-send to give the admin the chance to control
+the look of bounce and doublebounce messages. This feature can be 
+controlled by these new qmail control files:
+
+  bouncesubject       - Contains one line for the bounce message subject
+  bouncemessage       - Contains the text for the bounce message
+  doublebouncesubject - Contains one line for the double bounce message 
+                        subject
+  doublebouncemessage - Contains the text for the double bounce message
+  
+The message text is displayed at the top of the bounce message instead
+of the default "Hi. This is...."
+
+If you have problems with this patch or questions or comments please
+contact me: kay@debian.org
+# ------------------------------------------------------------------------
+
+diff -u qmail-1.03.orig/control.c qmail-1.03/control.c
+--- qmail-1.03.orig/control.c	Mon Jun 15 12:53:16 1998
++++ qmail-1.03/control.c	Fri Feb  9 15:39:31 2001
+@@ -85,6 +85,40 @@
+  return 1;
+ }
+ 
++int control_readnativefile(sa,fn)
++stralloc *sa;
++char *fn;
++{
++ substdio ss;
++ int fd;
++ int match;
++
++ if (!stralloc_copys(sa,"")) return -1;
++
++ fd = open_read(fn);
++ if (fd == -1) 
++  {
++   if (errno == error_noent)
++    {
++     if (!stralloc_0(sa)) return -1;
++     return 1;
++    }
++   return -1;
++  }
++
++ substdio_fdbuf(&ss,read,fd,inbuf,sizeof(inbuf));
++
++ for (;;)
++  {
++   if (getln(&ss,&line,&match,'\n') == -1) break;
++   if (!match && !line.len) { close(fd); return 1; }
++   if (!stralloc_cat(sa,&line)) break;
++   if (!match) { close(fd); return 1; }
++  }
++ close(fd);
++ return -1;
++}
++
+ int control_readfile(sa,fn,flagme)
+ stralloc *sa;
+ char *fn;
+diff -u qmail-1.03.orig/control.h qmail-1.03/control.h
+--- qmail-1.03.orig/control.h	Mon Jun 15 12:53:16 1998
++++ qmail-1.03/control.h	Fri Feb  9 15:39:44 2001
+@@ -5,6 +5,7 @@
+ extern int control_readline();
+ extern int control_rldef();
+ extern int control_readint();
++extern int control_readnativefile();
+ extern int control_readfile();
+ 
+ #endif
+diff -u qmail-1.03.orig/qmail-send.c qmail-1.03/qmail-send.c
+--- qmail-1.03.orig/qmail-send.c	Mon Jun 15 12:53:16 1998
++++ qmail-1.03/qmail-send.c	Fri Feb  9 15:26:45 2001
+@@ -47,6 +47,10 @@
+ stralloc percenthack = {0};
+ struct constmap mappercenthack;
+ stralloc locals = {0};
++stralloc bouncemessage = {0};
++stralloc bouncesubject = {0};
++stralloc doublebouncemessage = {0};
++stralloc doublebouncesubject = {0};
+ struct constmap maplocals;
+ stralloc vdoms = {0};
+ struct constmap mapvdoms;
+@@ -702,12 +706,23 @@
+    qmail_puts(&qqt,"\nTo: ");
+    while (!quote2(&quoted,bouncerecip)) nomem();
+    qmail_put(&qqt,quoted.s,quoted.len);
+-   qmail_puts(&qqt,"\n\
+-Subject: failure notice\n\
+-\n\
+-Hi. This is the qmail-send program at ");
+-   qmail_put(&qqt,bouncehost.s,bouncehost.len);
+-   qmail_puts(&qqt,*sender.s ? ".\n\
++   qmail_puts(&qqt,"\nSubject: ");
++   if (*sender.s)
++     qmail_put(&qqt,bouncesubject.s,bouncesubject.len);
++   else
++     qmail_put(&qqt,doublebouncesubject.s,doublebouncesubject.len);
++   qmail_puts(&qqt,"\n\n");
++   if (*sender.s && bouncemessage.s[0]) {
++     qmail_put(&qqt,bouncemessage.s,bouncemessage.len);
++     qmail_puts(&qqt,"\n");
++   } else if (!*sender.s && doublebouncemessage.s[0]) {
++     qmail_put(&qqt,doublebouncemessage.s,doublebouncemessage.len);
++     qmail_puts(&qqt,"\n");
++   }
++   else {
++     qmail_puts(&qqt,"Hi. This is the qmail-send program at ");
++     qmail_put(&qqt,bouncehost.s,bouncehost.len);
++     qmail_puts(&qqt,*sender.s ? ".\n\
+ I'm afraid I wasn't able to deliver your message to the following addresses.\n\
+ This is a permanent error; I've given up. Sorry it didn't work out.\n\
+ \n\
+@@ -715,7 +730,7 @@
+ I tried to deliver a bounce message to this address, but the bounce bounced!\n\
+ \n\
+ ");
+-
++   }
+    fd = open_read(fn2.s);
+    if (fd == -1)
+      qmail_fail(&qqt);
+@@ -1454,6 +1469,10 @@
+  if (!stralloc_cat(&doublebounceto,&doublebouncehost)) return 0;
+  if (!stralloc_0(&doublebounceto)) return 0;
+  if (control_readfile(&locals,"control/locals",1) != 1) return 0;
++ if (control_readnativefile(&bouncemessage,"control/bouncemessage") != 1) return 0;
++ if (control_readnativefile(&doublebouncemessage,"control/doublebouncemessage") != 1) return 0;
++ if (control_rldef(&bouncesubject,"control/bouncesubject",0,"failure notice") != 1) return 0;
++ if (control_rldef(&doublebouncesubject,"control/doublebouncesubject",0,"failure notice") != 1) return 0;
+  if (!constmap_init(&maplocals,locals.s,locals.len,0)) return 0;
+  switch(control_readfile(&percenthack,"control/percenthack",0))
+   {

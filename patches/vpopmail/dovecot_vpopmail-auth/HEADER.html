@@ -1,0 +1,19 @@
+<html>
+<body>
+<h1><code>Dovecot</code>'s <code>vpopmail-auth</code> driver patch</h1>
+
+<p>A patch by Ali Erturk TURKER which restores to life the <code>vpopmail-auth</code> driver for <code>Dovecot</code>
+(more info <a href="https://notes.sagredo.eu/en/qmail-notes-185/dovecot-vpopmail-auth-driver-removal-migrating-to-the-sql-driver-241.html#comment2787" target="_blank">here</a>).
+</p>
+
+<p>Patch and configure as follows:</p>
+
+<pre>
+patch -p1 < dovecot_x.y.z_vpopmail_auth.patch
+autoreconf -f -i
+./configure \
+--other-options-here \
+--with-vpopmail
+</pre>
+</body>
+</hmtl>

@@ -1,0 +1,52 @@
+<pre>
+Token bucket based outgoing SMTP sending rate limit
+
+REQUIREMENTS
+============
+This plugin requires MySQL.
+
+Compiling
+=========
+gcc -std=c99 -o smtp_ratelimit smtp_ratelimit.c -I/usr/include -I/usr/include/mysql -I/usr/local/include/mysql -L/usr/lib/mysql -L/usr/local/lib/mysql -lmysqlclient
+strip smtp_ratelimit
+
+smtp_ratelimit configuration
+=========================
+Configuration file must be placed at &lt;qmaildir&gt;/control/smtp_ratelimit
+Example file is included in this package and has to be renamed accordingly
+You can override all settings by using environment variables (see below)
+A row must not exceed MAXCONFIGLINESIZE(=1024) characters!
+
+mysql_default_file ... read mysql options from this file
+max_tokens ........... maximum tokens (outgoing e-mails) per single user/sender
+refill_tokens ........ refill this amount of tokens every $refill_time seconds
+refill_time .......... time in seconds. see refill_tokens above
+loglevel ............. loglevel (0=off, 1=fatal, 2=error, 3=warn, 4=info, 5=debug)
+
+Enviroment variables
+====================
+- RATELIMIT
+  _MUST_ be defined in order to start ratelimiting. Define in tcp-environ
+  (e.g. :allow,RATELIMIT="")
+- RLCONFIGFILE, RLLOGLEVEL
+  See configuration notes above
+
+Example qmail-spp configuration
+===============================
+[data]
+plugins/smtp_ratelimit
+
+NOTE: Make sure to NOT enabled this for inbound SMTP!
+
+Cleanup
+=======
+This packages includes a simple shell script (smtp_ratelimit_cleanup.sh) which
+cleans expired entries. You should run this once per day (e.g. via cron).
+
+History
+=======
+2016-08-16 (0.2)
+* add RATELIMIT env variable
+2016-02-19
+* release
+</pre>

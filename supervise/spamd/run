@@ -1,0 +1,2 @@
+#!/bin/sh
+exec /usr/bin/spamd -A 127.0.0.1,95.110.226.81 --nouser-config -q -D -u vpopmail -s stderr 2>&1

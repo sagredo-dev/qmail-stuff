@@ -1,0 +1,27 @@
+diff -ruN greylisting-0.5/greylisting.c greylisting-0.5.1/greylisting.c
+--- greylisting-0.5/greylisting.c	2015-05-19 21:07:27.000000000 +0200
++++ greylisting-0.5.1/greylisting.c	2023-01-28 18:20:53.431490161 +0100
+@@ -19,6 +19,13 @@
+  * Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+  */
+ 
++ /*
++  * Roberto Puzzanghera gen 28, 2023
++  * Patched on line 455 because the configuration file cannot be retrieved
++  * The configuration file mysql.cnf is now hard coded to control/mysql.cnf
++  * and the option inside control/greylisting will be ignored.
++  */
++
+ #define _BSD_SOURCE
+ #include <stdio.h>
+ #include <stdlib.h>
+@@ -445,7 +452,8 @@
+   }
+ 
+   if (mysql_default_file)
+-    mysql_options(mysql, MYSQL_READ_DEFAULT_FILE, mysql_default_file);
++    mysql_optionsv(mysql, MYSQL_READ_DEFAULT_FILE, (void *)"control/mysql.cnf");
++/*    mysql_options(mysql, MYSQL_READ_DEFAULT_FILE, mysql_default_file);*/
+ 
+   /* connect to mysql */
+   if (!mysql_real_connect(mysql, NULL, NULL, NULL, NULL, 0, NULL, 0))

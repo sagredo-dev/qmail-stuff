@@ -1,0 +1,995 @@
+diff -Nuar netqmail_sagredo.new/CHKUSER.automatic_patching netqmail_sagredo.new.moredocs/CHKUSER.automatic_patching
+--- netqmail_sagredo.new/CHKUSER.automatic_patching	1970-01-01 01:00:00.000000000 +0100
++++ netqmail_sagredo.new.moredocs/CHKUSER.automatic_patching	2016-10-31 15:17:21.000000000 +0100
+@@ -0,0 +1,94 @@
++Chkuser 2.0.9 automatic patching
++
++When to use automatic patching
++==============================
++
++The release.tar package contains some .patch files, ready for installation,
++trying to semplify the most frequent situations.
++
++You may use one of these patches if you have these sources:
++
++	- a clean qmail 1.03 or netqmail 1.05 
++
++You may also consider using one of these patches if you have additional compatible
++patches installed. This means that these additional patches should not have changed
++the same sources and lines which are going to be used by chkuser.
++
++If you have any doubt, backup your sources and try the automatic installation,
++otherwise execute the manual installation (that's very easy).
++
++Backup
++======
++
++Save you qmail working sources before making any change.
++
++Basic installation
++==================
++
++Download the newest release.tar package and untar it. It will create a directory
++containing all release chkuser files and patches.
++
++Chose the most appropriate .patch file to be applied, according to your qmail
++installation: .patch files names are self-describing.
++
++Position in the qmail/netqmail source directory:
++
++	$ cd /usr/.../netqmail-1.05
++
++Apply selected patch:
++
++	$ patch < /path_to_chkuser_release_dir/netqmail-1.05_chkuser-2.x.x.patch
++
++No errors should be displayed. If you see any error, better you restore your
++sources and go to manual editing.
++
++editing vpopmail home path
++
++	If your production home path for vpopmail (or whatever you call him) user
++	is NOT /home/vpopmail, you must perform the following additional actions.
++
++	Edit Makefile, changing the line referring to vpopmail's home path and
++	putting the right home path:
++
++		VPOPMAIL_HOME=/home/vpopmail 
++
++	Edit conf-cc, changing the string referring to vpopmail's home path and
++	putting the right home path:
++
++		cc -O2 -I/home/vpopmail/include 
++
++chkuser settings
++================
++
++Edit chkuser_settings.h, uncommenting the options you prefer, and commenting the
++ones you don't want. Default settings should cover the most of situations.
++
++See the related settings pages for more informations.
++
++Make
++====
++Now, make (or gmake on *BSD) as your usual. No errors (just warnings) should
++come out. If you see any error, better you restore your sources
++and go to manual editing.
++
++Checking
++========
++Select a domain, contained in your rcpthosts, for which bouncing is enabled, and run:
++
++	$ ./qmail-smtpd
++	mail from <wrong_sender>
++	mail from <right_sender>
++	rcpt to: <fake_user@your_domain>
++	rcpt to: <real_user@your_domain>
++
++You should see error and ok messages, depending on the addresses you typed.
++
++Install
++=======
++Copy the new executable in the /var/qmail/bin directory (or make install).
++
++Running
++=======
++This patched qmail-smtpd must be executed in a different way than the normal one.
++See the running pages for detailed instructions.
++
+diff -Nuar netqmail_sagredo.new/CHKUSER.changelog netqmail_sagredo.new.moredocs/CHKUSER.changelog
+--- netqmail_sagredo.new/CHKUSER.changelog	1970-01-01 01:00:00.000000000 +0100
++++ netqmail_sagredo.new.moredocs/CHKUSER.changelog	2016-10-31 15:17:21.000000000 +0100
+@@ -0,0 +1,183 @@
++
++CHKUSER 2.0 change log
++
++2.0.9 - 21 march 2007
++   New features
++        - New variable for accepting only authorized senders:
++                #define CHKUSER_EXTRA_MUSTAUTH_VARIABLE "CHKUSER_MUSTAUTH"
++                if the variable exists, then messages are accepted only if RELAYCLIENT is set
++                If defined, it works always despite CHKUSER being ON/OFF
++                This feature can be used for a "submission port" (see RFC 2476)
++        - Improved checking of MySQL server availability (if MySQL is used as vpopmail user's DB)
++        - Introduction of a new variable for disabling chkuser on the fly: CHKUSER_DISABLE_VARIABLE
++                (can be used for single IP or defined as "RELAYCLIENT" for all authorized e-mail clients)
++        - Improved starting variables checking sequence
++                CHKUSER_ALWAYS_ON and CHKUSER_STARTING_VARIABLE cannot be defined together
++                        and in such a case a fatal error is displayed; (in previous versions
++                        CHKUSER_ALWAYS_ON would automatically disable CHKUSER_STARTING_VARIABLE definition).
++                CHKUSER_DISABLE_VARIABLE is always evaluated after CHKUSER_ALWAYS_ON is set or
++                        CHKUSER_STARTING_VARIABLE is evaluated, so CHKUSER_ALWAYS_ON or
++                        CHKUSER_STARTING_VARIABLE can set the general behaviour, while
++                        CHKUSER_DISABLE_VARIABLE should be invoked to handle exceptions.
++        - New variable for accepting qmail doublebounces: CHKUSER_ENABLE_DOUBLEBOUNCE_VARIABLE
++                Sender "#@[]" will be accepted. It is used by qmail for doublebounces, and should be enabled for
++                selected IP senders.
++	- define CHKUSER_ENABLE_VAUTH_OPEN has been substituted by CHKUSER_VAUTH_OPEN_CALL: this new 
++		define must contain the name of the call used to open the auth DB
++
++   Updated features
++        - checking for ezmlm mailing list is now done looking for file "editor"
++                within mailing-list directory
++        - defines for allowed character within sender and rcpt addresses increased
++                up to CHKUSER_ALLOW_SENDER_CHAR_10 and CHKUSER_ALLOW_RCPT_CHAR_10
++        - updated SMTP error strings; more exact and detailed error codes
++                (thanks to Olivier Dony and Dane Thorsen)
++        - logging of valid rcpt. If CHKUSER_LOG_VALID_RCPT is defined then all valid
++                recipients are logged, even if domain does not want bouncing or chkuser
++                is disabled
++
++   Bugs corrected
++        - negative checking of backend DB connection did not report
++                DB unavailability in some situations
++                (thanks to Matt Brookings of Inter7)
++        - in check_rcpt_address_format format checking was done using defines
++                reserved for senders
++
++V 2.0.8 - 7 december 2004
++   Features
++	Freeze of new features of 2.0.7, except null senders behaviour.
++	CHKUSER_ENABLE_NULL_SENDER_WITH_TCPREMOTEHOST is no more available
++	CHKUSER_ENABLE_NULL_SENDER is no more available
++	NULL SENDERS are now always accepted. No option is available to disable
++		this behaviour. Previous chkuser versions broke RFC compatibility on
++		null senders, and complicated real life e-mailing.
++	Logging of null senders <> is now available.
++	
++   Bugs corrected
++	Sender controls were not executed if CHKUSER_STARTING_VARIABLE was defined
++		(thanks to Charles Sprickman)
++	Domains not in control/virtualdomains are now explicitely excluded from
++		following cascade checks; in previous versions following cascade
++		checks were done using fake domains paths.
++	vget_assign is now handled correctly (a domain in rcpthosts but not
++		in virtualdomains could have an incorrect path in previous versions
++		(this bug is also in all chkusr versions)
++
++	Defaults changed
++	CHKUSER_RCPT_FORMAT is now undefined as default
++	CHKUSER_RCPT_MX is now undefined as default.
++	CHKUSER_SENDER_FORMAT is now undefined as default
++	CHKUSER_SENDER_MX is now undefined as default.
++	CHKUSER_ERROR_DELAY_INCREASE new default is 300 milliseconds
++	
++V 2.0.7 - 25 october 2004
++   Features
++	added vclose() of DB auth connection, overriding
++		qmail-smtpd _exit call
++	improved MX checking; now SOFT failure is handled as
++		temporary error.
++	added #define CHKUSER_RCPTMX_TMP_STRING
++	added #define CHKUSER_SENDERMX_TMP_STRING 
++	added handling of mailman mailing lists
++		(and related #define CHKUSER_ENABLE_MAILMAN_LISTS)
++	changed order of checking for recipients:
++		1 - valias
++		2 - alias
++		3 - alias extensions
++		4 - users
++		5 - users extensions
++		6 - lists
++	added #define CHKUSER_ACCEPT_NULL_SENDER (default defined)
++	added #define CHKUSER_ENABLE_ALIAS_DEFAULT (default not defined)
++		enables checking of .qmail-alias-default
++	added #define CHKUSER_IDENTIFY_REMOTE_VARIABLE "CHKUSER_IDENTIFY"
++		in order to allow a easy identification of remote IP
++		(substitutes RELAYCLIENT in chkuser logging)
++	added #define CHKUSER_ALLOW_RCPT_SRS
++		enable usage of "#" and "+" characters within rcpt address
++	added #define CHKUSER_ALLOW_RCPT_CHAR_1 '$'
++	added #define CHKUSER_ALLOW_RCPT_CHAR_2 '%'
++	added #define CHKUSER_ALLOW_RCPT_CHAR_3 '£'
++	added #define CHKUSER_ALLOW_RCPT_CHAR_4 '?'
++	added #define CHKUSER_ALLOW_RCPT_CHAR_5 '*'
++	#define CHKUSER_ENABLE_USERS_EXTENSIONS
++		substitutes #define CHKUSER_ENABLE_EXTENSIONS
++	#define CHKUSER_ENABLE_EZMLM_LISTS
++		substitutes #define CHKUSER_ENABLE_LISTS
++	#define CHKUSER_USERS_DASH
++		substitutes #define CHKUSER_EXTENSION_DASH
++
++   Bugs corrected
++	sender address "name@" could cause a crash. Corrected
++		(Thanks to Dmitry Petukhov)
++	Corrected Makefile: now qmail-smtpd.c recompiles if chkuser.h
++		changes
++	Corrected a bug in #endif sequence related to
++		#define CHKUSER_RCPT_FORMAT (thanks to Alex Plainer)
++	Corrected a bug in chkuser_sender; now is not executed when
++		chkuser is disabled
++	Corrected check of format for domains:
++		"xn--" admitted as leading string
++	Deleted correction over usage of RELAYCLIENT variable
++		Previous correction could affect a special
++		feature of RELAYCLIENT (thanks to Alex Pleiner)
++
++   Defaults changed
++	#define CHKUSER_ENABLE_NULL_SENDER_WITH_TCPREMOTEHOST (default undefined)
++
++
++V 2.0.6 - 25 september 2004
++	No bugs, just doc updates and an empty patch file corrected
++
++	#define CHKUSER_ENABLE_VGET_REAL_DOMAIN was existing and working in code,
++		but not reported both in docs and inside chkuser_settings.h
++			(default is commented, but this #define is important)	
++	patch for toaster-0.6-1 was empty. Now the correct one is provided
++
++V 2.0.5 - 23 september 2004
++	This is the first public release.
++
++	added #define CHKUSER_ALLOW_SENDER_CHAR_1 (default not defined) 
++	added #define CHKUSER_ALLOW_SENDER_CHAR_2 (default not defined) 
++	added #define CHKUSER_ALLOW_SENDER_CHAR_3 (default not defined) 
++	added #define CHKUSER_ALLOW_SENDER_CHAR_4 (default not defined) 
++	added #define CHKUSER_ALLOW_SENDER_CHAR_5 (default not defined) 
++	added #define CHKUSER_MIN_DOMAIN_LEN (default defined 4) -
++		Previously it was hard coded as 5. Juergen Kendzorra
++		showed me some existing names long only 4 chars. 
++	added #define CHKUSER_LOG_VALID_SENDER (default defined)
++
++V 2.0.4 - 15 september 2004
++
++	added #define CHKUSER_SENDER_NOCHECK_VARIABLE (default not defined) 
++	added #define CHKUSER_DEBUG_STDERR (default not defined) 
++	added #define CHKUSER_ALLOW_SENDER_SRS (default not defined) 
++	cleaned some typos in code and documentation (thanks to Juergen
++		Kendzorra - http://www.kendzorra.de) 
++
++
++V 2.0.3 - 8 september 2004
++	This is the first version released outside, for wider testing.
++
++	Tested Makefile for netqmail 1.05 
++	Added Makefiles for applying over other patches 
++
++V 2.0.0 - july 2004
++	chkuser 2.0.0 starts here, and is a private internal release.
++	Version 2.0 is much more modular than previous one (named chkusr),
++	and has been designed with the goal of enabling more features and
++	semplifying installations and upgrades of the patch himself. 
++
++	chkusr changes his name, to reflect a deep change of the patch. 
++
++	Chkusr 1.0 received a lot of feedbacks and suggestions.
++	The most of these suggestions are now inside version 2.0.
++
++		- Marcelo Coelho (marcelo at tpn.com.br), segnaled me some
++		unseen minor bugs of chkusr 1.0 (minor but very annoying to
++		my pride) and suggested some very interesting features
++		(some of them are now in chkuser 2.0). 
++		- Iulian Margarintescu (http:://www.erata.net) suggested a
++		workable way of introducing quota check on recipients
++		(now in chkuser 2.0). 
++
+diff -Nuar netqmail_sagredo.new/CHKUSER.copyright netqmail_sagredo.new.moredocs/CHKUSER.copyright
+--- netqmail_sagredo.new/CHKUSER.copyright	1970-01-01 01:00:00.000000000 +0100
++++ netqmail_sagredo.new.moredocs/CHKUSER.copyright	2016-10-31 15:17:21.000000000 +0100
+@@ -0,0 +1,15 @@
++
++chkuser for qmail/netqmail > 1.0.3 and vpopmail > 5.3.x
++
++Author: Antonio Nati tonix@interazioni.it
++
++All rights on this software and
++the identifying words chkusr and chkuser kept by the author
++
++This software may be freely used, modified and distributed,
++but this lines must be kept in every original or derived version.
++
++Original author "Antonio Nati" and the web URL
++"http://www.interazioni.it/opensource"
++must be indicated in every related work or web page
++
+diff -Nuar netqmail_sagredo.new/CHKUSER.log_format netqmail_sagredo.new.moredocs/CHKUSER.log_format
+--- netqmail_sagredo.new/CHKUSER.log_format	1970-01-01 01:00:00.000000000 +0100
++++ netqmail_sagredo.new.moredocs/CHKUSER.log_format	2016-10-31 15:17:21.000000000 +0100
+@@ -0,0 +1,69 @@
++
++chkuser 2.0.9 logging format
++
++When #defines for logging are enabled, chkuser patch emits log informations
++on the same qmail-smtpd log destination
++
++This is the log format:
++
++    CHKUSER "brief message": \
++	    from <sender:remoteinfo:relayclient> \
++	    remote <helo:remotehostname:remotehostip> \
++	    rcpt <recipient> : "extended message"
++
++where
++	brief message 	
++		    * accepted rcpt
++		    * relaying rcpt
++		    * rejected relaying
++		    * rejected rcpt
++		    * no auth resource
++		    * mbx overquota
++		    * rejected intrusion
++		    * intrusion threshold
++		    * accepted sender
++		    * rejected sender
++		    * must auth
++
++	sender 	sender declared within "mail from"
++
++	remoteinfo	the value of "TCPREMOTEINFO" or the autenticated user
++
++	relayclient 	the value of CHKUSER_IDENTIFY env variable (this name
++			 is defined by #define CHKUSER_IDENTIFY_REMOTE_VARIABLE)
++
++	helo 		helo declared from remote system
++
++	hostname 	the value of "TCPREMOTEHOST"
++
++	remotehostip 	the value of "TCPREMOTEIP"
++
++	recipient 	recipient address
++
++	extended message 	this field has more wide description for
++				some generic "brief message":
++			accepted rcpt 	found existing recipient
++			accepted rcpt	accepted any recipient for any rcpt doman (from 2.0.9)
++			accepted rcpt	accepted any recipient for this domain (from 2.0.9)
++			relaying rcpt 	client allowed to relay
++			rejected relaying 	client not allowed to relay
++			rejected rcpt 	not existing recipient
++			rejected rcpt 	max number of recipients
++			rejected rcpt 	max number of invalid recipients
++			rejected rcpt 	invalid rcpt address format
++			rejected rcpt 	invalid rcpt MX domain
++			rejected rcpt	temporary DNS problem (from 2.0.9) 
++			intrusion threshold 	max number of allowed rcpt
++			intrusion threshold 	max number of allowed invalid rcpt
++			rejected intrusion 	rcpt ignored, session over intrusion threshold
++			no auth resource 	no auth resource available
++			must auth	sender not authenticated/authorized (from 2.0.9)
++			mbx overquota 	rcpt mailbox is overquota
++			accepted sender	sender accepted (from 2.0.9)
++			accepted sender accepted any sender always (from 2.0.9)
++			accepted sender accepted null sender always (from 2.0.9)
++			accepted doublebounce	accepted qmail doublebounce #@[] (from 2.0.9)
++			rejected sender 	invalid sender address format
++			rejected sender 	invalid sender MX domain
++			rejected sender		temporary DNS problem (from 2.0.9)
++	
+diff -Nuar netqmail_sagredo.new/CHKUSER.manual_patching netqmail_sagredo.new.moredocs/CHKUSER.manual_patching
+--- netqmail_sagredo.new/CHKUSER.manual_patching	1970-01-01 01:00:00.000000000 +0100
++++ netqmail_sagredo.new.moredocs/CHKUSER.manual_patching	2016-10-31 15:17:21.000000000 +0100
+@@ -0,0 +1,182 @@
++Chkuser 2.0 manual editing
++
++Manual editing is a very simple operation.
++
++Watching the patch design, shown in the patch design page, you may see that
++only some simple changes must be done to qmail-smtpd.c and Makefile.
++
++Backup
++======
++
++Save you qmail working sources before making any change.
++
++Basic installation
++==================
++
++Download the newest release.tar package and untar it. It will create a directory
++containing all chkuser files and patches.
++
++Position in the qmail/netqmail source directory:
++
++	$ cd /usr/.../netqmail-1.05
++
++Copy all the chkuser sources:
++
++	$ cp /path_to_release_tar/chkuser* .
++
++edit qmail-smtpd.c
++	within qmail-smtpd.c, change the following lines:
++
++	At the end of initial #include declarations, add the following (+) lines:
++
++	#include "timeoutwrite.h"
++	#include "commands.h"
++	
+++	/* start chkuser code */ 
+++	#include "chkuser.h"
+++	/* end chkuser code */
++
++	#define MAXHOPS 100 
++
++Within smtp_mail routine, add the following (+) lines
++
++	void smtp_mail(arg) char *arg;
++	{
++	if (!addrparse(arg)) { err_syntax(); return; }
+++	/* start chkuser code */
+++	if (chkuser_sender (&addr) != CHKUSER_OK) { return; }
+++	/* end chkuser code */
++	flagbarf = bmfcheck();
++
++	Within smtp_rcpt routine, delete the following (-) lines and substitute
++	them with the (+) ones:
++
++-	  if (relayclient) {
++-	    --addr.len;
++-	    if (!stralloc_cats(&addr,relayclient)) die_nomem();
++-	  }
++-	  else
++-	    if (!addrallowed()) { err_nogateway(); return; }
++
+++	/* start chkuser code */
+++	  switch (chkuser_realrcpt (&mailfrom, &addr)) {
+++	    case CHKUSER_KO:
+++	      return;
+++	      break;
+++	    case CHKUSER_RELAYING:
+++	      --addr.len;
+++	      if (!stralloc_cats(&addr,relayclient)) die_nomem();
+++	      if (!stralloc_0(&addr)) die_nomem();
+++	      break;
+++	}
+++	/* end chkuser code */
++
++	if (!stralloc_cats(&rcptto,"T")) die_nomem();
++	if (!stralloc_cats(&rcptto,addr.s)) die_nomem();
++	if (!stralloc_0(&rcptto)) die_nomem();
++
++edit Makefile
++	Within Makefile, change or add the following lines.
++
++	At the begininng of the file:
++
++	# Don't edit Makefile! Use conf-* for configuration.
++
+++	VPOPMAIL_HOME=/home/vpopmail
+++	SMTPD_CHKUSER_OBJ=chkuser.o dns.o
+++	VPOPMAIL_LIBS=`head -1 $(VPOPMAIL_HOME)/etc/lib_deps` `cat dns.lib`
++
++	SHELL=/bin/sh
++
++	Be carefule to use the right path, if your vpopmail production home
++	path is NOT "/home/vpopmail".
++
++	dns.lib is added to qmail-smtpd building instructions, so, if you
++	have previously patched qmail-smtpd in order to include dns.lib, take
++	care to delete the duplication from the previous lines.
++
++	Before "clean:" insert the chkuser.o definition:
++
++	exit.h auto_spawn.h
++      		./compile chkspawn.c
+++       chkuser.o: \
+++       compile chkuser.c chkuser.h chkuser_settings.h
+++       	./compile chkuser.c
++
++	clean: \
++
++	Beware: the "./compile chkuser.c" line has an heading TAB.
++
++	Change the qmail-smtpd compiling and linking instructions,
++	deleting the (-) lines and adding the (+) ones.
++
++
++	qmail-smtpd: \
++	load qmail-smtpd.o rcpthosts.o commands.o timeoutread.o \
++	timeoutwrite.o ip.o ipme.o ipalloc.o control.o constmap.o received.o \
++	date822fmt.o now.o qmail.o cdb.a fd.a wait.a datetime.a getln.a \
++	open.a sig.a case.a env.a stralloc.a alloc.a substdio.a error.a str.a \
++-	fs.a auto_qmail.o socket.lib
+++	fs.a auto_qmail.o socket.lib $(SMTPD_CHKUSER_OBJ)
++-	      ./load qmail-smtpd rcpthosts.o commands.o timeoutread.o \
+++	      ./load qmail-smtpd $(SMTPD_CHKUSER_OBJ) rcpthosts.o commands.o timeoutread.o \
++	      timeoutwrite.o ip.o ipme.o ipalloc.o control.o constmap.o \
++	      received.o date822fmt.o now.o qmail.o cdb.a fd.a wait.a \
++	      datetime.a getln.a open.a sig.a case.a env.a stralloc.a \
++-	      alloc.a substdio.a error.a str.a fs.a auto_qmail.o `cat \
++-	      socket.lib`
+++	      alloc.a substdio.a error.a str.a fs.a auto_qmail.o \
+++	      $(VPOPMAIL_LIBS) \
+++	      `cat socket.lib`
++
++	Beware: all the lines starting from and following "./load" have an heading TAB.
++
++edit TARGETS
++	Append the following blue line at the end of TARGETS file:
++
++	man
++	setup
++	check
+++	chkuser.o
++
++edit conf-cc
++	Edit conf-cc, adding the include path of production vpopmail:
++
++	cc -O2 -I/home/vpopmail/include 
++
++	Be carefule to use the right path, if your vpopmail production home path
++	is NOT "/home/vpopmail".
++
++chkuser settings
++================
++Edit chkuser_settings.h, uncommenting the options you prefer, and commenting the
++ones you don't want. Default settings should cover the most of situations.
++
++See the related settings pages for more informations.
++
++Make
++====
++Now, make (or gmake on *BSD) as your usual. No errors (just warnings)
++should come out. If you see any error, check carefully edited lines.
++
++Checking
++========
++Select a domain, contained in your rcpthosts, for which bouncing is enabled, and run:
++
++	$ ./qmail-smtpd
++	mail from <wrong_sender>
++	mail from <right_sender>
++	rcpt to: <fake_user@your_domain>
++	rcpt to: <real_user@your_domain>
++
++You should see error and ok messages, depending on the addresses you typed.
++
++Install
++=======
++Copy the new executable in the /var/qmail/bin directory (or make install).
++
++Running
++=======
++This patched qmail-smtpd must be executed in a different way than the normal one.
++See the running pages for detailed instructions.
++
+diff -Nuar netqmail_sagredo.new/CHKUSER.readme netqmail_sagredo.new.moredocs/CHKUSER.readme
+--- netqmail_sagredo.new/CHKUSER.readme	1970-01-01 01:00:00.000000000 +0100
++++ netqmail_sagredo.new.moredocs/CHKUSER.readme	2016-10-31 15:17:21.000000000 +0100
+@@ -0,0 +1,54 @@
++chkuser 2.0 - README
++
++Description
++===========
++The original qmail-smtpd accepts by default all messages, checking later for
++the existence of the recipient. So, if the message is delivered to not existing
++recipients a lot of additional system work and network traffic are generated,
++with multiple expensive bouncing if the sender is a fake one.
++
++chkuser has been developed with the goal to improve the acceptance SMTP phase
++of qmail-smtpd. qmail-smtpd patched with chkuser may check the existance of
++e-mail recipients immediately in the SMTP acceptance phase of a message and
++rejects istantly all messages not directed to existing users, avoiding
++additional traffic, work and messages bounced more times.
++
++These goals are achieved enquirying the existing vpopmail archives (each
++format is supported: cdb, MySQL, LDAP, etc.) by using standard vpopmail calls,
++or using customized chkuser routines.
++
++Version 2.0 - From chkusr to chkuser
++====================================
++Version 2.0 is a lot different from previous versions, so it deserves a more
++evident change in the name.
++
++Version 2.0 has been designed with the goal to be modular, and to make more easy
++both adding new features to chkuser code and semplifing code update.
++
++Patching over original qmail files is done over a few points, while the most of
++chkuser code remains ouside, in dedicated chkuser's files.
++
++Same for settings, that are inside a dedicated chkuser_settings.h file.
++
++The intention is to semplify upgrading: for future chkuser releases, upgrading
++will require only to update chkuser specific files, leaving all the rest
++untouched, and changing chkuser_settings.h only if new features must be enabled.
++
++Logging and SPAM
++================
++chkuser 2.0 has detailed logging of accepted and refused recipients and senders,
++allowing a deep analysis of "who's sending to who". This can lead to more
++sophisticated future enhancements of anti-SPAM features.
++
++Intrusion rejection
++===================
++chkuser 2.0 can be tuned to reject sessions exceeding some recipients limits
++(limits can be set for max recipients and max not existing recipients). 
++
++URL Location
++============
++For any new release, support, FAQ, mailing lists, or other information, see:
++
++	http://www.interazioni.it/opensource
++
++
+diff -Nuar netqmail_sagredo.new/CHKUSER.running netqmail_sagredo.new.moredocs/CHKUSER.running
+--- netqmail_sagredo.new/CHKUSER.running	1970-01-01 01:00:00.000000000 +0100
++++ netqmail_sagredo.new.moredocs/CHKUSER.running	2016-10-31 15:17:21.000000000 +0100
+@@ -0,0 +1,103 @@
++
++CHKUSER 2.0.9 - Running instructions
++
++Chkuser may run using the most of security, following very strictly the sacurity
++model used By Dan Berstein. To achieve this goal, chkuser may switch between
++differents UID/GID, for differente purposes.
++
++However this is incompatible with TLS patches (like toaster-0.6-1), as these patches
++want to run under a unique UID/GID. Luckily, qmail is enought robust to let us
++run this way.
++
++To achieve both these goals, chkuser uses a #define (CHKUSER_ENABLE_UIDGID)
++that indicates if UID/GID switching is wanted, and running instructions must
++adapt to this way.
++
++Instead, when this define is not used, another way of running must be used.
++(Just for precision, even if the CHKUSER_ENABLE_UIDGID define is used, chkuser
++may be run without switching UID/GID).
++
++Running with UID/GID switch
++===========================
++
++If you want the most security when using chkuser, and you have enabled 
++CHKUSER_ENABLE_UIDGID within chkuser_settings.h (it's enabled by default), use
++these instructions.
++
++Description.
++	qmail-smtpd-chkusr must be installed (by default in /var/qmail/bin) with
++	setuid (user qmaild) and setgid (group qnofiles), and executed by tcpserver 
++	with -u vpopmail-user and -g vchkpw-group  parameters.
++
++	qmail-smtpd-chkusr starts running with the original qmail-smtpd uid and gid,
++	switching to needed uid and gid only for vpopmail checks on user existance,
++	turning back to the starting uid and gid.
++
++Instructions.
++	You have to set SUID (set-user-ID-on-execution) and SGID
++	(set-group-ID-on-execution) bits on qmail-smtpd-chkusr:
++		chown qmaild qmail-smtpd
++		chgrp nofiles qmail-smtpd
++		chmod 6555 qmail-smtpd
++
++	and the result you see should be like (different size and date, of course):
++		-r-sr-sr-x 1 qmaild nofiles 57056 Feb 14 18:18 qmail-smtpd-chkusr
++
++	Integrate qmail-smtpd in your start files:
++
++	As example, a real start command for qmail-smtpd-chkusr may be
++
++	#!/bin/sh -e
++	#
++	# Using splogger to send the log through syslog.
++
++	exec env - PATH="/var/qmail/bin:/usr/local/bin" \
++	tcpserver -t 5 -v -p -x <your.tcp.smtp.cdb> \
++	-u <vpopmail-user> -g <vchkpw-group> -l <your-host.domain> 0 smtp \
++	qmail-smtpd-chkusr splogger smtpd &
++
++	where
++		<vpopmail-user> = vpopmail uid
++		<vchkpw-group> = vchkpw gid
++		<your-host.domain> = your host.domain (!)
++		<your.tcp.smtp.cdb> = your tcp.permission.to.relay cdb
++
++	NOTE: if you are using more system users for your domains, the execution
++	uid (which I indicated as vpopmail) should be set to root.
++
++
++Running with fixed UID/GID
++==========================
++You may use these instructions if you've not defined CHKUSER_ENABLE_UIDGID, or if
++you want to run qmail-smtpd as unique user, despite of CHKUSER_ENABLE_UIDGID define.
++qmail-smtpd is well safe and robust, and there is no risk running it directly as
++vpopmail user, unless you use untrusted software layered down.
++
++Description.
++	qmail-smtpd must be installed normally (-r-xr-xr-x) and executed by tcpserver
++	with -u vpopmail-user and -g vchkpw-group parameters.
++
++Instructions.
++	Integrate qmail-smtpd-chkusr in your start files:
++
++	As example, a real start command for qmail-smtpd-chkusr may be
++
++	#!/bin/sh -e
++	#
++	# Using splogger to send the log through syslog.
++
++	exec env - PATH="/var/qmail/bin:/usr/local/bin" \
++	tcpserver -t 5 -v -p -x <your.tcp.smtp.cdb> \
++	-u <vpopmail-user> -g <vchkpw-group> -l <your-host.domain> 0 smtp \
++	qmail-smtpd-chkusr splogger smtpd &
++
++	where
++		<vpopmail-user> = vpopmail uid
++		<vchkpw-group> = vchkpw gid
++		<your-host.domain> = your host.domain (!)
++		<your.tcp.smtp.cdb> = your tcp.permission.to.relay cdb
++
++	NOTE: if you are using more system users for your domains, the execution user
++	(which I indicated as vpopmail) should be set to root.
++
++
+diff -Nuar netqmail_sagredo.new/hier.c netqmail_sagredo.new.moredocs/hier.c
+--- netqmail_sagredo.new/hier.c	2016-11-03 10:49:44.682960249 +0100
++++ netqmail_sagredo.new.moredocs/hier.c	2016-11-02 17:51:12.994748612 +0100
+@@ -92,6 +92,7 @@
+   c(auto_qmail,"doc","TEST.receive",auto_uido,auto_gidq,0644);
+   c(auto_qmail,"doc","REMOVE.sendmail",auto_uido,auto_gidq,0644);
+   c(auto_qmail,"doc","REMOVE.binmail",auto_uido,auto_gidq,0644);
++  c(auto_qmail,"doc","README.qregex",auto_uido,auto_gidq,0644);
+   c(auto_qmail,"doc","PIC.local2alias",auto_uido,auto_gidq,0644);
+   c(auto_qmail,"doc","PIC.local2ext",auto_uido,auto_gidq,0644);
+   c(auto_qmail,"doc","PIC.local2local",auto_uido,auto_gidq,0644);
+diff -Nuar netqmail_sagredo.new/install-big.c netqmail_sagredo.new.moredocs/install-big.c
+--- netqmail_sagredo.new/install-big.c	2016-11-03 10:49:51.666960425 +0100
++++ netqmail_sagredo.new.moredocs/install-big.c	2016-11-02 17:51:50.338749350 +0100
+@@ -89,6 +89,7 @@
+   c(auto_qmail,"doc","TEST.receive",auto_uido,auto_gidq,0644);
+   c(auto_qmail,"doc","REMOVE.sendmail",auto_uido,auto_gidq,0644);
+   c(auto_qmail,"doc","REMOVE.binmail",auto_uido,auto_gidq,0644);
++  c(auto_qmail,"doc","README.qregex",auto_uido,auto_gidq,0644);
+   c(auto_qmail,"doc","PIC.local2alias",auto_uido,auto_gidq,0644);
+   c(auto_qmail,"doc","PIC.local2ext",auto_uido,auto_gidq,0644);
+   c(auto_qmail,"doc","PIC.local2local",auto_uido,auto_gidq,0644);
+diff -Nuar netqmail_sagredo.new/README.qregex netqmail_sagredo.new.moredocs/README.qregex
+--- netqmail_sagredo.new/README.qregex	1970-01-01 01:00:00.000000000 +0100
++++ netqmail_sagredo.new.moredocs/README.qregex	2016-10-31 15:17:21.000000000 +0100
+@@ -0,0 +1,203 @@
++QREGEX (v2) 20060423 - README April 23, 2006
++A Regular Expression matching patch for qmail 1.03 and netqmail
++
++
++OVERVIEW:
++
++qregex adds the ability to match address evelopes via Regular Expressions (REs)
++in the qmail-smtpd process. It has the abiltiy to match `helo/ehlo` (host name),
++`mail from` (envelope sender), and `rcpt to` (envelope recipient) commands.
++It follows all the base rules that are set out with qmail (ie using control
++files) so it makes for easy integretion into an existing setup (see the
++install instructions for more info). The v2 is specified because qregex was
++re-written to better conform to the security guarantee set forth by the author
++of qmail. The original version used stdio.h and stdlib.h for reading the
++control files whereas v2 now uses all stralloc functions which are much more
++regulated against buffer overruns and the like.
++See: http://cr.yp.to/qmail/guarantee.html
++
++
++FEATURES:
++
++Features of qregex include:
++
++1. Performs pattern matching on envelope senders and envelope
++   recipients against REs in the badmailfrom and badmailto control
++   files. Two additional control files, badmailfromnorelay and
++   badmailtonorelay, are used for pattern matching when the 
++   RELAYCLIENT environment variable is not set.
++
++2. Performs pattern matching on the helo/ehlo host name. Setting the
++   NOBADHELO environment variable prevents the host name from being
++   compared to the patterns in the badhelo control file.
++
++3. Matches to patterns are logged. Setting the LOGREGEX environment
++   variable causes the matched regex pattern to be included in the log. 
++
++4. Matching is case insensitive.
++
++5. qregex ignores empty envelope senders. An empty envelope sender is not
++   compared to the patterns in the badmailfrom and badmailfromnorelay
++   control files and is always accepted.
++
++
++PLATFORMS:
++
++qregex has been built and tested on the following platforms. I'm sure it won't
++have any problems on any platform that qmail will run on (providing they have
++a regex interface) but if you run into problems let me know.
++
++	- OpenBSD 3.x
++	- FreeBSD 4.x, 5.x
++	- Mandrake Linux 9.x
++	- SuSE Linux 8.x
++
++
++
++INSTALLATION INSTRUCTIONS:
++
++Installation is very simple, there is only one requirement. You need to use the
++GNU version of the patch utility (http://www.gnu.org/software/patch/patch.html).
++(For Solaris 8 users it is installed as 'gpatch')
++
++- If this is a new setup.
++Unpack the qmail archive, cd into the qmail-1.03 directory and run
++"patch < /path/to/qregex-<version>.patch". Follow the instructions as per the
++included qmail INSTALL file. Once you are done come back to this file and read
++the section on the control files.
++
++If you are using netqmail, then unpack the netqmail archive. Run the collate.sh
++script and cd into the resulting netqmail-<version> directory. From there, run
++"patch < /path/to/qregex-<version>.patch". Complete the netqmail installation
++normally. Once you are done, come back to this file and read the section on the
++control files.
++
++- If this is an existing setup.
++FIRST: create your control files (see below).
++cd into your existing qmail or netqmail source directory. Run
++"patch < /path/to/qregex-<version>.patch" then "make qmail-smtpd". Now run
++./qmail-smtpd and test your new rules to make sure they work as expected.
++
++Install the new binary by cd'ing to /var/qmail/bin and as root (in one command)
++copy the existing binary to 'qmail-smtpd.old' and copy the new binary from the
++source directory to 'qmail-smtpd'.
++(ex. cp qmail-smtpd qmail-smtpd.old && cp ~/qmail-1.03/qmail-smtpd qmail-smtpd)
++
++You can also optionally just run "make setup check" as it will install the
++updated documentation and man pages provided with this patch. Stopping qmail
++before doing the "make setup check" is always a good idea.
++
++
++LOGGING:
++
++qregex will log matches to the patterns in the various control files. Log
++messages will take these three forms depending on which control file was
++matched:
++
++badhelo
++qmail-smtpd: badhelo: <host> at <remote IP>
++
++badmailfrom and badmailfromnorelay
++qmail-smtpd: badmailfrom: <sender address> at <remote IP>
++
++badmailto and badmailtonorelay
++qmail-smtpd: badmailto: <rcpt address> at <remote IP>
++
++When the LOGREGEX environment variable is set, the matched pattern will
++be included in the log. Log messages will have the regex pattern appended
++to them. For example, a badhelo log message will look like this:
++
++qmail-smtpd: badhelo: <host> at <remote IP> matches pattern: <regex>
++
++
++CONTROL FILES:
++
++qregex provides you with five control files. None of these control files
++is mandatory and you can use them in any combination you choose in your setup.
++
++The "control/badmailfrom" and "control/badmailto" files contain your REs for
++matching against the 'mail from' (envelope sender) and 'rcpt to' (envelope
++recipient) smtp commands respectively.
++The "control/badmailfromnorelay" and "control/badmailtonorelay" match against
++the same commands but are read only when the RELAYCLIENT environment variable
++is not set.
++The "control/badhelo" file matches against the 'helo/ehlo' smtp command.
++
++If you prefer you can symlink the badmailfrom and badmailto control files
++(ln -s badmailfrom badmailto) and maintain fewer sets of rules. Beware
++this might cause problems in certain setups.
++        
++	Here's an example "badhelo" file.
++	-----------------------------------
++	# block host strings with no dot (not a FQDN)
++	!\.
++	-----------------------------------
++	
++	An example "badmailfrom" file.
++	-----------------------------------
++	# this will drop everything containing the string
++	# bad.domain.com or Bad.Domain.Com or BAD.domain.COM
++	bad\.domain\.com
++	# force users to fully qualify themselves
++	# (i.e. deny "user", accept "user@domain")
++	!@
++	-----------------------------------
++
++	And "badmailto" (a little more interesting)
++	-----------------------------------
++	# must not contain invalid characters, brakets or multiple @'s
++	[!%#:*^(){}]
++	@.*@
++	-----------------------------------
++
++You can use the non-RE character '!' to start an RE as a signal to qregex to
++negate the action. As used above in the badmailfrom file, by negating the '@'
++symbol qregex will signal qmail-smtpd to deny the 'mail from' command whenever
++the address doesn't contain an @ symbol. When used inside a bracket expression,
++the '!' character looses this special meaning. This is shown in the badmailto
++example.
++
++The norelay control files follow the same rules as the other control files but
++are intended to address two specific scenarios.
++The badmailfromnorelay file can be used to block mail trying to spoof a domain
++hosted on your mail server. It prevents a mail client that is not allowed to
++relay email through your server from using one of your hosted domains as its
++envelope sender.
++The badmailtonorelay file can be used to create email addresses that cannot
++receive mail from any source not allowed to relay email through your server.
++This is handy for creating email addresses for use only within your own 
++domain(s) that can't receive spam from the world at large.
++
++
++INTERNALS:
++
++qregex (or regexmatch as the function is called) will be called during the
++`helo/ehlo`, `rcpt to` and `mail from` handling routines in "qmail-smtpd.c".
++When called, it will read the proper control file then one by one compile and
++execute the regex on the string passed into qmail-smtpd. If the regex matches
++it returns TRUE (1) and the qmail-smtpd process will deny the user the ability
++to continue. If you change anything and think it betters this patch please
++send me a new diff file so I can take a peek.
++
++
++CONTACT:
++qregex is maintained by:
++	Andrew St. Jean
++	andrew@arda.homeunix.net
++	www.arda.homeunix.net/store/qmail/
++
++Contributers to qregex:
++	Jeremy Kitchen	
++	kitchen at scriptkitchen dot com
++	http://www.scriptkitchen.com/qmail
++
++	Alex Pleiner
++	alex@zeitform.de
++	zeitform Internet Dienste
++	http://www.zeitform.de/
++
++	Thanos Massias
++
++Original qregex patch written by:
++	Evan Borgstrom
++	evan at unixpimps dot org
+diff -Nuar netqmail_sagredo.new/README.tap netqmail_sagredo.new.moredocs/README.tap
+--- netqmail_sagredo.new/README.tap	1970-01-01 01:00:00.000000000 +0100
++++ netqmail_sagredo.new.moredocs/README.tap	2016-10-31 21:15:37.466220735 +0100
+@@ -0,0 +1,34 @@
++qmail provides the ability to make a copy of each email that flows through the system.
++This is done using the QUEUE_EXTRA code. See qmail FAQ #8.2
++
++The qmail tap patch adds additional functionality:
++1) Specify which email addresses to tap using a regex style control file. With the
++   regex function, you can specify full domains or individual email addresses.
++
++2) Specify which email address to send the emails to.
++
++3) Qmail does not need to be restated to when the taps control file is changed.
++
++The regex match is applied to both the to and from email addresses. So email
++sent to or from the addresses will be copied. Matching is case insensitive.
++If there are multiple matches, the first match is used.
++
++The queue tap patch adds a new control file:
++
++/var/qmail/control/taps
++Contains a regex style list of addresses to tap and the email
++address of where you want the copy sent to.
++
++Examples:
++a) To tap a whole domain add a line like:
++A:.*@domain.com:joe@example.com
++
++
++b) To tap an individual email address add a line like:
++A:user@domain.com:other@example.com
++
++c) To tap messages going to a domain add a line like:
++T:.*@domain.com:joe@example.com
++
++d) To tap messages comming from a domain add a line like:
++F:.*@domain.com:joe@example.com

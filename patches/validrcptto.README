@@ -1,0 +1,42 @@
+validrcptto (code from several patches with additional features: http://qmail.jms1.net/patches/validrcptto.cdb.shtml, http://netdevice.com/qmail/patch/goodrcptto-ms-12.patch, http://patch.be/qmail/badrcptto.html)
+
+  # files 'control/validrcptto' and 'control/morevalidrcptto.cdb' contain a list of recipients (one per line) to be accepted or rejected (entries starting with '-').
+  # control/morevalidrcptto.cdb is created from control/morevalidrptto using bin/qmail-newmvrt
+  # validrcptto and morevalidrcptto.cdb paths can be overridden by environment variables VALIDRCPTTO and MOREVALIDRCPTTO_CDB
+  # ---------------
+  # Example of file control/validrcptto (allow 'rcpt to' user1@test.com and user2@test.com, reject everything else @test.com;
+  #    reject demo@testdom2.com, allow info@testdom2.com, other addresses @testdom2.com are evaluated by chkuser or accepted):
+  # ---------------
+  user1@test.com
+  user2@test.com
+  -@test.com
+  -demo@testdom2.com
+  info@testdom2.com
+  # ---------------
+  # Notes:
+  # - validrcptto is normally useful when qmail is used as mx/mail/antispam frontend for other mail servers, but can be used in combination with chkuser (vpopmail)
+  # - validrcptto can contain multiple domains
+  # - the order is irrelevant: firstly are evaluated accepted addresses, then rejected (-) addresses, lastly the default reject (-@test.com)
+  # - no wildcards are supported, apart from the special case '-@testdomain.com' used to reject everything @testdomain.com not specifically listed
+
+  # Complete recipient checking order (during RCPT TO:)
+  # - badhelo (with or without RELAYCLIENT), badhelonorelay (only if RELAYCLIENT is not set): if triggered then REJECT-553
+  # - badmailfrom (with or without RELAYCLIENT), badmailfromnorelay (only if RELAYCLIENT is not set): if triggered then REJECT-553
+  # - spf: if triggered then REJECT-550
+  # - rbl: if triggered and not (RELAYCLIENT or authenticated or DNSBLSKIP) then REJECT-553 or TEMPFAIL-451
+  # - badrcptto (with or without RELAYCLIENT), badrcpttonorelay (only if RELAYCLIENT is not set): if triggered then REJECT-553
+  # - validrcptto (only if RELAYCLIENT is not set): if recipient is not allowed (ie. '-test@domain.com' or '-@domain.com') then REJECT-553. If recipient is listed as valid, skip chkuser
+  #   and proceed to empf
+  # - chkuser (only checked if recipient is not listed in validrcptto, either as allowed or denied address): various checks, see CHKUSER docs
+  # - empf
+  # - accept recipient
+
+  # Example of valircptto and chkuser interaction:
+    # virtual domain: 'testdomain.com'
+    # mailboxes: user1@testdomain.com, user2@testdomain.com, user3@testdomain.com
+    # default for unknown recipients: bounce-no-mailbox
+    # - If validrcptto doesn't contain lines regarding @testdomain.com, only chkuser is evaluated: so an email to user5@testdomain.com is rejected by qmail-smtpd after chkuser
+    # - If validrcptto contains user4@testdomain.com, chkuser is skipped, so qmail-smtpd accepts the message even if the mailbox doesn't exist in vpopmail and qmail generates a bounce
+    #   message
+    # - If validrcptto contains '-user3@testdomain.com', the message is rejected immediately, even if the mailbox exists in vpopmail. This is useful to allow RELAYCLIENT or authenticated
+    #   users to deliver mail to an internal mailbox not reachable from outside the organization.

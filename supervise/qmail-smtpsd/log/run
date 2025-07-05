@@ -1,0 +1,12 @@
+#!/bin/sh
+
+LOGUSER="qmaill"
+LOGDIR="/var/log/qmail/smtpsd"
+LOGDIRQLOG="/var/log/qmail/smtpsd/qlog"
+
+if [ -x /usr/local/bin/archive_qmail_qlog ]; then
+  exec /usr/local/bin/setuidgid $LOGUSER /usr/local/bin/multilog d n5 s16777215 $LOGDIR \
+  	n5 s16777215 '-*' '+*qlog*' !/usr/local/bin/archive_qmail_qlog $LOGDIRQLOG
+else
+  exec /usr/local/bin/setuidgid qmaill /usr/local/bin/multilog d s16777215 $LOGDIR
+fi

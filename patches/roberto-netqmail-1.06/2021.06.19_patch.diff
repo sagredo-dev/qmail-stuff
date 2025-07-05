@@ -1,0 +1,91 @@
+diff -ruN netqmail-1.06-orig/chkuser.c netqmail-1.06/chkuser.c
+--- netqmail-1.06-orig/chkuser.c	2019-08-05 19:11:16.583873852 +0200
++++ netqmail-1.06/chkuser.c	2021-06-19 12:54:40.238683686 +0200
+@@ -276,6 +276,12 @@
+ #if defined CHKUSER_ALLOW_SENDER_CHAR_10
+                 && (user->s[x] != CHKUSER_ALLOW_SENDER_CHAR_10)
+ #endif
++#if defined CHKUSER_ALLOW_SENDER_CHAR_11
++                && (user->s[x] != CHKUSER_ALLOW_SENDER_CHAR_11)
++#endif
++#if defined CHKUSER_ALLOW_SENDER_CHAR_12
++                && (user->s[x] != CHKUSER_ALLOW_SENDER_CHAR_12)
++#endif
+ 		&& (user->s[x] != '_') && (user->s[x] != '-') && (user->s[x] != '.') && (user->s[x] != '=')) {
+                         return 0;
+                 }
+@@ -377,6 +383,12 @@
+ #if defined CHKUSER_ALLOW_RCPT_CHAR_10
+                 && (user->s[x] != CHKUSER_ALLOW_RCPT_CHAR_10)
+ #endif
++#if defined CHKUSER_ALLOW_RCPT_CHAR_11
++                && (user->s[x] != CHKUSER_ALLOW_RCPT_CHAR_11)
++#endif
++#if defined CHKUSER_ALLOW_RCPT_CHAR_12
++                && (user->s[x] != CHKUSER_ALLOW_RCPT_CHAR_12)
++#endif
+ 		&& (user->s[x] != '_') && (user->s[x] != '-') && (user->s[x] != '.') && (user->s[x] != '=')) {
+                         return 0;
+                 }
+diff -ruN netqmail-1.06-orig/chkuser_settings.h netqmail-1.06/chkuser_settings.h
+--- netqmail-1.06-orig/chkuser_settings.h	2021-06-19 12:47:59.873380952 +0200
++++ netqmail-1.06/chkuser_settings.h	2021-06-19 12:53:57.838075220 +0200
+@@ -424,17 +424,18 @@
+  * Remember: '#' and '+' are accepted by CHKUSER_ALLOW_SENDER_SRS
+  *
+  */
+-#define CHKUSER_ALLOW_SENDER_CHAR_1 "'"
+-#define CHKUSER_ALLOW_SENDER_CHAR_2 '='
+-/* #define CHKUSER_ALLOW_SENDER_CHAR_2 '%' */
+-/* #define CHKUSER_ALLOW_SENDER_CHAR_3 '£' */
+-/* #define CHKUSER_ALLOW_SENDER_CHAR_4 '?' */
+-/* #define CHKUSER_ALLOW_SENDER_CHAR_5 '*' */
+-/* #define CHKUSER_ALLOW_SENDER_CHAR_6 '^' */
+-/* #define CHKUSER_ALLOW_SENDER_CHAR_7 '~' */
+-/* #define CHKUSER_ALLOW_SENDER_CHAR_8 '&' */	/* available for other characters */
+-/* #define CHKUSER_ALLOW_SENDER_CHAR_9 '#' */ 	/* available for other characters */
+-/* #define CHKUSER_ALLOW_SENDER_CHAR_10 '=' */ 	/* available for other characters */
++#define CHKUSER_ALLOW_SENDER_CHAR_1 '$'
++#define CHKUSER_ALLOW_SENDER_CHAR_2 '%'
++#define CHKUSER_ALLOW_SENDER_CHAR_3 'Â£'
++#define CHKUSER_ALLOW_SENDER_CHAR_4 '?'
++#define CHKUSER_ALLOW_SENDER_CHAR_5 '*'
++#define CHKUSER_ALLOW_SENDER_CHAR_6 '^'
++#define CHKUSER_ALLOW_SENDER_CHAR_7 '~'
++#define CHKUSER_ALLOW_SENDER_CHAR_8 '&'	  /* available for other characters */
++#define CHKUSER_ALLOW_SENDER_CHAR_9 '#'   /* available for other characters */
++#define CHKUSER_ALLOW_SENDER_CHAR_10 '='  /* available for other characters */
++#define CHKUSER_ALLOW_SENDER_CHAR_11 '/'  /* available for other characters */
++#define CHKUSER_ALLOW_SENDER_CHAR_12 '\''  /* available for other characters */
+ 
+ 
+ /*
+@@ -446,16 +447,18 @@
+  * Remember: '#' and '+' are accepted by CHKUSER_ALLOW_RCPT_SRS
+  *
+  */
+-/* #define CHKUSER_ALLOW_RCPT_CHAR_1 '$' */
+-/* #define CHKUSER_ALLOW_RCPT_CHAR_2 '%' */
+-/* #define CHKUSER_ALLOW_RCPT_CHAR_3 '£' */
+-/* #define CHKUSER_ALLOW_RCPT_CHAR_4 '?' */
+-/* #define CHKUSER_ALLOW_RCPT_CHAR_5 '*' */
+-/* #define CHKUSER_ALLOW_RCPT_CHAR_6 '^' */
+-/* #define CHKUSER_ALLOW_RCPT_CHAR_7 '~' */
+-/* #define CHKUSER_ALLOW_RCPT_CHAR_8 '&' */ 	/* available for other characters */
+-/* #define CHKUSER_ALLOW_RCPT_CHAR_9 '#' */ 	/* available for other characters */
+-/* #define CHKUSER_ALLOW_RCPT_CHAR_10 '=' */ 	/* available for other characters */
++#define CHKUSER_ALLOW_RCPT_CHAR_1 '$'
++#define CHKUSER_ALLOW_RCPT_CHAR_2 '%'
++#define CHKUSER_ALLOW_RCPT_CHAR_3 'Â£'
++#define CHKUSER_ALLOW_RCPT_CHAR_4 '?'
++#define CHKUSER_ALLOW_RCPT_CHAR_5 '*'
++#define CHKUSER_ALLOW_RCPT_CHAR_6 '^'
++#define CHKUSER_ALLOW_RCPT_CHAR_7 '~'
++#define CHKUSER_ALLOW_RCPT_CHAR_8 '&'  	/* available for other characters */
++#define CHKUSER_ALLOW_RCPT_CHAR_9 '#' 	/* available for other characters */
++#define CHKUSER_ALLOW_RCPT_CHAR_10 '=' 	/* available for other characters */
++#define CHKUSER_ALLOW_RCPT_CHAR_11 '/'  /* available for other characters */
++#define CHKUSER_ALLOW_RCPT_CHAR_12 '\''  /* available for other characters */
+ 
+ 
+ /*

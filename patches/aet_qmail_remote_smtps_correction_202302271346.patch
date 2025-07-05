@@ -1,0 +1,38 @@
+tx Ali Erturk TURKER
+https://notes.sagredo.eu/en/qmail-notes-185/patching-qmail-82.html#comment2844
+
+If the remote port is given as "465" in control/smtproutes file, qmail-remote automatically switches to implicit TLS ("SMTP over TLS" or "smtps").
+I believe qmail-rfc2821 patch appeared before the qmail-tls support, therefore it does not cover implicit TLS (SMTPS) connections.
+
+diff -ruN netqmail-1.06-original/qmail-remote.c netqmail-1.06/qmail-remote.c
+--- netqmail-1.06-original/qmail-remote.c	2023-02-27 13:43:50.904963397 +0400
++++ netqmail-1.06/qmail-remote.c	2023-02-27 20:33:59.409015456 +0400
+@@ -560,8 +560,6 @@
+     X509_free(peercert);
+   }
+ 
+-  if (smtps) if (smtpcode() != 220)
+-    quit("ZTLS Connected to "," but greeting failed");
+ 
+   return 1;
+ }
+@@ -756,11 +754,18 @@
+   code = ehlo();
+ 
+ # ifdef TLS
+-  if (tls_init())
++  if (tls_init()) {
++    if (smtps) {
++        code = smtpcode();
++        if (code >= 500 && code < 600) quit("DTLS Connected to "," but greeting failed");
++        if (code >= 400 && code < 500) return; /* try next MX, see RFC-2821 */
++        if (code != 220) quit("ZTLS Connected to "," but greeting failed");
++    }
+     /* RFC2487 says we should issue EHLO (even if we might not need
+      * extensions); at the same time, it does not prohibit a server
+      * to reject the EHLO and make us fallback to HELO */
+     code = ehlo();
++  }
+ # endif
+ 
+   if (code == 250) {

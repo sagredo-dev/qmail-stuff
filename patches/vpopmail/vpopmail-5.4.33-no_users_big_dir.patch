@@ -1,0 +1,81 @@
+https://sourceforge.net/p/vpopmail/bugs/222/
+If vadduser or vadddomain are used on a VPopMail-5.4.33 installation that has been compiled
+with --disable-users-big-dir then the .dir-control file in the domain directory is not created/updated.
+This leads to problems using vdominfo and vdeluser.
+I have written a patch to deal with the issue, but struggled a little with nice function naming in bigdir.c
+but needed to get a server fixed quickly.
+
+diff -uPr vpopmail-5.4.33.orig/bigdir.c vpopmail-5.4.33/bigdir.c
+--- vpopmail-5.4.33.orig/bigdir.c	2011-02-28 17:00:45.000000000 +0000
++++ vpopmail-5.4.33/bigdir.c	2013-01-15 16:06:16.000000000 +0000
+@@ -49,12 +49,25 @@
+ 
+ int dec_dir_control(char *domain, uid_t uid, gid_t gid)
+ {
++	return quick_dec_dir_control(domain, uid, gid);
++}
++
++int quick_dec_dir_control(char *domain, uid_t uid, gid_t gid)
++{
+ 	open_big_dir(domain, uid, gid);
+ 	--vdir.cur_users;
+ 	close_big_dir(domain, uid, gid);
+ 	return(0);
+ }
+ 
++int quick_inc_dir_control(char *domain, uid_t uid, gid_t gid)
++{
++	open_big_dir(domain, uid, gid);
++	++vdir.cur_users;
++	close_big_dir(domain, uid, gid);
++	return(0);
++}
++
+ char *next_big_dir(uid_t uid, gid_t gid)
+ {
+ 	inc_dir_control(&vdir);
+diff -uPr vpopmail-5.4.33.orig/vauth.h vpopmail-5.4.33/vauth.h
+--- vpopmail-5.4.33.orig/vauth.h	2013-01-15 16:03:10.000000000 +0000
++++ vpopmail-5.4.33/vauth.h	2013-01-15 16:06:49.000000000 +0000
+@@ -104,6 +104,8 @@
+ char next_char(char, int, int);
+ int inc_dir_control(vdir_type *);
+ int dec_dir_control(char *domain, uid_t uid, gid_t gid);
++int quick_dec_dir_control(char *domain, uid_t uid, gid_t gid);
++int quick_inc_dir_control(char *domain, uid_t uid, gid_t gid);
+ void print_control();
+ 
+ int vread_dir_control(vdir_type *vdir, char *domain, uid_t uid, gid_t gid );
+diff -uPr vpopmail-5.4.33.orig/vpopmail.c vpopmail-5.4.33/vpopmail.c
+--- vpopmail-5.4.33.orig/vpopmail.c	2013-01-15 16:03:10.000000000 +0000
++++ vpopmail-5.4.33/vpopmail.c	2013-01-15 16:14:35.000000000 +0000
+@@ -724,7 +724,7 @@
+     if (verrori != 0 ) return(verrori);
+     else return(VA_BAD_U_DIR);
+   }
+-        
++
+   /* add the user to the auth backend */
+   /* NOTE: We really need to update this method to include the quota. */
+   if (vauth_adduser(username, domain, password, gecos, user_hash, apop )!=0) {
+@@ -1807,7 +1807,11 @@
+ 
+   /* write the information to backfill */
+   backfill(user, domain, mypw->pw_dir, 2);
++#ifdef USERS_BIG_DIR
+   dec_dir_control(domain, uid, gid);
++#else
++  quick_dec_dir_control(domain, uid, gid);
++#endif
+ 
+   /* remove the user's directory from the file system 
+    * and check for error
+@@ -2414,6 +2418,8 @@
+   } else
+ 	r_mkdir(user_hash, uid, gid);
+   chdir(user_hash);
++#else
++  quick_inc_dir_control(domain, uid, gid);
+ #endif
+   /* check the length of the dir path to make sure it is not too 
+      long to save back to the auth backend */

@@ -1,0 +1,194 @@
+
+   *** qmail-dnsbl-tlssmtpauth-20061126.patch ***
+
+Author: Fabio Busatto <fabio.busatto@sikurezza.org>
+
+Applies to: netqmail-1.05 + netqmail-1.05-tls-smtpauth-20060105.patch
+(from http://www.netqmail.org/)
+
+   *** qmail-dnsbl-tlssmtpauth-20061126.patch ***
+
+diff -uNr netqmail-1.05-orig/Makefile netqmail-1.05/Makefile
+--- netqmail-1.05-orig/Makefile	2006-11-13 10:21:42.000000000 +0100
++++ netqmail-1.05/Makefile	2006-11-13 10:31:49.000000000 +0100
+@@ -1539,16 +1539,16 @@
+ qmail-smtpd: \
+ load qmail-smtpd.o rcpthosts.o commands.o timeoutread.o \
+ timeoutwrite.o ip.o ipme.o ipalloc.o control.o constmap.o received.o \
+-date822fmt.o now.o qmail.o cdb.a fd.a wait.a datetime.a getln.a \
++date822fmt.o now.o qmail.o dns.o cdb.a fd.a wait.a datetime.a getln.a \
+ open.a sig.a case.a env.a stralloc.a alloc.a substdio.a error.a str.a \
+-fs.a auto_qmail.o base64.o socket.lib
++fs.a auto_qmail.o base64.o socket.lib dns.lib
+ 	./load qmail-smtpd rcpthosts.o commands.o timeoutread.o \
+ 	timeoutwrite.o ip.o ipme.o ipalloc.o control.o constmap.o \
+ 	tls.o ssl_timeoutio.o ndelay.a -L/usr/local/ssl/lib -lssl -lcrypto \
+-	received.o date822fmt.o now.o qmail.o cdb.a fd.a wait.a \
++	received.o date822fmt.o now.o qmail.o dns.o cdb.a fd.a wait.a \
+ 	datetime.a getln.a open.a sig.a case.a env.a stralloc.a \
+ 	alloc.a substdio.a error.a str.a fs.a auto_qmail.o base64.o  `cat \
+-	socket.lib`
++	socket.lib` `cat dns.lib`
+ 
+ qmail-smtpd.0: \
+ qmail-smtpd.8
+@@ -1559,7 +1559,7 @@
+ substdio.h alloc.h auto_qmail.h control.h received.h constmap.h \
+ error.h ipme.h ip.h ipalloc.h ip.h gen_alloc.h ip.h qmail.h \
+ substdio.h str.h fmt.h scan.h byte.h case.h env.h now.h datetime.h \
+-exit.h rcpthosts.h timeoutread.h timeoutwrite.h commands.h base64.h
++exit.h rcpthosts.h timeoutread.h timeoutwrite.h commands.h base64.h dns.h
+ 	./compile qmail-smtpd.c
+ 
+ qmail-start: \
+diff -uNr netqmail-1.05-orig/qmail-control.9 netqmail-1.05/qmail-control.9
+--- netqmail-1.05-orig/qmail-control.9	2006-11-13 10:21:42.000000000 +0100
++++ netqmail-1.05/qmail-control.9	2006-11-13 10:26:00.000000000 +0100
+@@ -52,6 +52,7 @@
+ .I databytes	\fR0	\fRqmail-smtpd
+ .I dh1024.pem	\fR(none)	\fRqmail-smtpd
+ .I dh512.pem	\fR(none)	\fRqmail-smtpd
++.I dnsbllist	\fR(none)	\fRqmail-smtpd
+ .I doublebouncehost	\fIme	\fRqmail-send
+ .I doublebounceto	\fRpostmaster	\fRqmail-send
+ .I envnoathost	\fIme	\fRqmail-send
+diff -uNr netqmail-1.05-orig/qmail-showctl.c netqmail-1.05/qmail-showctl.c
+--- netqmail-1.05-orig/qmail-showctl.c	1998-06-15 12:53:16.000000000 +0200
++++ netqmail-1.05/qmail-showctl.c	2006-11-13 10:27:16.000000000 +0100
+@@ -222,6 +222,7 @@
+   do_int("databytes","0","SMTP DATA limit is "," bytes");
+   do_str("defaultdomain",1,"defaultdomain","Default domain name is ");
+   do_str("defaulthost",1,"defaulthost","Default host name is ");
++  do_lst("dnsbllist","No dnsbl list configured.","List at "," configured for dnsbl check.");
+   do_str("doublebouncehost",1,"doublebouncehost","2B recipient host: ");
+   do_str("doublebounceto",0,"postmaster","2B recipient user: ");
+   do_str("envnoathost",1,"envnoathost","Presumed domain name is ");
+@@ -275,6 +276,7 @@
+     if (str_equal(d->d_name,"databytes")) continue;
+     if (str_equal(d->d_name,"defaultdomain")) continue;
+     if (str_equal(d->d_name,"defaulthost")) continue;
++    if (str_equal(d->d_name,"dnsbllist")) continue;
+     if (str_equal(d->d_name,"doublebouncehost")) continue;
+     if (str_equal(d->d_name,"doublebounceto")) continue;
+     if (str_equal(d->d_name,"envnoathost")) continue;
+diff -uNr netqmail-1.05-orig/qmail-smtpd.8 netqmail-1.05/qmail-smtpd.8
+--- netqmail-1.05-orig/qmail-smtpd.8	2006-11-13 10:21:42.000000000 +0100
++++ netqmail-1.05/qmail-smtpd.8	2006-11-13 10:28:31.000000000 +0100
+@@ -123,6 +123,26 @@
+ .IR databytes .
+ 
+ .TP 5
++.I dnsbllist
++A list of dnsbl providers that
++.B qmail-smtpd
++checks to identify blacklisted ip addresses.
++
++Exception:
++If the environment variable
++.B DNSBLSKIP
++is set,
++.B qmail-smtpd
++ignores
++.IR dnsbllist ,
++and the dnsbl check is not performed.
++The check is skipped even if some other authentication method succedeed
++and authorized the client to relay (smtp-auth or tls client certificate),
++or if
++.B RELAYCLIENT
++enviromnent variable is set.
++
++.TP 5
+ .I dh1024.pem
+ If these 1024 bit DH parameters are provided,
+ .B qmail-smtpd
+diff -uNr netqmail-1.05-orig/qmail-smtpd.c netqmail-1.05/qmail-smtpd.c
+--- netqmail-1.05-orig/qmail-smtpd.c	2006-11-13 10:21:42.000000000 +0100
++++ netqmail-1.05/qmail-smtpd.c	2006-11-13 10:35:31.000000000 +0100
+@@ -67,6 +67,13 @@
+ void die_nomem() { out("421 out of memory (#4.3.0)\r\n"); flush(); _exit(1); }
+ void die_control() { out("421 unable to read controls (#4.3.0)\r\n"); flush(); _exit(1); }
+ void die_ipme() { out("421 unable to figure out my IP addresses (#4.3.0)\r\n"); flush(); _exit(1); }
++void die_dnsbl(arg)
++char *arg;
++{
++  out("421 your ip is currently blacklisted, try to auth first ("); out(arg); out(")\r\n");
++  flush();
++  _exit(1);
++}
+ void straynewline() { out("451 See http://pobox.com/~djb/docs/smtplf.html.\r\n"); flush(); _exit(1); }
+ 
+ void err_size() { out("552 sorry, that message size exceeds my databytes limit (#5.3.4)\r\n"); }
+@@ -122,6 +129,7 @@
+ char *remoteinfo;
+ char *local;
+ char *relayclient;
++char *dnsblskip;
+ 
+ stralloc helohost = {0};
+ char *fakehelo; /* pointer into helohost, or 0 */
+@@ -172,6 +180,7 @@
+   if (!remotehost) remotehost = "unknown";
+   remoteinfo = env_get("TCPREMOTEINFO");
+   relayclient = env_get("RELAYCLIENT");
++  dnsblskip = env_get("DNSBLSKIP");
+ 
+ #ifdef TLS
+   if (env_get("SMTPS")) { smtps = 1; tls_init(); }
+@@ -265,6 +274,48 @@
+   return r;
+ }
+ 
++int flagdnsbl = 0;
++stralloc dnsblhost = {0};
++
++int dnsblcheck()
++{
++  char *ch;
++  static stralloc dnsblbyte = {0};
++  static stralloc dnsblrev = {0};
++  static ipalloc dnsblip = {0};
++  static stralloc dnsbllist = {0};
++
++  ch = remoteip;
++  if(control_readfile(&dnsbllist,"control/dnsbllist",0) != 1) return 0;
++
++  if (!stralloc_copys(&dnsblrev,"")) return 0;
++  for (;;) {
++    if (!stralloc_copys(&dnsblbyte,"")) return 0;
++    while (ch[0] && (ch[0] != '.')) {
++      if (!stralloc_append(&dnsblbyte,ch)) return 0;
++      ch++;
++    }
++    if (!stralloc_append(&dnsblbyte,".")) return 0;
++    if (!stralloc_cat(&dnsblbyte,&dnsblrev)) return 0;
++    if (!stralloc_copy(&dnsblrev,&dnsblbyte)) return 0;
++
++    if (!ch[0]) break;
++    ch++;
++  }
++
++  flagdnsbl = 1;
++  ch = dnsbllist.s;
++  while (ch < (dnsbllist.s + dnsbllist.len)) {
++    if (!stralloc_copy(&dnsblhost,&dnsblrev)) return 0;
++    if (!stralloc_cats(&dnsblhost,ch)) return 0;
++    if (!stralloc_0(&dnsblhost)) return 0;
++
++    if (!dns_ip(&dnsblip,&dnsblhost)) return 1;
++    while (*ch++);
++  }
++
++  return 0;
++}
+ 
+ int seenmail = 0;
+ int flagbarf; /* defined if seenmail */
+@@ -389,6 +440,8 @@
+   }
+   else
+     if (!addrallowed()) { err_nogateway(); return; }
++  if (!(relayclient || dnsblskip || flagdnsbl))
++    if (dnsblcheck()) die_dnsbl(dnsblhost.s);
+   if (!stralloc_cats(&rcptto,"T")) die_nomem();
+   if (!stralloc_cats(&rcptto,addr.s)) die_nomem();
+   if (!stralloc_0(&rcptto)) die_nomem();

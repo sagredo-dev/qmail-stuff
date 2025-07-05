@@ -1,0 +1,43 @@
+Cracklib patch for the Roundcube/password plugin. Original version
+Thanks to Tony Fung https://notes.sagredo.eu/en/qmail-notes-185/roundcube-plugins-35.html#comment1651
+
+=============================================================================================================
+
+diff -ruN roundcube-original/plugins/password/drivers/sql.php roundcube/plugins/password/drivers/sql.php
+--- roundcube-original/plugins/password/drivers/sql.php	2020-09-27 13:38:37.000000000 +0200
++++ roundcube/plugins/password/drivers/sql.php	2020-10-07 19:24:52.531366744 +0200
+@@ -36,6 +36,15 @@
+     function save($curpass, $passwd)
+     {
+         $rcmail = rcmail::get_instance();
++        exec("echo ".$passwd." | /usr/sbin/cracklib-check 2>/dev/null", $output, $return_var);
++
++        if(preg_match("/^.*\: ([^:]+)$/", $output[0], $matches)) {
++            // Check response:
++            if(strtoupper($matches[1])!=="OK") {
++                // Cracklib doesn't like it:
++                return PASSWORD_CONSTRAINT_VIOLATION;
++            }
++        }
+ 
+         if (!($sql = $rcmail->config->get('password_query'))) {
+             $sql = 'SELECT update_passwd(%c, %u)';
+diff -ruN roundcube-original/plugins/password/drivers/vpopmaild.php roundcube/plugins/password/drivers/vpopmaild.php
+--- roundcube-original/plugins/password/drivers/vpopmaild.php	2020-09-27 13:38:37.000000000 +0200
++++ roundcube/plugins/password/drivers/vpopmaild.php	2020-10-07 19:25:26.019048496 +0200
+@@ -32,6 +32,15 @@
+         $vpopmaild = new Net_Socket();
+         $host      = $rcmail->config->get('password_vpopmaild_host');
+         $port      = $rcmail->config->get('password_vpopmaild_port');
++        exec("echo ".$passwd." | /usr/sbin/cracklib-check 2>/dev/null", $output, $return_var);
++
++        if(preg_match("/^.*\: ([^:]+)$/", $output[0], $matches)) {
++            // Check response:
++            if(strtoupper($matches[1])!=="OK") {
++                // Cracklib doesn't like it:
++                return PASSWORD_CONSTRAINT_VIOLATION;
++            }
++        }
+ 
+         $result = $vpopmaild->connect($host, $port, null);
+         if (is_a($result, 'PEAR_Error')) {

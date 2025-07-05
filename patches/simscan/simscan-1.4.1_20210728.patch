@@ -1,0 +1,201 @@
+Combined patch for simscan-1.4.1 (https://github.com/qmail/simscan/releases) by Roberto Puzzanghera
+More info at https://notes.sagredo.eu/en/qmail-notes-185/simscan-38.html
+v. 20210728
+
+This patch puts together:
+
+* jms patch to improve the debugging of simscan on qmail-smtpd log
+  https://notes.sagredo.eu/files/qmail/patches/simscan/jms/simscan-1.4.0-debug.patch
+  more info here https://qmail.jms1.net/simscan/
+
+* A bug fix by Bob Greco where a received message with multiple 'local' recipients executes spamc
+  as null user and not as the user extracted from the first local recipient.
+  https://notes.sagredo.eu/en/qmail-notes-185/simscan-38.html#comment844
+
+* The "attachments-size-limit" patch by Roberto Puzzanghera
+  https://notes.sagredo.eu/files/qmail/patches/simscan/simscan-1.4.1_attachments-size-limit.patch
+
+  Simscan doesn't pass messages over 250k to spamassassin. This patch let the administrator set the
+  attachments' size limit in bytes at compilation time configuring in this way
+
+  autoreconf -f -i (this in needed as configure.ac was modified)
+  configure --with-attachments-size-limit=250000 (default 250k, value must be a number)
+
+  Furthermore, events where simscan is not activated are now logged at smtpd level (it was logged
+  only when debug is active).
+
+===================================================================================================
+
+diff -ruN ../simscan-1.4.1_original/configure.ac simscan-1.4.1/configure.ac
+--- ../simscan-1.4.1_original/configure.ac	2015-01-23 09:57:43.000000000 +0100
++++ simscan-1.4.1/configure.ac	2021-07-28 13:51:50.658779381 +0200
+@@ -17,6 +17,23 @@
+ fi
+ 
+ #----------------------------------------------------------------------
++# AC_ARG_WITH (package, help-string, [action-if-given], [action-if-not-given])
++AC_ARG_WITH(attachments-size-limit,
++    [  --with-attachments-size-limit=250000   Attachments with size above the limit in bytes are not passed to spamassassin (default 250k).],
++    [
++       case $withval in
++           ''|*[0-9]*) AC_MSG_ERROR(attachments-size-limit is not a number) ;;
++           *) attachments_size_limit="$withval" ;;
++       esac
++    ],
++    attachments_size_limit=250000)
++
++if [[ "$withval" == "no" ]]; then
++    attachments_size_limit=2500000
++fi
++AC_DEFINE_UNQUOTED(ATTACHMENTS_SIZE_LIMIT,$attachments_size_limit,"")
++
++#----------------------------------------------------------------------
+ AC_ARG_ENABLE(user, [  --enable-user=<user> Change the user for simscan.  Default: simscan.],
+ 	ENABLE_USER="$enableval",
+ 	[
+@@ -870,10 +887,10 @@
+ 
+   case $ENABLE_SPAM_AUTH_USER in
+     0*|n*|N*)
+-      echo "authenticated users scanned = OFF"
++      echo " authenticated users scanned = OFF"
+       ;;
+     *)
+-      echo "authenticated users scanned = ON"
++      echo " authenticated users scanned = ON"
+       ;;
+   esac
+ 
+@@ -929,4 +946,7 @@
+     ;;
+ esac
+ 
++echo " attachments with size above $attachments_size_limit bytes are not passed to spamassassin"
++
+ echo ""
++	
+diff -ruN ../simscan-1.4.1_original/simscan.c simscan-1.4.1/simscan.c
+--- ../simscan-1.4.1_original/simscan.c	2015-01-23 09:57:43.000000000 +0100
++++ simscan-1.4.1/simscan.c	2021-07-28 13:51:50.660779363 +0200
+@@ -102,6 +102,7 @@
+ int str_rstr(register char *h,register char *n);
+ char *replace(char *string, char *oldpiece, char *newpiece);
+ int DebugFlag = 0;
++int DebugFiles = 0;
+ 
+ /* --stdout is required for reading virus names */
+ char *viri_args[] = { "clamdscan", "--stdout", message_name, NULL };
+@@ -171,6 +172,7 @@
+ int InClamHeaders;
+ int check_clam();
+ int is_clam(char *clambuf);
++void log_clam(char *clambuf);
+ #endif
+ 
+ /* Attachment scanning globals */
+@@ -274,6 +276,11 @@
+   if ( (tmpstr=getenv("SIMSCAN_DEBUG"))!=NULL ) {
+     DebugFlag = atoi(tmpstr);
+   }
++
++  /* Set the "leave temp files alone" flag */
++  if ( (tmpstr=getenv("SIMSCAN_DEBUG_FILES"))!=NULL ) {
++    DebugFiles = atoi(tmpstr);
++  }
+   
+ #ifdef ENABLE_ATTACH
+   init_attach();
+@@ -546,11 +553,11 @@
+ #endif
+ 
+ #ifdef ENABLE_SPAM
+-if (msgsize >= 250000) {
+-  if ( DebugFlag > 0 ) {
++if (msgsize >= ATTACHMENTS_SIZE_LIMIT) {
++//  if ( DebugFlag > 0 ) {
+     fprintf(stderr, "simscan: big file (%lu bytes); skipping SpamAssassin\n",
+       (unsigned long) msgsize);
+-  }
++//  }
+ } else {
+   /* re-open the file read only */
+   if ( (fd = open(message_name, O_RDONLY)) == -1 ) {
+@@ -828,10 +835,12 @@
+   }
+ 
+   /* remove the working files */
+-  if ( remove_files(workdir) == -1 ) {
+-    exit_clean(EXIT_400);
++  if ( DebugFiles < 2 ) {
++    if ( remove_files(workdir) == -1 ) {
++      exit_clean(EXIT_400);
++    }
+   }
+-  
++
+   /* pass qmail-queue's exit status on */
+   _exit(WEXITSTATUS(qstat));
+ 
+@@ -984,6 +993,7 @@
+   InClamHeaders = 1;
+   memset(buffer,0,sizeof(buffer));
+   while((file_count=read(0,buffer,BUFFER_SIZE))>0) {
++    if ( DebugFlag > 2 ) log_clam(buffer) ;
+     if ( InClamHeaders == 1 ) {
+       is_clam(buffer);
+     }
+@@ -1010,6 +1020,35 @@
+   return(-1);
+ }
+ 
++void log_clam(char *clambuf)
++{
++	char *p ;
++	int needh = 1 ;
++
++	p = clambuf ;
++	while ( *p )
++	{
++		if ( *p != '\r' )
++		{
++			if ( needh )
++			{
++				fputs ( "simscan: clamdscan: " , stderr ) ;
++				needh = 0 ;
++			}
++
++			fputc ( *p , stderr ) ;
++
++			if ( *p == '\n' )
++				needh = 1 ;
++		}
++
++		p++ ;
++	}
++
++	if ( ! needh )
++		fputc ( '\n' , stderr ) ;
++}
++
+ int is_clam(char *clambuf)
+ {
+  int i,j,k;
+@@ -1315,7 +1354,7 @@
+     spamc_args[i++] = "-u";
+     spamc_args[i++] = spamuser;
+ #ifdef ENABLE_SPAMC_USER
+-  } else if ( MaxRcptTo==1 && i<MAX_SPAMC_ARGS-2 && strlen(spamuser) == 0) {
++  } else if ( MaxRcptTo>0 && i<MAX_SPAMC_ARGS-2 && strlen(spamuser) == 0) {
+     spamc_args[i++] = "-u";
+     spamc_args[i++] = RcptTo[0];
+ #endif
+@@ -1638,7 +1677,8 @@
+  */
+ void exit_clean( int error_code )
+ {
+-  remove_files(workdir);
++  if ( DebugFiles < 1 )
++    remove_files(workdir);
+   if ( DebugFlag > 0 ) {
+     fprintf(stderr, "simscan:[%d]: exit error code: %d\n", getppid(), error_code); 
+   }

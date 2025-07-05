@@ -1,0 +1,26 @@
+tx Luca Franceschini
+
+diff -Nuar a/qmail-remote.c b/qmail-remote.c
+--- a/qmail-remote.c	2019-03-22 09:55:02.604135975 +0000
++++ b/qmail-remote.c	2019-03-22 10:38:18.454510848 +0000
+@@ -290,7 +290,7 @@
+   int state = ssl ? ssl->state : SSL_ST_BEFORE;
+   if (state & SSL_ST_OK || (!smtps && state & SSL_ST_BEFORE))
+ #else
+-  int state = SSL_get_state(ssl);
++  int state = ssl ? SSL_get_state(ssl) : TLS_ST_BEFORE;
+   if (state & TLS_ST_OK || (!smtps && state & TLS_ST_BEFORE))
+ #endif
+ #endif
+diff -Nuar a/ssl_timeoutio.c b/ssl_timeoutio.c
+--- a/ssl_timeoutio.c	2019-03-22 09:55:02.616136196 +0000
++++ b/ssl_timeoutio.c	2019-03-22 10:33:55.146602501 +0000
+@@ -84,7 +84,7 @@
+ #if (OPENSSL_VERSION_NUMBER < 0x10100000L) || (defined(LIBRESSL_VERSION_NUMBER) && LIBRESSL_VERSION_NUMBER < 0x20700000L)
+   ssl->state = SSL_ST_ACCEPT;
+ #else
+-  SSL_set_connect_state(ssl);
++  SSL_set_accept_state(ssl);
+ #endif
+ 
+   return ssl_timeoutio(SSL_do_handshake, t, rfd, wfd, ssl, NULL, 0);

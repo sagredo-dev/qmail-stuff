@@ -1,0 +1,94 @@
+Cracklib patch for the Roundcube/password plugin.
+Thanks to Tony Fung https://notes.sagredo.eu/en/qmail-notes-185/roundcube-plugins-35.html#comment1651
+
+Use like this
+
+cd /var/www/roundcube
+wget https://notes.sagredo.eu/files/qmail/patches/roundcube/cracklib-roundcube_pwd_plugin.patch
+patch -p1 < cracklib-roundcube_pwd_plugin.patch
+
+More info here https://notes.sagredo.eu/en/qmail-notes-185/roundcube-plugins-35.html#password
+
+=============================================================================================================
+
+diff -ruN roundcube-original/plugins/password/drivers/sql.php roundcube/plugins/password/drivers/sql.php
+--- roundcube-original/plugins/password/drivers/sql.php	2024-12-18 18:46:57.726886576 +0100
++++ roundcube/plugins/password/drivers/sql.php	2024-12-18 18:40:39.754309175 +0100
+@@ -26,6 +26,21 @@
+ class rcube_sql_password
+ {
+     /**
++     * Finds the cracklib-check path
++     *
++     * @return string Result
++     */
++    function get_cracklib_path()
++    {
++        $paths = array('/sbin/cracklib-check', '/usr/sbin/cracklib-check', '/usr/local/sbin/cracklib-check');
++        foreach ($paths as $path)
++        {
++            if (file_exists($path))	break;
++        }
++        return $path;
++    }
++
++    /**
+      * Update current user password
+      *
+      * @param string $curpass Current password
+@@ -37,6 +52,15 @@
+     function save($curpass, $passwd)
+     {
+         $rcmail = rcmail::get_instance();
++        exec("echo ".$passwd." | ".$this->get_cracklib_path()." 2>/dev/null", $output, $return_var);
++
++        if(preg_match("/^.*\: ([^:]+)$/", $output[0], $matches)) {
++            // Check response:
++            if(strtoupper($matches[1])!=="OK") {
++                // Cracklib doesn't like it:
++                return PASSWORD_CONSTRAINT_VIOLATION;
++            }
++        }
+ 
+         if (!($sql = $rcmail->config->get('password_query'))) {
+             $sql = 'SELECT update_passwd(%P, %u)';
+diff -ruN roundcube-original/plugins/password/drivers/vpopmaild.php roundcube/plugins/password/drivers/vpopmaild.php
+--- roundcube-original/plugins/password/drivers/vpopmaild.php	2024-12-18 18:46:37.938909085 +0100
++++ roundcube/plugins/password/drivers/vpopmaild.php	2024-12-18 18:42:57.861156590 +0100
+@@ -26,6 +26,20 @@
+ 
+ class rcube_vpopmaild_password
+ {
++   /**
++    * Finds the cracklib-check path
++    *
++    * @return string Result
++    */
++    function get_cracklib_path()
++    {
++        $paths = array('/sbin/cracklib-check', '/usr/sbin/cracklib-check', '/usr/local/sbin/cracklib-check');
++        foreach ($paths as $path)
++        {
++            if (file_exists($path)) break;
++        }
++        return $path;
++    }
+ 
+     function save($curpass, $passwd, $username)
+     {
+@@ -33,6 +47,15 @@
+         $vpopmaild = new Net_Socket();
+         $host      = $rcmail->config->get('password_vpopmaild_host');
+         $port      = $rcmail->config->get('password_vpopmaild_port');
++        exec("echo ".$passwd." | ".$this->get_cracklib_path()." 2>/dev/null", $output, $return_var);
++
++        if(preg_match("/^.*\: ([^:]+)$/", $output[0], $matches)) {
++            // Check response:
++            if(strtoupper($matches[1])!=="OK") {
++                // Cracklib doesn't like it:
++                return PASSWORD_CONSTRAINT_VIOLATION;
++            }
++        }
+ 
+         $result = $vpopmaild->connect($host, $port, null);
+         if (is_a($result, 'PEAR_Error')) {

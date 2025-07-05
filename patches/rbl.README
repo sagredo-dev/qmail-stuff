@@ -1,0 +1,34 @@
+rbl code and logic from rblsmtpd and qmail-dnsbl patch http://qmail-dnsbl.sourceforge.net/
+added support for whitelists, TXT and A queries, configurable return codes 451 or 553 with custom messages
+
+  # - default file control/dnsbllist can be overridden with env variable DNSBLLIST
+  # - if DNSBLSKIP env variable is set, qmail-smtpd skips the rbl check
+  # - if control/dnsblfailclosed or DNSBLFAILCLOSED are defined, qmail-smtpd considers the source ip as blacklisted even in case of lookup failures (check rblsmtpd man page for more details)
+  # - support for environment variable RBLSMTPD (check rblsmtpd man page for more details)
+  # - dnsbllist can contain empty lines and comments with '#' at start or end of lines; leading and trailing spaces are automatically removed
+
+  Examples and formats:
+  # query rbl for TXT records, return code 451: "451 http://www.spamhaus.org/query/bl?ip=30.50.20.3"
+  zen.spamhaus.org
+
+  # query rbl for TXT records, return code 553: "553 http://www.spamhaus.org/query/bl?ip=30.50.20.3"
+  -zen.spamhaus.org
+
+  # query rbl for A records, custom return message with ret code 451: "451 Message rejected"
+  zen.spamhaus.org:Message rejected
+
+  # query rbl for A records, custom return message with ret code 553: "553 Message rejected", the following syntaxes are allowed:
+  -zen.spamhaus.org:Message rejected
+  zen.spamhaus.org:-Message rejected
+  -zen.spamhaus.org:-Message rejected
+
+  # query rbl for A records, custom return message with IP variable, replaced by remote ip:
+  zen.spamhaus.org:Message blocked from %IP%
+
+  # dns whitelist A query:
+  +white.dnsbl.local:Whitelist test
+  +white.dnsbl.local
+
+  # the following syntaxes are NOT ALLOWED:
+  zen.spamhaus.org:
+  zen.spamhaus.org:-

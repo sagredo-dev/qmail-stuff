@@ -1,0 +1,6 @@
+[client]
+#socket=/run/mysql/mysql.sock
+#host=10.0.0.1
+user=mta
+password=xxxxxxx
+database=mta

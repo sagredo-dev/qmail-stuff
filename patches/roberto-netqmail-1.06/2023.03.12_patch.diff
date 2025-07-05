@@ -1,0 +1,43 @@
+tx aet
+https://gist.github.com/turkerali/f87d77b6cb64061f2aa459b4590a1348
+https://marc.info/?l=qmail&m=118763997501287&w=2
+
+--- netqmail-1.06-original/qmail-smtpd.c
++++ netqmail-1.06/qmail-smtpd.c
+@@ -40,6 +40,7 @@
+ void tls_nogateway();
+ int ssl_rfd = -1, ssl_wfd = -1; /* SSL_get_Xfd() are broken */
+ int forcetls = 1;
++stralloc proto = {0};
+ #endif
+ 
+ /* start chkuser code */
+@@ -2118,7 +2119,20 @@
+     case 0:
+       if (!spp_auth(authcmds[i].text, user.s)) return;
+       seenauth = 1;
++#ifdef TLS
++      if (ssl) {
++        if (!stralloc_copys(&proto, "ESMTPSA (")
++            || !stralloc_cats(&proto, SSL_get_cipher(ssl))
++            || !stralloc_cats(&proto, " encrypted, authenticated)")) 
++          die_nomem();
++        if (!stralloc_0(&proto)) die_nomem();
++        protocol = proto.s;
++      } else {
++        protocol = "ESMTPA";
++      }
++#else
+       protocol = "ESMTPA";
++#endif
+       relayclient = "";
+       remoteinfo = user.s;
+       if (!env_unset("TCPREMOTEINFO")) die_read("TCPREMOTEINFO not set");
+@@ -2140,7 +2154,6 @@
+ }
+ 
+ #ifdef TLS
+-stralloc proto = {0};
+ int ssl_verified = 0;
+ const char *ssl_verify_err = 0;
+ 

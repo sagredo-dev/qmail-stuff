@@ -1,0 +1,160 @@
+VERSION 0.42
+---
+2006-04-07  Pawel Foremski <pjf@asn.pl>
+        * released 0.42
+
+2006-04-03  Pawel Foremski <pjf@asn.pl>
+        * included patch against Bill Shupp's smtpauth/tls combo patch v.
+        20060105, contributed by Jason 'XenoPhage' Frisvold (friz /at/ godshell
+        \dot\ com)
+
+2006-04-01  Pawel Foremski <pjf@asn.pl>
+        * fixed bug in qmail-smtpd.c where SMTPRCPTHOSTSOK was not set properly
+        if RELAYCLIENT env var was set (authenticated client / tcprules); thanks
+        for Roberto Alsina (ralsina /at/ kde \dot\ org) for bugreport
+        * added SMTPRCPTCOUNTALL env var which also counts rejected RCPT
+        commands; thanks for Michael Handler for suggestion
+
+VERSION 0.41
+---
+2005-01-24  Pawel Foremski <pjf@asn.pl>
+
+        * qmail-spp 0.41 released
+
+2005-01-19  Pawel Foremski <pjf@asn.pl>
+
+        * [new] included patch against Bill Shupp's smtpauth-tls patch -
+        thanks to Jason Frisvold
+        * [new] included patch against Erwin Hoffmann's smtpauth patch
+        v. 0.4.3
+
+
+VERSION 0.41rc1
+---
+2005-01-16  Pawel Foremski <pjf@asn.pl>
+
+        * [new] added support to specify alternative config file using
+        SPPCONFFILE env var - patch by Michael Handler
+        * [change] qmail check against rcpthosts is now run before RCPT
+        plugins and the result is passed via SMTPRCPTHOSTSOK variable -
+        1: passed, 0: failed - patch by Michael Handler (mostly)
+        * [bugfix] don't increase SMTPRCPTCOUNT if qmail denies mail
+
+2004-12-08  Pawel Foremski <pjf@asn.pl>
+
+        * Makefile: fixed double env lib bug reported by Michael Handler
+
+
+VERSION 0.40
+---
+2004-12-01  Pawel Foremski <pjf@asn.pl>
+
+        * released qmail-spp 0.40
+
+
+2004-11-26  Pawel Foremski <pjf@asn.pl>
+
+        * added patch with SMTP AUTH support
+
+
+2004-11-25  Pawel Foremski <pjf@asn.pl>
+
+        * delete queued errors after RSET and DATA
+        * removed "LH"
+
+
+2004-11-24  Pawel Foremski <pjf@asn.pl>
+
+        * code cleanup
+        * moved qmail-spp to separate source file - now it should apply
+        more cleanly on heavily patched qmail versions
+        * added [connection] and [data] events
+        * added possibility to omit qmail checks ("O" command)
+        * added comments to sample plugins ;)
+        * added possibility to queue error messages to show after
+        HELO/EHLO, MAIL, RCPT, DATA commands ("L" command)
+
+
+VERSION 0.34
+---
+2004-09-29  Pawel Foremski <pjf@asn.pl>
+
+        * fixed typo in qmail-smtpd.c ;-)
+
+
+VERSION 0.33
+---
+2004-09-23  Pawel Foremski <pjf@asn.pl>
+
+        * fixed bug in setting environmental variable (reported by Derek
+        Sims <derek /at/ interdart.co.uk>)
+
+
+VERSION 0.32
+---
+2004-08-10  Pawel Foremski <pjf@asn.pl>
+
+        * added sample plugins
+        * fixed zombie processes bug
+        * faster configuration file parser
+        * added patch against netqmail 1.05
+        * added patch against netqmail-tls-smtpauth - thanks to Jason
+        'XenoPhage' Frisvold <friz /at/ godshell.com>
+
+
+VERSION 0.31
+---
+2004-08-02  Pawel Foremski <pjf@asn.pl>
+
+        * added verbose error messages with plugin name
+        * don't print out plugin output if it failed
+        * added support for executing plugins via system shell, what
+        might be useful for debugging and passing arguments
+        * fixed updates of SMTPMAILFROM and SMTPRCPTTO variables after
+        'C' command
+
+
+VERSION 0.3
+---
+2004-07-09  Pawel Foremski <pjf@asn.pl>
+
+        * version 0.3 released with (almost) no changes
+
+
+VERSION 0.3rc1
+---
+2004-07-04  Pawel Foremski <pjf@asn.pl>
+
+        * changed name to qmail-spp - qmail SMTP plugin patch
+        * rewritten from scratch adding new features (see README)
+
+
+VERSION 0.21
+---
+2004-03-26  Pawel Foremski <pjf@asn.pl>
+
+        * moved setting env vars to functions related to them
+        * qmail-smtpd.c(qusee()): added NULL as the last argument to
+        execlp() call - fixes bug which might cause qmail to hang on
+        some platforms
+
+
+VERSION 0.2
+---
+2004-01-02  Pawel Foremski <pjf@asn.pl>
+
+        * moved to the Helios qmail project - http://helios-qmail.sf.net/
+        * back-ported new features from helios-qmail
+        * imported sample modules from helios-qmail
+        * updated README
+        * merged qmail-qusee and qmail-qusee-smtpauth
+        * added ChangeLog and COPYING files
+
+
+VERSION 0.1
+---
+2003-11-18  Pawel Foremski <pjf@asn.pl>
+
+        * qmail-qusee: first release
+
+# vim: textwidth=80 tabstop=8 expandtab

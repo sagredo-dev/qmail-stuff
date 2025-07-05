@@ -1,0 +1,15 @@
+Chronological order
+-------------------
+
+Jason 'XenoPhage' Frisvold  <friz /at/ godshell /dot/ com>
+  - qmail-spp patches against netqmail-tls-smtpauth
+  - RC versions tests
+  - qmail-spp toaster site
+
+Michael Handler <handler /at/ grendel /dot/ net>
+  - bug reports
+  - SPPCONFFILE and SMTPRCPTHOSTSOK patches
+
+Roberto Alsina <ralsina /at/ kde /dot/ org>
+  - bug reports
+  - many good qmail-spp plugins

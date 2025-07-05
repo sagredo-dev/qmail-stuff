@@ -1,0 +1,27 @@
+More info here (tx MG)
+http://notes.sagredo.eu/en/qmail-notes-185/installing-dovecot-and-sieve-on-a-vpopmail-qmail-server-28.html#comment995
+
+=============================
+
+The qmail-maildir++ patch, which is fetched and enabled in case the
+MAILDIRQUOTA option has been enabled miscalculates the file size in
+qmail-local.c because the first two lines of the mail file (Return-Path and
+Delivered-To) are not taken into account. As a result, the filesize
+part of the S=<filesize> component of the Maildir++ compatible filename
+is always too low. This hasn't been noticed for many years, since the
+impact on quota calculation was negligible (typically less than 100
+bytes per e-mail). I stumbled over this, because mail/dovecot2 2.1.7 is
+actually comparing the value of S= with the result of stat and ends the
+connection to correct the problem. This is also affecting any other
+program using Maildir++, so this definitely needs to be fixed. The
+specification of the Maildir++ format clearly states that the S=xxx
+should match the size of the file (see also
+http://www.inter7.com/courierimap/README.maildirquota.html).
+
+The following line in the patch is the root of the problem:
+
+s += fmt_ulong(s,st.st_size); *s++ = 0;
+
+which should be:
+
+s += fmt_ulong(s,st.st_size+rpline.len+dtline.len); *s++ = 0;

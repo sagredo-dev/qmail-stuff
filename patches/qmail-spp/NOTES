@@ -1,0 +1,15 @@
+qmail-spp 0.42 - Release Notes
+Pawel Foremski <pjf@asn.pl>, April 7th 2006
+
+
+Hi, this is next brand new qmail-spp release fixing small bug and introducing
+new minor feature.
+
+The ChangeLog says it all:
+
+  * fixed bug in qmail-smtpd.c where SMTPRCPTHOSTSOK was not set properly
+    if RELAYCLIENT env var was set (authenticated client / tcprules);
+    thanks for Roberto Alsina (ralsina /at/ kde \dot\ org) for bugreport
+
+  * added SMTPRCPTCOUNTALL env var which also counts rejected RCPT
+    commands; thanks for Michael Handler for suggestion

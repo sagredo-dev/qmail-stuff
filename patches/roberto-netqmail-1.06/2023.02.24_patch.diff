@@ -1,0 +1,139 @@
+diff -ruN netqmail-1.06-old/README.qregex netqmail-1.06/README.qregex
+--- netqmail-1.06-old/README.qregex	2022-09-28 17:16:57.485045717 +0200
++++ netqmail-1.06/README.qregex	2023-02-24 07:21:37.945659740 +0100
+@@ -22,9 +22,9 @@
+ Features of qregex include:
+ 
+ 1. Performs pattern matching on envelope senders and envelope
+-   recipients against REs in the badmailfrom and badmailto control
++   recipients against REs in the badmailfrom and badrcptto control
+    files. Two additional control files, badmailfromnorelay and
+-   badmailtonorelay, are used for pattern matching when the 
++   badrcpttonorelay, are used for pattern matching when the 
+    RELAYCLIENT environment variable is not set.
+ 
+ 2. Performs pattern matching on the helo/ehlo host name. Setting the
+@@ -100,8 +100,8 @@
+ badmailfrom and badmailfromnorelay
+ qmail-smtpd: badmailfrom: <sender address> at <remote IP>
+ 
+-badmailto and badmailtonorelay
+-qmail-smtpd: badmailto: <rcpt address> at <remote IP>
++badrcptto and badrcpttonorelay
++qmail-smtpd: badrcptto: <rcpt address> at <remote IP>
+ 
+ When the LOGREGEX environment variable is set, the matched pattern will
+ be included in the log. Log messages will have the regex pattern appended
+@@ -115,16 +115,16 @@
+ qregex provides you with five control files. None of these control files
+ is mandatory and you can use them in any combination you choose in your setup.
+ 
+-The "control/badmailfrom" and "control/badmailto" files contain your REs for
++The "control/badmailfrom" and "control/badrcptto" files contain your REs for
+ matching against the 'mail from' (envelope sender) and 'rcpt to' (envelope
+ recipient) smtp commands respectively.
+-The "control/badmailfromnorelay" and "control/badmailtonorelay" match against
++The "control/badmailfromnorelay" and "control/badrcpttonorelay" match against
+ the same commands but are read only when the RELAYCLIENT environment variable
+ is not set.
+ The "control/badhelo" file matches against the 'helo/ehlo' smtp command.
+ 
+-If you prefer you can symlink the badmailfrom and badmailto control files
+-(ln -s badmailfrom badmailto) and maintain fewer sets of rules. Beware
++If you prefer you can symlink the badmailfrom and badrcptto control files
++(ln -s badmailfrom badrcptto) and maintain fewer sets of rules. Beware
+ this might cause problems in certain setups.
+         
+ 	Here's an example "badhelo" file.
+@@ -143,7 +143,7 @@
+ 	!@
+ 	-----------------------------------
+ 
+-	And "badmailto" (a little more interesting)
++	And "badrcptto" (a little more interesting)
+ 	-----------------------------------
+ 	# must not contain invalid characters, brakets or multiple @'s
+ 	[!%#:*^(){}]
+@@ -154,7 +154,7 @@
+ negate the action. As used above in the badmailfrom file, by negating the '@'
+ symbol qregex will signal qmail-smtpd to deny the 'mail from' command whenever
+ the address doesn't contain an @ symbol. When used inside a bracket expression,
+-the '!' character looses this special meaning. This is shown in the badmailto
++the '!' character looses this special meaning. This is shown in the badrcptto
+ example.
+ 
+ The norelay control files follow the same rules as the other control files but
+@@ -163,7 +163,7 @@
+ hosted on your mail server. It prevents a mail client that is not allowed to
+ relay email through your server from using one of your hosted domains as its
+ envelope sender.
+-The badmailtonorelay file can be used to create email addresses that cannot
++The badrcpttonorelay file can be used to create email addresses that cannot
+ receive mail from any source not allowed to relay email through your server.
+ This is handy for creating email addresses for use only within your own 
+ domain(s) that can't receive spam from the world at large.
+diff -ruN netqmail-1.06-old/qmail-control.9 netqmail-1.06/qmail-control.9
+--- netqmail-1.06-old/qmail-control.9	2022-09-28 17:16:57.496045687 +0200
++++ netqmail-1.06/qmail-control.9	2023-02-24 07:22:44.665467106 +0100
+@@ -23,8 +23,8 @@
+ .IR badhelo ,
+ .IR badmailfrom ,
+ .IR badmailfromnorelay ,
+-.IR badmailto ,
+-.IR badmailtonorelay ,
++.IR badrcptto ,
++.IR badrcpttonorelay ,
+ .IR locals ,
+ .IR percenthack ,
+ .IR qmqpservers ,
+@@ -49,8 +49,8 @@
+ .I badhelonorelay     \fR(none)       \fRqmail-smtpd
+ .I badmailfrom	\fR(none)	\fRqmail-smtpd
+ .I badmailfromnorelay  \fR(none)       \fRqmail-smtpd
+-.I badmailto   \fR(none)       \fRqmail-smtpd
+-.I badmailtonorelay    \fR(none)       \fRqmail-smtpd
++.I badrcptto   \fR(none)       \fRqmail-smtpd
++.I badrcpttonorelay    \fR(none)       \fRqmail-smtpd
+ .I bouncefrom	\fRMAILER-DAEMON	\fRqmail-send
+ .I bouncehost	\fIme	\fRqmail-send
+ .I brtlimit	\fR0	\fRqmail-smtpd
+diff -ruN netqmail-1.06-old/qmail-showctl.c netqmail-1.06/qmail-showctl.c
+--- netqmail-1.06-old/qmail-showctl.c	2022-09-28 17:16:57.500045676 +0200
++++ netqmail-1.06/qmail-showctl.c	2023-02-24 07:24:04.088237795 +0100
+@@ -220,8 +220,8 @@
+   do_lst("badhelonorelay","Any HELO host name is allowed.",""," HELO host name denied if it matches this pattern and RELAYCLIENT is not set.");
+   do_lst("badmailfrom","Any MAIL FROM is allowed.",""," MAIL FROM denied if it matches this pattern.");
+   do_lst("badmailfromnorelay","Any MAIL FROM is allowed.",""," MAIL FROM denied if it matches this pattern and RELAYCLIENT is not set.");
+-  do_lst("badmailto","No RCPT TO are specifically denied.",""," RCPT TO denied if it matches this pattern.");
+-  do_lst("badmailtonorelay","No RCPT TO are specifically denied.",""," RCPT TO denied if it matches this pattern and RELAYCLIENT is not set.");
++  do_lst("badrcptto","No RCPT TO are specifically denied.",""," RCPT TO denied if it matches this pattern.");
++  do_lst("badrcpttonorelay","No RCPT TO are specifically denied.",""," RCPT TO denied if it matches this pattern and RELAYCLIENT is not set.");
+   do_str("bouncefrom",0,"MAILER-DAEMON","Bounce user name is ");
+   do_str("bouncehost",1,"bouncehost","Bounce host name is ");
+   do_int("brtlimit","0","The brtlimit is ","");
+@@ -290,8 +290,8 @@
+     if (str_equal(d->d_name,"badmailfrom")) continue;
+     if (str_equal(d->d_name,"badhelo")) continue;
+     if (str_equal(d->d_name,"badmailfromnorelay")) continue;
+-    if (str_equal(d->d_name,"badmailto")) continue;
+-    if (str_equal(d->d_name,"badmailtonorelay")) continue;
++    if (str_equal(d->d_name,"badrcptto")) continue;
++    if (str_equal(d->d_name,"badrcpttonorelay")) continue;
+     if (str_equal(d->d_name,"bouncefrom")) continue;
+     if (str_equal(d->d_name,"bouncehost")) continue;
+     if (str_equal(d->d_name,"concurrencylocal")) continue;
+diff -ruN netqmail-1.06-old/qmail-smtpd.8 netqmail-1.06/qmail-smtpd.8
+--- netqmail-1.06-old/qmail-smtpd.8	2022-09-28 17:16:57.500045676 +0200
++++ netqmail-1.06/qmail-smtpd.8	2023-02-24 07:23:31.824330946 +0100
+@@ -114,9 +114,9 @@
+ environment variable is not set.
+ For more information, please have a look at doc/README.qregex.
+ .TP 5
+-.I badmailtonorelay
++.I badrcpttonorelay
+ Functions the same as the
+-.IR badmailto
++.IR badrcptto
+ control file but is read only if the
+ .B RELAYCLIENT
+ environment variable is not set.

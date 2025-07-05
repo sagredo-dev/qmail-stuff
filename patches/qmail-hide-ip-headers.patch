@@ -1,0 +1,32 @@
+## Hide Client IP in Headers Patch ## You can find the old patchs here, Thanks ##
+##  ---> http://windy.zapto.org/qmail/patches/Qmail-Hide-IP-Headers-Auth.patch ##
+##   ---> http://windy.zapto.org/qmail/patches/Qmail-Hide-IP-Headers-old.patch ##
+
+--- ../netqmail-bak/received.c  2004-10-08 16:01:43.000000000 +1000
++++ received.c  2005-08-14 19:26:55.856842752 +1000
+@@ -21,6 +21,9 @@
+   return 0;
+ }
+
++char *relayclient;
++int relayclientlen;
++
+ void safeput(qqt,s)
+ struct qmail *qqt;
+ char *s;
+@@ -58,9 +61,12 @@
+   qmail_puts(qqt," (");
+   if (remoteinfo) {
+     safeput(qqt,remoteinfo);
+-    qmail_puts(qqt,"@");
+   }
+-  safeput(qqt,remoteip);
++  relayclient = env_get("RELAYCLIENT");
++  if (!relayclient) {
++    if (remoteinfo) { qmail_puts(qqt,"@"); }
++     safeput(qqt,remoteip);
++  }
+   qmail_puts(qqt,")\n  by ");
+   safeput(qqt,local);
+   qmail_puts(qqt," with ");
+

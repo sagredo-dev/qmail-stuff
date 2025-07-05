@@ -1,0 +1,218 @@
+Content-type: text/html
+
+<HTML><HEAD><TITLE>Manpage of ezmlmwebrc</TITLE>
+</HEAD><BODY>
+<H1>ezmlmwebrc</H1>
+Section: configuration file (5)<BR>Updated: April 02007<BR><A HREF="#index">Index</A>
+<A HREF="http://localhost/cgi-bin/man/man2html">Return to Main Contents</A><HR>
+
+<A NAME="lbAB">&nbsp;</A>
+<H2>NAME</H2>
+
+ezmlmwebrc - configuration file for ezmlm-web
+<A NAME="lbAC">&nbsp;</A>
+<H2>DESCRIPTION</H2>
+
+<P>
+
+<B>ezmlmwebrc</B> contains the configuration settings necessary for ezmlm-web.
+<P>
+
+The file is required for ezmlm-web and must exist in one of the following
+locations:
+<DL COMPACT>
+<DT><B>~/.ezmlmwebrc</B><DD>
+user-specific configuration file
+<DT><B>/etc/ezmlm-web/ezmlmwebrc</B><DD>
+system-wide default configuration file
+<DT><B>/etc/ezmlm/ezmlmwebrc</B><DD>
+system-wide default configuration file (deprecated since v2.2)
+</DL>
+<P>
+
+Additionally the location of the configuration file may be overriden by the
+command line switch <B>-C</B> of <I>ezmlm-web.cgi (1p)</I>. 
+<A NAME="lbAD">&nbsp;</A>
+<H2>FILE FORMAT</H2>
+
+<P>
+
+The file itself is sourced by the perl script <I>ezmlm-web.cgi</I>, so it is
+required that the file conforms to the syntax of perl scripts. See the
+manpage of perl (1) for details.
+<P>
+
+You should avoid to declare other variables than the settings described below.
+Otherwise you may run into namespace conflicts. Just don't do it.
+<P>
+
+You may rely on the existence (and meaningful content) of the following
+variables:
+<DL COMPACT>
+<DT><I>$USER</I><DD>
+the name of the owner of the current process
+<DT><I>$HOME</I><DD>
+the home directory of the owner of the current process
+</DL>
+<A NAME="lbAE">&nbsp;</A>
+<H2>REQUIRED SETTINGS</H2>
+
+<DL COMPACT>
+<DT><B>$LIST_DIR</B><DD>
+This is the directory containing the lists, that you want to manage via
+ezmlm-web. It will be created automatically if it does not exist yet.
+The value <I>$HOME/lists</I> should be quite reasonable.
+<DT><B>$LANGUAGE_DIR</B><DD>
+This directory contains the language files of ezmlm-web (e.g. <I>en.hdf</I>).
+Usually this should be something like <I>/usr/local/share/ezmlm-web/lang</I>.
+<DT><B>$TEMPLATE_DIR</B><DD>
+This directory contains the template files of ezmlm-web (e.g. <I>main.cs</I>).
+Usually this should be something like
+<I>/usr/local/share/ezmlm-web/template</I>.
+</DL>
+<A NAME="lbAF">&nbsp;</A>
+<H2>OPTIONAL SETTINGS</H2>
+
+<DL COMPACT>
+<DT><B>$DEFAULT_OPTIONS</B><DD>
+Specify the default options used for ezmlm-make (1) when creating a new list.
+The default value is: <I>aBDFGHiJkLMNOpQRSTUWx</I>. See the manpage of
+ezmlm-make (1) for details.
+<DT><B>$ALIAS_USER</B><DD>
+The alias user of a qmail installation manages all mail addresses that are
+not handled by specific dotqmail files or other definitions. It defaults to
+<I>alias</I>.
+<DT><B>$QMAIL_BASE</B><DD>
+This is the control directory of your qmail setup. It defaults to
+<I>/var/qmail/control</I>.
+<DT><B>$DOTQMAIL_DIR</B><DD>
+The directory of the dotqmail (5) files of the lists managed by ezmlm-web.
+It defaults to the home directory of the owner of the current process
+(<I>$HOME</I>).
+<DT><B>$WEBUSERS_FILE</B><DD>
+This file contains the access rules for the lists managed by ezmlm-web.
+Read the README file of ezmlm-web for details. This setting defaults to
+<I>$LISTS/webusers</I>.
+<DT><B>$MAIL_DOMAIN</B><DD>
+Specify the default domain name of new mailing lists. Leave it empty if you
+want ezmlm-web to try to detect this value automatically.
+<DT><B>$MAIL_ADDRESS_PREFIX</B><DD>
+Specify the default prefix for the local part of the addresses of new mailing
+lists. By default it is empty ('').
+<DT><B>$PRETTY_NAMES</B><DD>
+Do you want to store connections between real names and mail addresses if both
+were provided when adding a new subscriber? This results in a file called
+<I>webnames</I> being created in every mailing list directory when necessary.
+<DT><B>$FILE_UPLOAD</B><DD>
+Should the upload of subscriber files be possible? The default is <I>1</I>.
+If you consider this as a security risk, then you should set it to <I>0</I>.
+<DT><B>$UNSAFE_RM</B><DD>
+This setting defines, if list removal requested via the web interface should
+be recoverable or not. The value <I>1</I> will make ezmlm-web remove the list
+directory completely without any chance of recovery. The default value <I>0</I> 
+will just move deleted lists to a safe place. Thus deletion is recoverable.
+<DT><B>$HTML_TITLE</B><DD>
+Print a reasonable name of the web interface to the left upper corner of every
+page. By default this string is empty.
+<DT><B>$HTML_CSS_COMMON</B><DD>
+This is the URL of the basic stylesheet file to be used by ezmlm-web. Make sure
+it is actually available, as the design of the web interface will suffer a lot
+without it.
+<DT><B>$HTML_CSS_COLOR</B><DD>
+The color scheme of the web interface is separated from the basic stylesheet.
+This URL should point to the location of the color scheme CSS file. Your
+interface will be plain black and white if the stylesheet is not available.
+Be aware, that some of the supplied color schemes may require additional
+files (images) in the same directory. Currently 'color-red-blue.css'
+and 'color-blue-gray.css' are available.
+<DT><B>@HTML_LINKS</B><DD>
+This array may contain hashes with the elements <I>name</I> and <I>url</I>.
+These links will be visible in the upper right corner of every page.
+Please pay attention to the syntax of perl and use the example configuration
+file distributed with ezmlm-web as a template. By default, this array is
+empty.
+<DT><B>$HTML_LANGUAGE</B><DD>
+Specify the defaut language of the web interface. This value will be overriden
+when the browser requests an available language or when the user explicitly
+selects a different language. The default value is <I>en</I>.
+<DT><B>$DEFAULT_INTERFACE_TYPE</B><DD>
+Set the default interface template. Available values are <I>easy</I>,
+<I>normal</I> and <I>expert</I>. The default value is <I>normal</I>.
+<DT><B>$INTERFACE_OPTIONS_BLACKLIST</B><DD>
+Exclude some list options from being displayed via the web interface.
+BEWARE: this does not protect the specific option from being changed.
+It just hides the visible interface items. Anyone can still craft a manual
+http request, that could change the specified options.
+See the list of filenames below <I>$TEMPLATE_DIR/config_options/</I>. The
+blacklist may contain any of these filenames (without '.cs' extension).
+<DT><B>$ENCRYPTION_SUPPORT</B><DD>
+Enable support for encrypted mailing lists. Currently this feature is still
+considered as beta quality. User reports are warmly welcome!
+<DT><B>$GPG_KEYRING_DEFAULT_LOCATION</B><DD>
+This setting defines the default location of gnupg keyrings used for mailing list
+encryption. If the location starts with a slash ('/'), then it is considered
+to be an absolute path. Otherwise it is relative to the directory of the current
+list. For the ezmlm-gpg mailing list encryption system, the default (&quot;.gnupg&quot;) is
+usable.
+<DT><B>%DOMAINS</B><DD>
+This hash of hashes (<I>name</I> associated with a hash of domain specific
+information) can be used to define a multi-domain setup. See the example
+configuration file (<I>multidomain.conf</I>) as distributed with ezmlm-web for
+more details.
+</DL>
+<A NAME="lbAG">&nbsp;</A>
+<H2>EXAMPLES</H2>
+
+<DL COMPACT>
+<DT>A minimal example configuration file:<DD>
+<P>
+<PRE>
+$LIST_DIR = &quot;$HOME_DIR/lists&quot;;
+$LANGUAGE_DIR = &quot;/usr/local/share/ezmlm-web/lang&quot;;
+$TEMPLATE_DIR = &quot;/usr/local/share/ezmlm-web/template&quot;;
+<DT>Some more examples of settings:<DD>
+$QMAIL_BASE = $Mail::Ezmlm::QMAIL_BASE . '/control';
+$MAIL_ADDRESS_PREFIX = &quot;lists-&quot;;
+$DEFAULT_OPTIONS = &quot;aBDFGHiJkLMNOpQRSTUWx&quot;;
+$INTERFACE_OPTIONS_BLACKLIST = ('lang_select', 'mime_reject');
+$HTML_TITLE = &quot;ezmlm-web - a mailinglist administration interface&quot;;
+$HTML_CSS_COMMON = &quot;/ezmlm-web/default.css&quot;;
+$HTML_CSS_COLOR = &quot;/ezmlm-web/color-red-blue.css&quot;;
+$HTML_LANGUAGE = &quot;en&quot;;
+$GPG_KEYRING_DEFAULT_LOCATION = &quot;.gnupg&quot;;
+</DL>
+</PRE><A NAME="lbAH">&nbsp;</A>
+<H2>AUTHOR</H2>
+
+Written by Lars Kruse
+<A NAME="lbAI">&nbsp;</A>
+<H2>REPORTING BUGS</H2>
+
+Report bugs to &lt;<A HREF="mailto:devel@sumpfralle.de">devel@sumpfralle.de</A>&gt;
+<A NAME="lbAJ">&nbsp;</A>
+<H2>COPYRIGHT</H2>
+
+Copyright &#169; 02007 Lars Kruse
+<P>
+<P>
+
+<HR>
+<A NAME="index">&nbsp;</A><H2>Index</H2>
+<DL>
+<DT><A HREF="#lbAB">NAME</A><DD>
+<DT><A HREF="#lbAC">DESCRIPTION</A><DD>
+<DT><A HREF="#lbAD">FILE FORMAT</A><DD>
+<DT><A HREF="#lbAE">REQUIRED SETTINGS</A><DD>
+<DT><A HREF="#lbAF">OPTIONAL SETTINGS</A><DD>
+<DT><A HREF="#lbAG">EXAMPLES</A><DD>
+<DT><A HREF="#lbAH">AUTHOR</A><DD>
+<DT><A HREF="#lbAI">REPORTING BUGS</A><DD>
+<DT><A HREF="#lbAJ">COPYRIGHT</A><DD>
+</DL>
+<HR>
+This document was created by
+<A HREF="http://localhost/cgi-bin/man/man2html">man2html</A>,
+using the manual pages.<BR>
+Time: 18:30:43 GMT, January 24, 2011
+</BODY>
+</HTML>

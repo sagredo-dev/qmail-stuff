@@ -1,0 +1,858 @@
+diff -Naur netqmail-1.06/CHANNELS netqmail-1.06-channels/CHANNELS
+--- netqmail-1.06/CHANNELS	1969-12-31 16:00:00.000000000 -0800
++++ netqmail-1.06-channels/CHANNELS	2008-11-15 03:14:52.000000000 -0800
+@@ -0,0 +1,100 @@
++CHANNELS by Reed Sandberg
++Copyright (c) 2007-2008 The SMB Exchange, INC
++
++This patch is free software; you can redistribute it and/or modify
++it under the Artistic License.
++
++This patch for (net)qmail comes with NO WARRANTY.
++
++RELEASE: November 15, 2008
++
++
++qmail manages two different queues
++with different configurable concurrency settings (rates) based on a set
++of domains - those delivered locally (control files: locals,
++virtualdomains, concurrencylocal) and those delivered remotely (domains
++not listed in  above control files and concurrencyremote). Luckily,
++qmail's author (DJB) spent some time abstracting the implementation of
++these channels and this patch advances the abstraction to add an
++arbitrary number of channels - each with a distinct set of domains and
++throttling capabilities.
++
++BIG PICTURE
++With ext_todo patch. Adapted from:
++EXTTODO by Claudio Jeker <jeker@n-r-g.com> and
++Andre Oppermann <opi@nrg4u.com>
++(c) 1998,1999,2000,2001,2002 Internet Business Solutions Ltd.
++
++
++               +-------+   +-------+       +-------+
++               | clean |   | clean |       | logger|
++               +--0-1--+   +--0-1--+       +---0---+           +-----------+
++         trigger  ^ |         ^ |              |             +->0,1 lspawn |
++            |     | v         | v              v            /  +-----------+
++ +-------+  v  +--2-3--+   +--5-6--------------0-------+   /
++ |       |  |  |       0<--7                         1,2<-+
++ | queue |--+--| todo  |   | send                      |
++ |       |  |  |       1-->8                         3,4<-+
++ +-------+     +-------+   +--11,12---...-------X,Y----+   \
++                                |                |          \  +-----------+
++                                v                v           +->0,1 rspwan |
++                            +--0,1-+         +--0,1-+          +-----------+
++                            |rspawn|  ...    |rspawn|    
++                            +------+         +------+       
++
++Communication between qmail-send and qmail-todo
++
++todo -> send:
++   D[01]{n}<mesgid>\0
++          Start delivery for a new message with id <mesgid>.
++          the character '0' or '1' indicates whether this message
++          will go through the corresponding channel (false/true)
++          by position where n is the number of channels. E.g. D1011<msgid>\0:
++          means there are four channels, the first 2 are always
++          the local and default remote channels, and the rest are
++          an optional number of supplemental channels (defined
++          at compile-time by conf-channels). So this message
++          has a local recipient, and a recipient on the first and
++          second supplemental channels.
++   L<string>\0
++          Dump string to the logger without adding additional \n or similar.
++send -> todo:
++   H      Got a SIGHUP, reread ~/control/locals, ~/control/virtualdomains,
++          ~/control/concurrencyremote, ~/control/concurrencylocal,
++          ~/control/concurrencysupplX, ~/control/supplsX
++   X      Quit ASAP.
++
++qmail-todo sends "\0" terminated messages whereas qmail-send just send one
++character to qmail-todo.
++
++
++CAVEATS
++qmail-qread ignores all supplemental channels - contributions are welcome!
++
++Supplemental channels use qmail-rspawn for remote recipients only.
++
++Dynamic throttling and resource limits
++File descriptor limits are imposed on a per-process basis (FD_SET), on a
++per-account basis (ulimit -n, /etc/security/limits.conf on Linux, pam limits, etc.)
++and then on a system-wide basis by the OS (/proc/sys/fs/file-max on Linux, etc).
++concurrencyremote, concurrencysupplX, etc are each subject to the hard limit in
++conf-spawn, which in turn is bounded by per-process limits. Note that this limit
++applies separately to each queue, not to all queues in total. The sum of all
++concurrency limits for each queue in total is bounded on a per-account basis
++(ulimit -n). These limits can easily be approached if you are running many
++supplemental channels.
++
++qmail double checks the concurrency limits on startup for each channel (using FD_SET)
++and silently curbs them if needed because bad things happen if this limit is breached.
++If you're sending qmail-send a HUP signal after editing concurrency limits (dynamic
++throttling) be aware that qmail's builtin checks can be circumvented, here's what
++qmail's author has to say on the subject (from chkspawn.c):
++This means that the qmail daemons could crash if you set the run-time concurrency higher
++than [the per-process limit].
++
++Even if the per-process limits are in check, per-account and system-wide file descriptor
++limits may still cause bad things to happen if you're not careful (you've been warned!).
++
++Enjoy!
++Reed Sandberg
++
+diff -Naur netqmail-1.06/channels.g netqmail-1.06-channels/channels.g
+--- netqmail-1.06/channels.g	1969-12-31 16:00:00.000000000 -0800
++++ netqmail-1.06-channels/channels.g	2008-11-14 01:11:59.000000000 -0800
+@@ -0,0 +1,18 @@
++#ifndef CHANNELS_H
++#define CHANNELS_H
++
++/* total number of channels including canonical "local" and "remote" channels */
++#define CHANNELS NUMCHANNELS
++
++/* supplemental channels are all channels less the canonical "local" and "remote" channels */
++#define SUPPL_CHANNELS (CHANNELS - 2)
++
++/* Not longer than 80 bytes, must also change qmail-upq.sh */
++#define QDIR_BASENAME "suppl"
++
++/* start supplemental channel fd numbers here */
++#define CHANNEL_FD_OFFSET 10
++
++
++#endif
++
+diff -Naur netqmail-1.06/conf-channels netqmail-1.06-channels/conf-channels
+--- netqmail-1.06/conf-channels	1969-12-31 16:00:00.000000000 -0800
++++ netqmail-1.06-channels/conf-channels	2008-11-14 01:11:59.000000000 -0800
+@@ -0,0 +1,4 @@
++22
++
++Total number of channels (queues) available for delivery. Must be at
++least 2, and anything above 2 are considered supplemental channels.
+diff -Naur netqmail-1.06/FILES netqmail-1.06-channels/FILES
+--- netqmail-1.06/FILES	2007-11-30 12:22:54.000000000 -0800
++++ netqmail-1.06-channels/FILES	2008-11-15 03:21:33.000000000 -0800
+@@ -432,3 +432,6 @@
+ tcp-environ.5
+ constmap.h
+ constmap.c
++channels.g
++conf-channels
++CHANNELS
+diff -Naur netqmail-1.06/hier.c netqmail-1.06-channels/hier.c
+--- netqmail-1.06/hier.c	1998-06-15 03:53:16.000000000 -0700
++++ netqmail-1.06-channels/hier.c	2008-11-14 01:11:59.000000000 -0800
+@@ -4,6 +4,9 @@
+ #include "fmt.h"
+ #include "fifo.h"
+ 
++#include <stdio.h>
++#include "channels.h"
++
+ char buf[100 + FMT_ULONG];
+ 
+ void dsplit(base,uid,mode)
+@@ -29,6 +32,8 @@
+ 
+ void hier()
+ {
++  int cc;
++
+   h(auto_qmail,auto_uido,auto_gidq,0755);
+ 
+   d(auto_qmail,"control",auto_uido,auto_gidq,0755);
+@@ -59,6 +64,14 @@
+   dsplit("queue/local",auto_uids,0700);
+   dsplit("queue/remote",auto_uids,0700);
+ 
++  for (cc = 0;cc < SUPPL_CHANNELS;++cc)
++  {
++      char adbuf[100];
++
++      sprintf(adbuf,"queue/" QDIR_BASENAME "%d", cc);
++      dsplit(adbuf,auto_uids,0700);
++  }
++
+   d(auto_qmail,"queue/lock",auto_uidq,auto_gidq,0750);
+   z(auto_qmail,"queue/lock/tcpto",1024,auto_uidr,auto_gidq,0644);
+   z(auto_qmail,"queue/lock/sendmutex",0,auto_uids,auto_gidq,0600);
+diff -Naur netqmail-1.06/install-big.c netqmail-1.06-channels/install-big.c
+--- netqmail-1.06/install-big.c	1998-06-15 03:53:16.000000000 -0700
++++ netqmail-1.06-channels/install-big.c	2008-11-14 01:11:59.000000000 -0800
+@@ -4,6 +4,9 @@
+ #include "fmt.h"
+ #include "fifo.h"
+ 
++#include <stdio.h>
++#include "channels.h"
++
+ char buf[100 + FMT_ULONG];
+ 
+ void dsplit(base,uid,mode)
+@@ -29,6 +32,8 @@
+ 
+ void hier()
+ {
++  int cc;
++
+   h(auto_qmail,auto_uido,auto_gidq,0755);
+ 
+   d(auto_qmail,"control",auto_uido,auto_gidq,0755);
+@@ -59,6 +64,14 @@
+   dsplit("queue/local",auto_uids,0700);
+   dsplit("queue/remote",auto_uids,0700);
+ 
++  for (cc = 0;cc < SUPPL_CHANNELS;++cc)
++  {
++      char adbuf[100];
++
++      sprintf(adbuf,"queue/" QDIR_BASENAME "%d", cc);
++      dsplit(adbuf,auto_uids,0700);
++  }
++
+   d(auto_qmail,"queue/lock",auto_uidq,auto_gidq,0750);
+   z(auto_qmail,"queue/lock/tcpto",1024,auto_uidr,auto_gidq,0644);
+   z(auto_qmail,"queue/lock/sendmutex",0,auto_uids,auto_gidq,0600);
+diff -Naur netqmail-1.06/Makefile netqmail-1.06-channels/Makefile
+--- netqmail-1.06/Makefile	2007-11-30 12:22:54.000000000 -0800
++++ netqmail-1.06-channels/Makefile	2008-11-14 01:16:27.000000000 -0800
+@@ -702,9 +702,16 @@
+ 	./compile hfield.c
+ 
+ hier.o: \
+-compile hier.c auto_qmail.h auto_split.h auto_uids.h fmt.h fifo.h
++compile hier.c auto_qmail.h auto_split.h auto_uids.h fmt.h fifo.h channels.h
+ 	./compile hier.c
+ 
++channels.h: \
++conf-channels channels.g
++	cat channels.g \
++	| sed s}NUMCHANNELS}"`head -1 conf-channels`"}g \
++	> channels.h
++	chmod 644 channels.h
++
+ home: \
+ home.sh conf-qmail
+ 	cat home.sh \
+@@ -754,7 +761,7 @@
+ 
+ install-big.o: \
+ compile install-big.c auto_qmail.h auto_split.h auto_uids.h fmt.h \
+-fifo.h
++fifo.h channels.h
+ 	./compile install-big.c
+ 
+ install.o: \
+@@ -1483,23 +1490,24 @@
+ trigger.o fmtqfn.o quote.o now.o readsubdir.o qmail.o date822fmt.o \
+ datetime.a case.a ndelay.a getln.a wait.a seek.a fd.a sig.a open.a \
+ lock.a stralloc.a alloc.a substdio.a error.a str.a fs.a auto_qmail.o \
+-auto_split.o env.a
++auto_split.o env.a auto_spawn.o
+ 	./load qmail-send qsutil.o control.o constmap.o newfield.o \
+ 	prioq.o trigger.o fmtqfn.o quote.o now.o readsubdir.o \
+ 	qmail.o date822fmt.o datetime.a case.a ndelay.a getln.a \
+ 	wait.a seek.a fd.a sig.a open.a lock.a stralloc.a alloc.a \
+-	substdio.a error.a str.a fs.a auto_qmail.o auto_split.o env.a
++	substdio.a error.a str.a fs.a auto_qmail.o auto_split.o env.a auto_spawn.o
+ 
+ qmail-send.0: \
+ qmail-send.8
+ 	nroff -man qmail-send.8 > qmail-send.0
+ 
+ qmail-send.8: \
+-qmail-send.9 conf-break conf-spawn
++qmail-send.9 conf-break conf-spawn conf-channels
+ 	cat qmail-send.9 \
+ 	| sed s}QMAILHOME}"`head -1 conf-qmail`"}g \
+ 	| sed s}BREAK}"`head -1 conf-break`"}g \
+ 	| sed s}SPAWN}"`head -1 conf-spawn`"}g \
++	| sed s}CHANNELS}"`head -1 conf-channels`"}g \
+ 	> qmail-send.8
+ 
+ qmail-send.o: \
+@@ -1508,7 +1516,7 @@
+ substdio.h alloc.h error.h stralloc.h gen_alloc.h str.h byte.h fmt.h \
+ scan.h case.h auto_qmail.h trigger.h newfield.h stralloc.h quote.h \
+ qmail.h substdio.h qsutil.h prioq.h datetime.h gen_alloc.h constmap.h \
+-fmtqfn.h readsubdir.h direntry.h
++fmtqfn.h readsubdir.h direntry.h channels.h auto_qmail.h
+ 	./compile qmail-send.c
+ 
+ qmail-showctl: \
+@@ -1573,7 +1581,7 @@
+ 	> qmail-start.8
+ 
+ qmail-start.o: \
+-compile qmail-start.c fd.h prot.h exit.h fork.h auto_uids.h
++compile qmail-start.c fd.h prot.h exit.h fork.h auto_uids.h channels.h
+ 	./compile qmail-start.c
+ 
+ qmail-tcpok: \
+diff -Naur netqmail-1.06/qmail-send.9 netqmail-1.06-channels/qmail-send.9
+--- netqmail-1.06/qmail-send.9	1998-06-15 03:53:16.000000000 -0700
++++ netqmail-1.06-channels/qmail-send.9	2008-11-14 01:11:59.000000000 -0800
+@@ -16,6 +16,15 @@
+ .B qmail-send
+ leaves it in the queue and tries the addresses again later.
+ 
++.B Supplemental queues
++allow more than one queue for remote recipients. (CHANNELS - 2) supplemental queues total, because one queue is always
++designated for local deliveries and a second queue is always available for remote deliveries that
++don't match any of the domains listed in the supplemental queue control files.
++This makes it possible to divide remote deliveries into distinct queues at different concurrency
++levels and can be used as a throttling mechanism based on domain.
++Supplemental queues are managed by the supplsX and concurrencysupplX control files, where X is an integer from
++0 to (CHANNELS - 3).
++
+ .B qmail-send
+ prints a readable record of its activities to descriptor 0.
+ It writes commands to
+@@ -51,7 +60,11 @@
+ .B qmail-send
+ receives a HUP signal,
+ it will reread
+-.I locals
++.I locals,
++.I supplsX,
++.I concurrencylocal,
++.I concurrencyremote,
++.I concurrencysupplX
+ and
+ .IR virtualdomains .
+ .TP 5
+@@ -93,6 +106,15 @@
+ is limited at compile time to
+ SPAWN.
+ .TP 5
++.I concurrencysupplX
++Maximum number of simultaneous delivery attempts via supplemental
++channel X, where X is an integer starting at 0.
++Default: 20.
++If 0, deliveries via channel X will be put on hold.
++.I concurrencysupplX
++is limited at compile time to
++SPAWN.
++.TP 5
+ .I doublebouncehost
+ Double-bounce host.
+ Default:
+@@ -147,6 +169,12 @@
+ is listed in
+ .IR locals .
+ .TP 5
++.I supplsX
++List of domain names that the current host
++will deliver on supplemental channel X where X is an integer starting at 0,
++one per line.
++No default.
++.TP 5
+ .I percenthack
+ List of domain names where the percent hack is applied.
+ If
+@@ -164,7 +192,9 @@
+ handles
+ .I percenthack
+ before
+-.IR locals .
++.I locals
++and
++.IR supplsX.
+ .TP 5
+ .I queuelifetime
+ Number of seconds
+diff -Naur netqmail-1.06/qmail-send.c netqmail-1.06-channels/qmail-send.c
+--- netqmail-1.06/qmail-send.c	1998-06-15 03:53:16.000000000 -0700
++++ netqmail-1.06-channels/qmail-send.c	2008-11-14 01:11:59.000000000 -0800
+@@ -32,6 +32,10 @@
+ #include "fmtqfn.h"
+ #include "readsubdir.h"
+ 
++#include "auto_spawn.h"
++
++#include "channels.h"
++
+ /* critical timing feature #1: if not triggered, do not busy-loop */
+ /* critical timing feature #2: if triggered, respond within fixed time */
+ /* important timing feature: when triggered, respond instantly */
+@@ -59,13 +63,15 @@
+ char strnum2[FMT_ULONG];
+ char strnum3[FMT_ULONG];
+ 
+-#define CHANNELS 2
+-char *chanaddr[CHANNELS] = { "local/", "remote/" };
+-char *chanstatusmsg[CHANNELS] = { " local ", " remote " };
+-char *tochan[CHANNELS] = { " to local ", " to remote " };
+-int chanfdout[CHANNELS] = { 1, 3 };
+-int chanfdin[CHANNELS] = { 2, 4 };
+-int chanskip[CHANNELS] = { 10, 20 };
++char *chanaddr[CHANNELS];
++char *chanstatusmsg[CHANNELS];
++char *tochan[CHANNELS];
++int chanfdout[CHANNELS];
++int chanfdin[CHANNELS];
++int chanskip[CHANNELS];
++struct constmap mapsuppl[SUPPL_CHANNELS];
++stralloc suppls[SUPPL_CHANNELS];
++stralloc newsuppls[SUPPL_CHANNELS];
+ 
+ int flagexitasap = 0; void sigterm() { flagexitasap = 1; }
+ int flagrunasap = 0; void sigalrm() { flagrunasap = 1; }
+@@ -88,6 +94,7 @@
+ stralloc fn = {0};
+ stralloc fn2 = {0};
+ char fnmake_strnum[FMT_ULONG];
++stralloc fname = {0};
+ 
+ void fnmake_init()
+ {
+@@ -117,6 +124,7 @@
+ {
+   int i;
+   int j;
++  int c;
+   char *x;
+   static stralloc addr = {0};
+   int at;
+@@ -159,6 +167,13 @@
+  
+   if (!stralloc_cat(&rwline,&addr)) return 0;
+   if (!stralloc_0(&rwline)) return 0;
++
++  for (c = 0;c < SUPPL_CHANNELS;++c)
++  {
++      if (constmap(&mapsuppl[c],addr.s + at + 1,addr.len - at - 1))
++          return c + 3;
++  }
++
+   return 2;
+ }
+ 
+@@ -228,7 +243,8 @@
+ 
+ substdio sstoqc; char sstoqcbuf[1024];
+ substdio ssfromqc; char ssfromqcbuf[1024];
+-stralloc comm_buf[CHANNELS] = { {0}, {0} };
++
++stralloc comm_buf[CHANNELS];
+ int comm_pos[CHANNELS];
+ 
+ void comm_init()
+@@ -382,7 +398,7 @@
+ /* this file is too long ----------------------------------- PRIORITY QUEUES */
+ 
+ prioq pqdone = {0}; /* -todo +info; HOPEFULLY -local -remote */
+-prioq pqchan[CHANNELS] = { {0}, {0} };
++prioq pqchan[CHANNELS];
+ /* pqchan 0: -todo +info +local ?remote */
+ /* pqchan 1: -todo +info ?local +remote */
+ prioq pqfail = {0}; /* stat() failure; has to be pqadded again */
+@@ -780,8 +796,8 @@
+ ;
+ 
+ unsigned long masterdelid = 1;
+-unsigned int concurrency[CHANNELS] = { 10, 20 };
+-unsigned int concurrencyused[CHANNELS] = { 0, 0 };
++unsigned int concurrency[CHANNELS];
++unsigned int concurrencyused[CHANNELS];
+ struct del *d[CHANNELS];
+ stralloc dline[CHANNELS];
+ char delbuf[2048];
+@@ -808,9 +824,9 @@
+  for (c = 0;c < CHANNELS;++c)
+   {
+    flagspawnalive[c] = 1;
+-   while (!(d[c] = (struct del *) alloc(concurrency[c] * sizeof(struct del))))
++   while (!(d[c] = (struct del *) alloc(auto_spawn * sizeof(struct del))))
+      nomem();
+-   for (i = 0;i < concurrency[c];++i)
++   for (i = 0;i < auto_spawn;++i)
+     { d[c][i].used = 0; d[c][i].recip.s = 0; }
+    dline[c].s = 0;
+    while (!stralloc_copys(&dline[c],"")) nomem();
+@@ -909,7 +925,7 @@
+    if (!ch && (dline[c].len > 1))
+     {
+      delnum = (unsigned int) (unsigned char) dline[c].s[0];
+-     if ((delnum < 0) || (delnum >= concurrency[c]) || !d[c][delnum].used)
++     if ((delnum < 0) || (delnum >= auto_spawn) || !d[c][delnum].used)
+        log1("warning: internal error: delivery report out of range\n");
+      else
+       {
+@@ -1363,12 +1379,9 @@
+        log1("\n");
+        break;
+      case 'T':
+-       switch(rewrite(todoline.s + 1))
+-	{
+-	 case 0: nomem(); goto fail;
+-	 case 2: c = 1; break;
+-	 default: c = 0; break;
+-        }
++       c = rewrite(todoline.s + 1);
++       if (c == 0) { nomem(); goto fail; }
++       c--;
+        if (fdchan[c] == -1)
+ 	{
+ 	 fnmake_chanaddr(id,c);
+@@ -1441,10 +1454,24 @@
+ 
+ /* this file is too long ---------------------------------------------- MAIN */
+ 
+-int getcontrols() { if (control_init() == -1) return 0;
++int getcontrols() {
++ int c;
++ int ck = 0;
++ 
++ if (control_init() == -1) return 0;
+  if (control_readint(&lifetime,"control/queuelifetime") == -1) return 0;
+  if (control_readint(&concurrency[0],"control/concurrencylocal") == -1) return 0;
+  if (control_readint(&concurrency[1],"control/concurrencyremote") == -1) return 0;
++
++ for (c = 2,ck = 0;c < CHANNELS;++c)
++ {
++     strnum2[fmt_uint(strnum2,ck++)] = 0;
++     if (!stralloc_copys(&fname,"control/concurrencysuppl")) return 0;
++     if (!stralloc_cats(&fname,strnum2)) return 0;
++     if (!stralloc_0(&fname)) return 0;
++     if (control_readint(&concurrency[c],fname.s) == -1) return 0;
++ }
++
+  if (control_rldef(&envnoathost,"control/envnoathost",1,"envnoathost") != 1) return 0;
+  if (control_rldef(&bouncefrom,"control/bouncefrom",0,"MAILER-DAEMON") != 1) return 0;
+  if (control_rldef(&bouncehost,"control/bouncehost",1,"bouncehost") != 1) return 0;
+@@ -1467,6 +1494,21 @@
+    case 0: if (!constmap_init(&mapvdoms,"",0,1)) return 0; break;
+    case 1: if (!constmap_init(&mapvdoms,vdoms.s,vdoms.len,1)) return 0; break;
+   }
++
++ for (c = 0;c < SUPPL_CHANNELS;++c)
++ {
++     strnum2[fmt_uint(strnum2,c)] = 0;
++     if (!stralloc_copys(&fname,"control/suppls")) return 0;
++     if (!stralloc_cats(&fname,strnum2)) return 0;
++     if (!stralloc_0(&fname)) return 0;
++     switch (control_readfile(&suppls[c],fname.s,0))
++     {
++         case -1: return 0;
++         case 0: if (!constmap_init(&mapsuppl[c],"",0,0)) return 0; break;
++         case 1: if (!constmap_init(&mapsuppl[c],suppls[c].s,suppls[c].len,0)) return 0; break;
++     }
++ }
++
+  return 1; }
+ 
+ stralloc newlocals = {0};
+@@ -1475,6 +1517,26 @@
+ void regetcontrols()
+ {
+  int r;
++ int c;
++ int ck = 0;
++
++ if (control_readint(&concurrency[0],"control/concurrencylocal") == -1)
++  { log1("alert: unable to reread control/concurrencylocal\n"); return; }
++ if (control_readint(&concurrency[1],"control/concurrencyremote") == -1)
++  { log1("alert: unable to reread control/concurrencyremote\n"); return; }
++
++ for (c = 2,ck = 0;c < CHANNELS;++c)
++ {
++     strnum2[fmt_uint(strnum2,ck++)] = 0;
++     if (!stralloc_copys(&fname,"control/concurrencysuppl"))
++         { log3("alert: unable to reread ",fname.s,"\n"); return; }
++     if (!stralloc_cats(&fname,strnum2))
++         { log3("alert: unable to reread ",fname.s,"\n"); return; }
++     if (!stralloc_0(&fname))
++         { log3("alert: unable to reread ",fname.s,"\n"); return; }
++     if (control_readint(&concurrency[c],fname.s) == -1)
++         { log3("alert: unable to reread ",fname.s,"\n"); return; }
++ }
+ 
+  if (control_readfile(&newlocals,"control/locals",1) != 1)
+   { log1("alert: unable to reread control/locals\n"); return; }
+@@ -1495,6 +1557,28 @@
+   }
+  else
+    while (!constmap_init(&mapvdoms,"",0,1)) nomem();
++
++ for (c = 0;c < SUPPL_CHANNELS;++c)
++ {
++     strnum2[fmt_uint(strnum2,c)] = 0;
++     if (!stralloc_copys(&fname,"control/suppls")) nomem();
++     if (!stralloc_cats(&fname,strnum2)) nomem();
++     if (!stralloc_0(&fname)) nomem();
++     r = control_readfile(&newsuppls[c],fname.s,0);
++     if (r == -1)
++      { log3("alert: qmail-todo: unable to reread ", fname.s, "\n"); return; }
++
++     constmap_free(&mapsuppl[c]);
++
++     if (r)
++      {
++       while (!stralloc_copy(&suppls[c],&newsuppls[c])) nomem();
++       while (!constmap_init(&mapsuppl[c],suppls[c].s,suppls[c].len,0)) nomem();
++      }
++     else
++       while (!constmap_init(&mapsuppl[c],"",0,0)) nomem();
++ }
++
+ }
+ 
+ void reread()
+@@ -1512,6 +1596,104 @@
+   }
+ }
+ 
++
++static int static_i = 0;
++static int static_j = 0;
++static void channels_init(void)
++{
++    chanaddr[0] = "local/";
++    chanaddr[1] = "remote/";
++    for (static_i=2,static_j=0;static_i<CHANNELS;static_i++,static_j++)
++    {
++        stralloc fnc = {0};
++        strnum2[fmt_uint(strnum2,static_j)] = 0;
++        if (!stralloc_copys(&fname,QDIR_BASENAME)) nomem();
++        if (!stralloc_cats(&fname,strnum2)) nomem();
++        if (!stralloc_cats(&fname,"/")) nomem();
++        if (!stralloc_0(&fname)) nomem();
++        if (!stralloc_copy(&fnc,&fname)) nomem();
++        chanaddr[static_i] = fnc.s;
++    }
++
++    chanstatusmsg[0] = " local ";
++    chanstatusmsg[1] = " remote ";
++    for (static_i=2,static_j=0;static_i<CHANNELS;static_i++,static_j++)
++    {
++        stralloc fnc = {0};
++        strnum2[fmt_uint(strnum2,static_j)] = 0;
++        if (!stralloc_copys(&fname," " QDIR_BASENAME)) nomem();
++        if (!stralloc_cats(&fname,strnum2)) nomem();
++        if (!stralloc_cats(&fname," ")) nomem();
++        if (!stralloc_0(&fname)) nomem();
++        if (!stralloc_copy(&fnc,&fname)) nomem();
++        chanstatusmsg[static_i] = fnc.s;
++    }
++
++    tochan[0] = " to local ";
++    tochan[1] = " to remote ";
++    static_j = 0;
++    for (static_i=2;static_i<CHANNELS;static_i++)
++    {
++        stralloc fnc = {0};
++        strnum2[fmt_uint(strnum2,static_j++)] = 0;
++        if (!stralloc_copys(&fname," to " QDIR_BASENAME)) nomem();
++        if (!stralloc_cats(&fname,strnum2)) nomem();
++        if (!stralloc_cats(&fname," ")) nomem();
++        if (!stralloc_0(&fname)) nomem();
++        if (!stralloc_copy(&fnc,&fname)) nomem();
++        tochan[static_i] = fnc.s;
++    }
++
++    chanfdout[0] = 1;
++    chanfdout[1] = 3;
++    static_j = 1+CHANNEL_FD_OFFSET;
++    for (static_i=2;static_i<CHANNELS;static_i++)
++    {
++        chanfdout[static_i] = static_j;
++        static_j+=2;
++    }
++
++    chanfdin[0] = 2;
++    chanfdin[1] = 4;
++    static_j = 2+CHANNEL_FD_OFFSET;
++    for (static_i=2;static_i<CHANNELS;static_i++)
++    {
++        chanfdin[static_i] = static_j;
++        static_j+=2;
++    }
++
++    chanskip[0] = 10;
++    chanskip[1] = 20;
++    static_j = 20;
++    for (static_i=2;static_i<CHANNELS;static_i++)
++    {
++        chanskip[static_i] = static_j;
++    }
++
++    for (static_i=0;static_i<CHANNELS;static_i++)
++        comm_buf[static_i].s = 0;
++
++    for (static_i=0;static_i<CHANNELS;static_i++)
++        pqchan[static_i].p = 0;
++
++    concurrency[0] = 10;
++    concurrency[1] = 20;
++    for (static_i=2;static_i<CHANNELS;static_i++)
++    {
++        concurrency[static_i] = 20;
++    }
++
++    for (static_i=0;static_i<CHANNELS;static_i++)
++        concurrencyused[static_i] = 0;
++
++    for (static_i=0;static_i<SUPPL_CHANNELS;static_i++)
++        suppls[static_i].s = 0;
++
++    for (static_i=0;static_i<SUPPL_CHANNELS;static_i++)
++        newsuppls[static_i].s = 0;
++
++}
++
+ void main()
+ {
+  int fd;
+@@ -1522,6 +1704,8 @@
+  struct timeval tv;
+  int c;
+ 
++ channels_init();
++
+  if (chdir(auto_qmail) == -1)
+   { log1("alert: cannot start: unable to switch to home directory\n"); _exit(111); }
+  if (!getcontrols())
+diff -Naur netqmail-1.06/qmail-start.c netqmail-1.06-channels/qmail-start.c
+--- netqmail-1.06/qmail-start.c	1998-06-15 03:53:16.000000000 -0700
++++ netqmail-1.06-channels/qmail-start.c	2008-11-14 01:11:59.000000000 -0800
+@@ -3,6 +3,7 @@
+ #include "exit.h"
+ #include "fork.h"
+ #include "auto_uids.h"
++#include "channels.h"
+ 
+ char *(qsargs[]) = { "qmail-send", 0 };
+ char *(qcargs[]) = { "qmail-clean", 0 };
+@@ -19,18 +20,38 @@
+ int pi5[2];
+ int pi6[2];
+ 
+-void close23456() { close(2); close(3); close(4); close(5); close(6); }
++int suppl_pi[SUPPL_CHANNELS*2][2];
++
++void close23456() { 
++  int c;
++  close(2); close(3); close(4); close(5); close(6); 
++
++  for (c=1+CHANNEL_FD_OFFSET;c<=SUPPL_CHANNELS*2+CHANNEL_FD_OFFSET;c++)
++  {
++      close(c);
++  }
++}
+ 
+ void closepipes() {
++  int c;
++
+   close(pi1[0]); close(pi1[1]); close(pi2[0]); close(pi2[1]);
+   close(pi3[0]); close(pi3[1]); close(pi4[0]); close(pi4[1]);
+   close(pi5[0]); close(pi5[1]); close(pi6[0]); close(pi6[1]);
++
++  for (c=0;c<SUPPL_CHANNELS*2;c++)
++  {
++      close(suppl_pi[c][0]);
++      close(suppl_pi[c][1]);
++  }
+ }
+ 
+ void main(argc,argv)
+ int argc;
+ char **argv;
+ {
++  int c, cc;
++
+   if (chdir("/") == -1) die();
+   umask(077);
+   if (prot_gid(auto_gidq) == -1) die();
+@@ -41,6 +62,11 @@
+   if (fd_copy(5,0) == -1) die();
+   if (fd_copy(6,0) == -1) die();
+ 
++  for (c=1+CHANNEL_FD_OFFSET;c<=SUPPL_CHANNELS*2+CHANNEL_FD_OFFSET;c++)
++  {
++      if (fd_copy(c,0) == -1) die();
++  }
++
+   if (argv[1]) {
+     qlargs[1] = argv[1];
+     ++argv;
+@@ -71,6 +97,11 @@
+   if (pipe(pi5) == -1) die();
+   if (pipe(pi6) == -1) die();
+  
++  for (c=0;c<SUPPL_CHANNELS*2;c++)
++  {
++      if (pipe(suppl_pi[c]) == -1) die();
++  }
++
+   switch(fork()) {
+     case -1: die();
+     case 0:
+@@ -105,7 +136,30 @@
+       execvp(*qcargs,qcargs);
+       die();
+   }
+- 
++
++  for (c=0,cc=0;c<SUPPL_CHANNELS;++c,cc+=2)
++  {
++      switch(fork()) {
++        case -1: die();
++        case 0:
++          if (prot_uid(auto_uidr) == -1) die();
++          /* Does not increment cc in parent process */
++          if (fd_copy(0,suppl_pi[cc++][0]) == -1) die();
++          if (fd_copy(1,suppl_pi[cc][1]) == -1) die();
++          close23456();
++          closepipes();
++          /*if (str_equal(channel_types[c],"remote"))
++          {*/
++              execvp(*qrargs,qrargs);
++          /*}
++           else
++          {
++             execvp(*qlargs,qlargs);
++          }*/
++          die();
++      }
++  }
++
+   if (prot_uid(auto_uids) == -1) die();
+   if (fd_copy(0,1) == -1) die();
+   if (fd_copy(1,pi1[1]) == -1) die();
+@@ -114,6 +168,13 @@
+   if (fd_copy(4,pi4[0]) == -1) die();
+   if (fd_copy(5,pi5[1]) == -1) die();
+   if (fd_copy(6,pi6[0]) == -1) die();
++
++  for (cc=0,c=1+CHANNEL_FD_OFFSET;c<=SUPPL_CHANNELS*2+CHANNEL_FD_OFFSET;c++)
++  {
++      if (fd_copy(c++,suppl_pi[cc++][1]) == -1) die();
++      if (fd_copy(c,suppl_pi[cc++][0]) == -1) die();
++  }
++
+   closepipes();
+   execvp(*qsargs,qsargs);
+   die();
+diff -Naur netqmail-1.06/qmail-upq.sh netqmail-1.06-channels/qmail-upq.sh
+--- netqmail-1.06/qmail-upq.sh	1998-06-15 03:53:16.000000000 -0700
++++ netqmail-1.06-channels/qmail-upq.sh	2008-11-14 01:11:59.000000000 -0800
+@@ -1,6 +1,6 @@
+ cd QMAIL
+ cd queue
+-for dir in mess info local remote
++for dir in mess info local remote suppl*
+ do
+   ( cd $dir; find . -type f -print ) | (
+     cd $dir
+diff -Naur netqmail-1.06/TARGETS netqmail-1.06-channels/TARGETS
+--- netqmail-1.06/TARGETS	1998-06-15 03:53:16.000000000 -0700
++++ netqmail-1.06-channels/TARGETS	2008-11-14 01:11:59.000000000 -0800
+@@ -385,3 +385,4 @@
+ man
+ setup
+ check
++channels.h

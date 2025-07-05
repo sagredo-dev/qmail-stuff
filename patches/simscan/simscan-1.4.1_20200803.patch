@@ -1,0 +1,124 @@
+Combined patch for simscan-1.4.1 (https://github.com/qmail/simscan/releases)
+v. 20200803
+
+This patch puts together:
+
+* jms patch to improve the debugging of simscan on qmail-smtpd log
+  https://notes.sagredo.eu/files/qmail/patches/simscan/jms/simscan-1.4.0-debug.patch
+  more info here https://qmail.jms1.net/simscan/
+* A bug fix by Bob Greco where a received message with multiple 'local' recipients executes spamc
+  as null user and not as the user extracted from the first local recipient.
+  https://notes.sagredo.eu/en/qmail-notes-185/simscan-38.html#comment844
+
+===================================================================================================
+
+diff -ruN ../simscan-1.4.1_original/simscan.c simscan-1.4.1/simscan.c
+--- ../simscan-1.4.1_original/simscan.c	2015-01-23 09:57:43.000000000 +0100
++++ simscan-1.4.1/simscan.c	2020-08-03 16:50:36.013631212 +0200
+@@ -102,6 +102,7 @@
+ int str_rstr(register char *h,register char *n);
+ char *replace(char *string, char *oldpiece, char *newpiece);
+ int DebugFlag = 0;
++int DebugFiles = 0;
+ 
+ /* --stdout is required for reading virus names */
+ char *viri_args[] = { "clamdscan", "--stdout", message_name, NULL };
+@@ -171,6 +172,7 @@
+ int InClamHeaders;
+ int check_clam();
+ int is_clam(char *clambuf);
++void log_clam(char *clambuf);
+ #endif
+ 
+ /* Attachment scanning globals */
+@@ -274,6 +276,11 @@
+   if ( (tmpstr=getenv("SIMSCAN_DEBUG"))!=NULL ) {
+     DebugFlag = atoi(tmpstr);
+   }
++
++  /* Set the "leave temp files alone" flag */
++  if ( (tmpstr=getenv("SIMSCAN_DEBUG_FILES"))!=NULL ) {
++    DebugFiles = atoi(tmpstr);
++  }
+   
+ #ifdef ENABLE_ATTACH
+   init_attach();
+@@ -828,10 +835,12 @@
+   }
+ 
+   /* remove the working files */
+-  if ( remove_files(workdir) == -1 ) {
+-    exit_clean(EXIT_400);
++  if ( DebugFiles < 2 ) {
++    if ( remove_files(workdir) == -1 ) {
++      exit_clean(EXIT_400);
++    }
+   }
+-  
++
+   /* pass qmail-queue's exit status on */
+   _exit(WEXITSTATUS(qstat));
+ 
+@@ -984,6 +993,7 @@
+   InClamHeaders = 1;
+   memset(buffer,0,sizeof(buffer));
+   while((file_count=read(0,buffer,BUFFER_SIZE))>0) {
++    if ( DebugFlag > 2 ) log_clam(buffer) ;
+     if ( InClamHeaders == 1 ) {
+       is_clam(buffer);
+     }
+@@ -1010,6 +1020,35 @@
+   return(-1);
+ }
+ 
++void log_clam(char *clambuf)
++{
++	char *p ;
++	int needh = 1 ;
++
++	p = clambuf ;
++	while ( *p )
++	{
++		if ( *p != '\r' )
++		{
++			if ( needh )
++			{
++				fputs ( "simscan: clamdscan: " , stderr ) ;
++				needh = 0 ;
++			}
++
++			fputc ( *p , stderr ) ;
++
++			if ( *p == '\n' )
++				needh = 1 ;
++		}
++
++		p++ ;
++	}
++
++	if ( ! needh )
++		fputc ( '\n' , stderr ) ;
++}
++
+ int is_clam(char *clambuf)
+ {
+  int i,j,k;
+@@ -1315,7 +1354,7 @@
+     spamc_args[i++] = "-u";
+     spamc_args[i++] = spamuser;
+ #ifdef ENABLE_SPAMC_USER
+-  } else if ( MaxRcptTo==1 && i<MAX_SPAMC_ARGS-2 && strlen(spamuser) == 0) {
++  } else if ( MaxRcptTo>0 && i<MAX_SPAMC_ARGS-2 && strlen(spamuser) == 0) {
+     spamc_args[i++] = "-u";
+     spamc_args[i++] = RcptTo[0];
+ #endif
+@@ -1638,7 +1677,8 @@
+  */
+ void exit_clean( int error_code )
+ {
+-  remove_files(workdir);
++  if ( DebugFiles < 1 )
++    remove_files(workdir);
+   if ( DebugFlag > 0 ) {
+     fprintf(stderr, "simscan:[%d]: exit error code: %d\n", getppid(), error_code); 
+   }

@@ -1,0 +1,33 @@
+Patch for netqmail-1.06 by Roberto Puzzanghera https://notes.sagredo.eu
+It gets netqmail to compile with gcc-10
+
+The compilation breaks was caused by the qmail-hide-ip-headers.patch,
+(https://notes.sagredo.eu/files/hacks/qmail/patches/qmail-hide-ip-headers.patch)
+which was revised.
+
+=================================================================================
+
+diff -ruN netqmail-1.06-original/received.c netqmail-1.06/received.c
+--- netqmail-1.06-original/received.c   2020-12-04 19:05:28.395202615 +0100
++++ netqmail-1.06/received.c    2020-12-04 19:07:55.609122706 +0100
+@@ -21,8 +21,8 @@
+   return 0;
+ }
+ 
+-char *relayclient;
+-int relayclientlen;
++extern char *relayclient;
++extern int relayclientlen;
+ 
+ void safeput(qqt,s)
+ struct qmail *qqt;
+@@ -62,7 +62,7 @@
+   if (remoteinfo) {
+     safeput(qqt,remoteinfo);
+   }
+-  relayclient = env_get("RELAYCLIENT");
++  char relayclient = env_get("RELAYCLIENT");
+   if (!relayclient) {
+     if (remoteinfo) { qmail_puts(qqt,"@"); }
+      safeput(qqt,remoteip);
+

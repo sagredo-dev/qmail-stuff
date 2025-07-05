@@ -1,0 +1,91 @@
+https://lists.archive.carbon60.com/qmail/users/138190
+
+Remove an ancient misfeature that was introduced for compatibility with
+misguided setups that don't exist anymore. Not doing an ANY query (to
+check for CNAMEs) avoids getting large amounts of data we have no
+interest in and that may overflow our response buffer. This is becoming
+an increasingly widespread problem in practice due to DNSSEC.
+
+With this change, qmail will only break for (i.e. be unable to deliver
+to) domains that have enough _MX_ records to overflow the fixed buffer
+size.
+
+This approach was suggested [1] by DJB:
+
+> Hi Bhasker,
+>
+> Back in the 1990s there were many sites relying on the following feature
+> of the SMTP infrastructure:
+>
+> If you set up www.your.site with a CNAME for your.site, mail to
+> www.your.site will automatically be accepted by your.site's mailer.
+>
+> This feature was implemented by SMTP clients: the client would see the
+> CNAME record for www.your.site and rewrite www.your.site as your.site in
+> SMTP. This wasn't in the RFCs---I'm pretty sure that it started with
+> Eric Allman misinterpreting a stupid side comment in the RFCs---but new
+> clients such as qmail had to do the same thing for interoperability.
+>
+> Implementors discussing this in the late 1990s agreed that it would be
+> good to drop this feature, eliminating all special knowledge of CNAMEs
+> from clients and telling servers to take care of themselves. I hate to
+> break the mail system, so I advocated a two-step transition with a gap
+> in time between
+>
+> (1) warning clients to stop relying on the feature and
+> (2) turning the feature off.
+>
+> Other people---including the RFC 2821 author---advocated simply turning
+> the feature off, mail delivery be damned.
+>
+> I don't know who was the first to actually turn the feature off. I'm
+> sure that there aren't any sites relying on the feature now. It's safe
+> to simply skip the CNAME lookup: i.e., have dns_cname simply return 0.
+>
+> ---Dan
+
+[1] http://www.ornl.gov/lists/mailing-lists/qmail/2010/10/msg00018.html
+
+Signed-off-by: Sascha Silbe <sascha-pgp@silbe.org>
+---
+dns.c | 27 +--------------------------
+1 file changed, 1 insertion(+), 26 deletions(-)
+
+diff --git a/dns.c b/dns.c
+index e9faad7..f00c16d 100644
+--- a/dns.c
++++ b/dns.c
+@@ -187,32 +187,7 @@ int flagsearch;
+int dns_cname(sa)
+stralloc *sa;
+{
+- int r;
+- int loop;
+- for (loop = 0;loop < 10;++loop)
+- {
+- if (!sa->len) return loop;
+- if (sa->s[sa->len - 1] == ']') return loop;
+- if (sa->s[sa->len - 1] == '.') { --sa->len; continue; }
+- switch(resolve(sa,T_ANY))
+- {
+- case DNS_MEM: return DNS_MEM;
+- case DNS_SOFT: return DNS_SOFT;
+- case DNS_HARD: return loop;
+- default:
+- while ((r = findname(T_CNAME)) != 2)
+- {
+- if (r == DNS_SOFT) return DNS_SOFT;
+- if (r == 1)
+- {
+- if (!stralloc_copys(sa,name)) return DNS_MEM;
+- break;
+- }
+- }
+- if (r == 2) return loop;
+- }
+- }
+- return DNS_HARD; /* alias loop */
++ return 0;
+}
+
+#define FMT_IAA 40

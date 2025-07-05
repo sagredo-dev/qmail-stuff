@@ -1,0 +1,103 @@
+diff -ruN netqmail-1.06-original/qmail-smtpd.c netqmail-1.06/qmail-smtpd.c
+--- netqmail-1.06-original/qmail-smtpd.c	2019-05-24 14:28:28.346529544 +0200
++++ netqmail-1.06/qmail-smtpd.c	2019-07-13 09:51:02.282951887 +0200
+@@ -110,7 +110,7 @@
+ void flush() { substdio_flush(&ssout); }
+ void out(s) char *s; { substdio_puts(&ssout,s); }
+ 
+-void die_read() { logit("read failed"); _exit(1); }
++void die_read(char *reason) { logit2("read failed", reason); flush(); _exit(1); }
+ void die_alarm() { qlogenvelope("rejected","alarmtimeout","","451"); logit("timeout"); out("451 timeout (#4.4.2)\r\n"); flush(); _exit(1); }
+ void die_nomem() { qlogenvelope("rejected","outofmemory","","421"); out("421 out of memory (#4.3.0)\r\n"); flush(); _exit(1); }
+ void die_control() { qlogenvelope("rejected","cannotreadcontrols","","421"); logit("unable to read controls"); out("421 unable to read controls (#4.3.0)\r\n"); flush(); _exit(1); }
+@@ -1104,7 +1104,7 @@
+   if (reason) {
+       if (!stralloc_cats(&log_buf, " (")) die_nomem();
+       if (!stralloc_cats(&log_buf, reason)) die_nomem();
+-      if (!stralloc_cats(&log_buf, "): ")) die_nomem();
++      if (!stralloc_cats(&log_buf, ")")) die_nomem();
+   }
+   if (!stralloc_catb(&log_buf, ": ", 2)) die_nomem();
+   safeloglen(mailfrom.s, mailfrom.len);
+@@ -1150,7 +1150,7 @@
+   if(!stralloc_0(&fuser)) die_nomem();
+   if (!remoteinfo) {
+     remoteinfo = fuser.s;
+-    if (!env_unset("TCPREMOTEINFO")) die_read();
++    if (!env_unset("TCPREMOTEINFO")) die_read("TCPREMOTEINFO");
+     if (!env_put2("TCPREMOTEINFO",remoteinfo)) die_nomem();
+   }
+ }
+@@ -1694,7 +1694,7 @@
+ #endif
+   r = timeoutread(timeout,fd,buf,len);
+   if (r == -1) if (errno == error_timeout) die_alarm();
+-  if (r <= 0) die_read();
++  if (r <= 0) die_read("timeoutread");
+   return r;
+ }
+ 
+@@ -1917,7 +1917,7 @@
+   for (;;) {
+     if (!stralloc_readyplus(&authin,1)) die_nomem(); /* XXX */
+     i = substdio_get(&ssin,authin.s + authin.len,1);
+-    if (i != 1) die_read();
++    if (i != 1) die_read("authgetl");
+     if (authin.s[authin.len] == '\n') break;
+     ++authin.len;
+   }
+@@ -2096,15 +2096,15 @@
+       protocol = "ESMTPA";
+       relayclient = "";
+       remoteinfo = user.s;
+-      if (!env_unset("TCPREMOTEINFO")) die_read();
++      if (!env_unset("TCPREMOTEINFO")) die_read("TCPREMOTEINFO");
+       if (!env_put2("TCPREMOTEINFO",remoteinfo)) die_nomem();
+       if (!env_put2("RELAYCLIENT",relayclient)) die_nomem();
+ 
+-      if (!env_unset("SMTPAUTHMETHOD")) die_read();
++      if (!env_unset("SMTPAUTHMETHOD")) die_read("SMTPAUTHMETHOD");
+       if (!env_put2("SMTPAUTHMETHOD", authcmds[i].text)) die_nomem();
+-      if (!env_unset("SMTPAUTHUSER")) die_read();
++      if (!env_unset("SMTPAUTHUSER")) die_read("SMTPAUTHUSER");
+       if (!env_put2("SMTPAUTHUSER",user.s)) die_nomem();
+-      if (!env_unset("SMTP_AUTH_USER")) die_read();
++      if (!env_unset("SMTP_AUTH_USER")) die_read("SMTP_AUTH_USER");
+       if (!env_put2("SMTP_AUTH_USER",user.s)) die_nomem();
+ 
+       strerr_warn4(title.s,"auth: auth-success type=login user=<",user.s,">",0);
+@@ -2199,7 +2199,7 @@
+   if (s2) { out(": "); out(s2); }
+   out(" (#4.3.0)\r\n"); flush();
+ }
+-void tls_err(const char *s) { tls_out(s, ssl_error()); if (smtps) die_read(); }
++void tls_err(const char *s) { tls_out(s, ssl_error()); if (smtps) die_read("tls_err"); }
+ 
+ # define CLIENTCA "control/clientca.pem"
+ # define CLIENTCRL "control/clientcrl.pem"
+@@ -2237,7 +2237,7 @@
+ 
+   if (ssl_timeoutrehandshake(timeout, ssl_rfd, ssl_wfd, ssl) <= 0) {
+     const char *err = ssl_error_str();
+-    tls_out("rehandshake failed", err); die_read();
++    tls_out("rehandshake failed", err); die_read("rehandshake failed");
+   }
+ 
+   do { /* one iteration */
+@@ -2369,7 +2369,7 @@
+   if (ssl_timeoutaccept(timeout, ssl_rfd, ssl_wfd, myssl) <= 0) {
+     /* neither cleartext nor any other response here is part of a standard */
+     const char *err = ssl_error_str();
+-    tls_out("connection failed", err); ssl_free(myssl); die_read();
++    tls_out("connection failed", err); ssl_free(myssl); die_read("tls connection failed");
+   }
+   ssl = myssl;
+ 
+@@ -2540,6 +2540,6 @@
+ 
+   smtp_greet("220 ");
+   out(" ESMTP\r\n");
+-  if (commands(&ssin,&smtpcommands) == 0) die_read();
++  if (commands(&ssin,&smtpcommands) == 0) die_read("commands");
+   die_nomem();
+ }

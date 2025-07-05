@@ -1,0 +1,32 @@
+Solve a problem where the files ripemime creates within the work directory are not group-readable
+
+diff -ruN ripmime-1.4.0.9/mime.c ripmime-1.4.0.9-patched/mime.c
+--- ripmime-1.4.0.9/mime.c	2008-11-07 05:33:33.000000000 +0200
++++ ripmime-1.4.0.9-patched/mime.c	2008-12-29 11:10:00.882647067 +0200
+@@ -1339,7 +1339,7 @@
+ 	if (MIME_DNORMAL) LOGGER_log("%s:%d:MIME_decode_raw:DEBUG: Start\n",FL);
+ 
+ 	snprintf(fullpath,sizeof(fullpath),"%s/%s",unpackdir,hinfo->filename);
+-	fo = open(fullpath, O_WRONLY|O_CREAT, S_IRUSR|S_IWUSR);
++	fo = open(fullpath, O_WRONLY|O_CREAT, S_IRUSR|S_IWUSR|S_IRGRP);
+ 
+ 	if (fo == -1)
+ 	{
+@@ -1686,7 +1686,7 @@
+ 
+ 
+ 	//of = fopen(fullMIME_filename,"wb");
+-	of = open(fullMIME_filename, O_WRONLY|O_CREAT, S_IRUSR|S_IWUSR);
++	of = open(fullMIME_filename, O_WRONLY|O_CREAT, S_IRUSR|S_IWUSR|S_IRGRP);
+ 
+ 
+ 	/* if we were unable to open the output file, then we better log an error and drop out */
+@@ -2171,7 +2171,7 @@
+ 	}
+ 
+ 	/* open up our input file */
+-	fout = open(dest_mpname,O_WRONLY|O_CREAT, S_IRUSR|S_IWUSR);
++	fout = open(dest_mpname,O_WRONLY|O_CREAT, S_IRUSR|S_IWUSR|S_IRGRP);
+ 	if (fout == -1) {
+ 		LOGGER_log("%s:%d:MIME_read_raw:ERROR: Cannot open '%s' for writing. (%s)",FL, dest_mpname, strerror(errno));
+ 		return -1;

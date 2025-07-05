@@ -1,0 +1,238 @@
+Jan Mojzis <jan.mojzis@gmail.com>
+
+Global setup
+=============
+echo "192.168.1.20:60000" > /var/qmail/control/postgrey
+... done
+
+Per IP setup
+============
+echo "192.168.1.:allow,POSTGREY="192.168.1.20:60000" >> /etc/tcp.smtp
+tcprules /etc/tcp.smtp.cdb /etc/tcp.smtp.tmp < /etc/tcp.smtp
+... done
+
+diff -uNr qmail-1.03/hier.c qmail-1.03.postgrey/hier.c
+--- qmail-1.03/hier.c	1998-06-15 12:53:16.000000000 +0200
++++ qmail-1.03.postgrey/hier.c	2008-09-21 13:16:14.323441197 +0200
+@@ -104,6 +104,7 @@
+   c(auto_qmail,"bin","qmail-start",auto_uido,auto_gidq,0700);
+   c(auto_qmail,"bin","qmail-getpw",auto_uido,auto_gidq,0711);
+   c(auto_qmail,"bin","qmail-local",auto_uido,auto_gidq,0711);
++  c(auto_qmail,"bin","qmail-postgrey",auto_uido,auto_gidq,0755);
+   c(auto_qmail,"bin","qmail-remote",auto_uido,auto_gidq,0711);
+   c(auto_qmail,"bin","qmail-rspawn",auto_uido,auto_gidq,0711);
+   c(auto_qmail,"bin","qmail-clean",auto_uido,auto_gidq,0711);
+diff -uNr qmail-1.03/Makefile qmail-1.03.postgrey/Makefile
+--- qmail-1.03/Makefile	1998-06-15 12:53:16.000000000 +0200
++++ qmail-1.03.postgrey/Makefile	2008-09-21 13:15:12.275563447 +0200
+@@ -808,7 +808,7 @@
+ forward preline condredirect bouncesaying except maildirmake \
+ maildir2mbox maildirwatch qail elq pinq idedit install-big install \
+ instcheck home home+df proc proc+df binm1 binm1+df binm2 binm2+df \
+-binm3 binm3+df
++binm3 binm3+df qmail-postgrey
+ 
+ load: \
+ make-load warn-auto.sh systype
+@@ -1556,6 +1556,17 @@
+ exit.h rcpthosts.h timeoutread.h timeoutwrite.h commands.h
+ 	./compile qmail-smtpd.c
+ 
++qmail-postgrey.o: \
++compile qmail-postgrey.c stralloc.h
++	./compile qmail-postgrey.c
++
++qmail-postgrey: \
++load qmail-postgrey.o timeoutread.o timeoutwrite.o timeoutconn.o ip.o \
++stralloc.a alloc.a case.a str.a error.a fs.a ndelay.a
++	./load qmail-postgrey timeoutread.o timeoutwrite.o \
++	timeoutconn.o ip.o stralloc.a alloc.a case.a str.a error.a fs.a \
++	ndelay.a `cat socket.lib`
++
+ qmail-start: \
+ load qmail-start.o prot.o fd.a auto_uids.o
+ 	./load qmail-start prot.o fd.a auto_uids.o 
+diff -uNr qmail-1.03/qmail-postgrey.c qmail-1.03.postgrey/qmail-postgrey.c
+--- qmail-1.03/qmail-postgrey.c	1970-01-01 01:00:00.000000000 +0100
++++ qmail-1.03.postgrey/qmail-postgrey.c	2008-09-21 13:15:12.283563947 +0200
+@@ -0,0 +1,89 @@
++#include <stdio.h>
++#include <unistd.h>
++#include <sys/types.h>
++#include <sys/socket.h>
++#include <netinet/in.h>
++#include "stralloc.h"
++#include "error.h"
++#include "ip.h"
++#include "case.h"
++#include "str.h"
++#include "exit.h"
++
++#define CT 10 /* Connect timeout */
++#define WT 10 /* Write timeout   */
++#define RT 10 /* Read timeout    */
++
++struct ip_address ip;
++int port = 60000; /* default port */
++int s;
++int n;
++unsigned int i;
++char *ipport;
++stralloc query = {0};
++char buf[64];
++
++
++int main(int argc, char *argv[]){
++
++
++    if (argc != 6){
++	printf("usage:\n");
++	printf("%s ip:port sender recipient client_address client_name\n", argv[0]);
++	printf("\n");
++	fflush(stdout);
++	_exit(1);
++    }
++
++    if (!stralloc_copys(&query,"request=smtpd_access_policy\nclient_address="))_exit(1);
++    if (!stralloc_cats(&query,argv[4]))_exit(1);
++    if (!stralloc_cats(&query,"\nclient_name="))_exit(1);
++    if (!stralloc_cats(&query,argv[5]))_exit(1);
++    if (!stralloc_cats(&query,"\nsender="))_exit(1);
++    if (!stralloc_cats(&query,argv[2]))_exit(1);
++    if (!stralloc_cats(&query,"\nrecipient="))_exit(1);
++    if (!stralloc_cats(&query,argv[3]))_exit(1);
++    if (!stralloc_cats(&query,"\n\n"))_exit(1);
++
++    /* scan ip and port */
++    ipport=argv[1];
++    if (!ip_scan(ipport,&ip)) _exit(1);
++    i = str_chr(ipport,':');
++    if (ipport[i]){
++	scan_ulong(ipport + i + 1, &port);
++    }
++
++    /* create tcp socket */
++    s = socket(AF_INET,SOCK_STREAM,0);
++    if (s == -1)_exit(1);
++
++    /* connect to postgrey server */
++    if (timeoutconn(s,&ip,port,CT) != 0) {
++	close(s);
++	_exit(1);
++    }
++
++    /* write request */
++    do{
++	n = timeoutwrite(WT, s, query.s, query.len);
++    }while(n == -1 && errno == error_intr);
++    if (n != query.len){close(s);_exit(1);}
++
++    /* read response */
++    do{
++	n = timeoutread(RT, s, buf, sizeof buf);
++    }while(n == -1 && errno == error_intr);
++    if (n == -1){close(s);_exit(1);}
++    close(s);
++
++    if (n >= 12)
++        if (!case_diffb(buf,12,"action=dunno")) _exit(0);
++
++    if (n >= 14)
++        if (!case_diffb(buf,14,"action=prepend")) _exit(0);
++
++    if (n >= 22)
++        if (!case_diffb(buf,22,"action=defer_if_permit")) _exit(10);
++
++    _exit(1);
++}
+diff -uNr qmail-1.03/qmail-smtpd.c qmail-1.03.postgrey/qmail-smtpd.c
+--- qmail-1.03/qmail-smtpd.c	1998-06-15 12:53:16.000000000 +0200
++++ qmail-1.03.postgrey/qmail-smtpd.c	2008-09-21 13:16:34.816721947 +0200
+@@ -19,6 +19,8 @@
+ #include "env.h"
+ #include "now.h"
+ #include "exit.h"
++#include "fork.h"
++#include "wait.h"
+ #include "rcpthosts.h"
+ #include "timeoutread.h"
+ #include "timeoutwrite.h"
+@@ -58,6 +60,7 @@
+ void err_noop() { out("250 ok\r\n"); }
+ void err_vrfy() { out("252 send some mail, i'll try my best\r\n"); }
+ void err_qqt() { out("451 qqt failure (#4.3.0)\r\n"); }
++void err_greylisted() { out("450 greylisted (#4.3.0)\r\n"); }
+ 
+ 
+ stralloc greeting = {0};
+@@ -91,6 +94,9 @@
+   fakehelo = case_diffs(remotehost,helohost.s) ? helohost.s : 0;
+ }
+ 
++int pgreyok = 0;
++stralloc pgrey = {0};
++
+ int liphostok = 0;
+ stralloc liphost = {0};
+ int bmfok = 0;
+@@ -112,6 +118,12 @@
+ 
+   if (rcpthosts_init() == -1) die_control();
+ 
++  pgreyok = control_rldef(&pgrey,"control/postgrey",0,(char *) 0);
++  if (pgreyok == -1) die_control();
++  x = env_get("POSTGREY");
++  if (x) if (!stralloc_copys(&pgrey,x)) die_nomem();
++  if (!stralloc_append(&pgrey,"")) die_nomem();
++
+   bmfok = control_readfile(&bmf,"control/badmailfrom",0);
+   if (bmfok == -1) die_control();
+   if (bmfok)
+@@ -256,8 +268,10 @@
+     if (!stralloc_cats(&addr,relayclient)) die_nomem();
+     if (!stralloc_0(&addr)) die_nomem();
+   }
+-  else
++  else{
+     if (!addrallowed()) { err_nogateway(); return; }
++    if ((pgreyok) && (postgrey_scanner() == 1)){ err_greylisted(); return;}
++  }
+   if (!stralloc_cats(&rcptto,"T")) die_nomem();
+   if (!stralloc_cats(&rcptto,addr.s)) die_nomem();
+   if (!stralloc_0(&rcptto)) die_nomem();
+@@ -265,6 +279,35 @@
+ }
+ 
+ 
++int postgrey_scanner()
++{
++  int child;
++  int wstat;
++
++  char *postgrey_scannerarg[] = { "bin/qmail-postgrey" , pgrey.s, mailfrom.s, addr.s, remoteip, remotehost, 0 };
++
++  switch(child = vfork()) {
++    case -1:
++      return -1;
++    case 0:
++      execv(*postgrey_scannerarg,postgrey_scannerarg);
++      _exit(1);
++  }
++
++  wait_pid(&wstat,child);
++  if (wait_crashed(wstat)) {
++    return -1;
++  }
++
++  switch(wait_exitcode(wstat)) {
++    case 10:
++      return 1;
++    default:
++      return 0;
++  }
++}
++
++
+ int saferead(fd,buf,len) int fd; char *buf; int len;
+ {
+   int r;

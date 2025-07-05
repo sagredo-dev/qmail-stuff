@@ -1,0 +1,15 @@
+diff -ruN netqmail-1.06-original/chkuser.c netqmail-1.06/chkuser.c
+--- netqmail-1.06-original/chkuser.c	2021-09-27 19:22:33.665033761 +0200
++++ netqmail-1.06/chkuser.c	2021-09-24 21:12:42.559628632 +0200
+@@ -327,9 +327,11 @@
+ 	if (strncmp (domain->s, "xn--", 4) == 0) {
+ 		if (strstr (&domain->s[4], "--") != NULL)
+ 			return 0;
++/* allowing domains with hyphens like y--s.co.jp
+ 	} else {
+ 		if (strstr (domain->s, "--") != NULL)
+ 			return 0;
++*/
+ 	}
+         if (strstr (domain->s, ".-") != NULL) {
+                 return 0;

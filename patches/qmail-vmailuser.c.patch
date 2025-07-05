@@ -1,0 +1,30 @@
+--- qmail-vmailuser.c.orig	2019-10-05 19:20:16.000000000 +0200
++++ qmail-vmailuser.c	2021-08-18 09:56:03.232911649 +0200
+@@ -107,11 +107,10 @@
+   }
+   if (!stralloc_0(&vuser)) pam_exit(111); 
+ 
+-  if (!stralloc_copys(&vdomdir,homedir)) pam_exit(111);  	/* common */
++  if (!stralloc_copys(&vdomdir,homedir)) pam_exit(111);  	/* vmailmgr */
+   if (!stralloc_cats(&vdomdir,"/")) pam_exit(111);  
+   if (!stralloc_copy(&vuserdir,&vdomdir)) pam_exit(111);  
+-
+-  if (!stralloc_cats(&vuserdir,vdomuser)) pam_exit(111);  	/* vmailmgr */
++  if (!stralloc_cats(&vuserdir,vdomuser)) pam_exit(111);
+   if (!stralloc_cats(&vuserdir,"/users")) pam_exit(111);  
+   if (!stralloc_copy(&vdomdir,&vuserdir)) pam_exit(111);  
+   if (!stralloc_0(&vdomdir)) pam_exit(111); 
+@@ -125,8 +124,11 @@
+     dir = opendir(vuserdir.s);
+     if (dir) pam_exit(0);
+   }
+-   
+-  if (!stralloc_cats(&vuserdir,"vpopmail")) pam_exit(111);	/* vpopmail */
++
++  if (!stralloc_copys(&vdomdir,homedir)) pam_exit(111);         /* vpopmail */
++  if (!stralloc_cats(&vdomdir,"/")) pam_exit(111);
++  if (!stralloc_cats(&vdomdir,"vpopmail")) pam_exit(111);
++  if (!stralloc_copy(&vuserdir,&vdomdir)) pam_exit(111);  
+   if (!stralloc_cats(&vuserdir,"/domains/")) pam_exit(111);
+   if (!stralloc_cats(&vuserdir,vdomuser)) pam_exit(111);  
+   if (!stralloc_copy(&vdomdir,&vuserdir)) pam_exit(111);  

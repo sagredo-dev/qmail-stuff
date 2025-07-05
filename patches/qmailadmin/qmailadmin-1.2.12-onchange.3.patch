@@ -1,0 +1,42 @@
+diff -ruN qmailadmin-1.2.12-factory/autorespond.c qmailadmin-1.2.12-patched/autorespond.c
+--- qmailadmin-1.2.12-factory/autorespond.c	2007-09-21 19:27:38.000000000 -0400
++++ qmailadmin-1.2.12-patched/autorespond.c	2008-12-21 15:55:12.000000000 -0500
+@@ -186,6 +186,10 @@
+   sprintf(TmpBuf, "|%s/autorespond 10000 5 %s/%s/message %s/%s",
+     AUTORESPOND_PATH, RealDir, TmpBuf2, RealDir, TmpBuf2);
+   valias_insert (ActionUser, Domain, TmpBuf);
++#ifdef ONCHANGE_SCRIPT
++  snprintf ( onchange_buf , MAX_BUFF , "%s@%s" , ActionUser , Domain ) ;
++  call_onchange ( "addautorespond" ) ;
++#endif
+ 
+   /*
+    * Report success
+diff -ruN qmailadmin-1.2.12-factory/command.c qmailadmin-1.2.12-patched/command.c
+--- qmailadmin-1.2.12-factory/command.c	2007-01-01 18:17:06.000000000 -0500
++++ qmailadmin-1.2.12-patched/command.c	2008-12-21 15:26:17.000000000 -0500
+@@ -306,6 +306,10 @@
+     } else {
+       fprintf(fs, "| %s/bin/vdelivermail '' %s@%s\n", VPOPMAILDIR, ActionUser, Domain);
+       fclose(fs);
++#ifdef ONCHANGE_SCRIPT
++      snprintf ( onchange_buf , MAX_BUFF , "%s@%s" , ActionUser , Domain ) ;
++      call_onchange ( "setdefault" ) ;
++#endif
+     }
+   }
+   show_users(Username, Domain, Mytime);
+diff -ruN qmailadmin-1.2.12-factory/user.c qmailadmin-1.2.12-patched/user.c
+--- qmailadmin-1.2.12-factory/user.c	2007-11-03 13:44:12.000000000 -0400
++++ qmailadmin-1.2.12-patched/user.c	2008-12-21 15:27:57.000000000 -0500
+@@ -611,6 +611,10 @@
+   } else {
+     fprintf(fs,"| %s/bin/vdelivermail '' %s\n", VPOPMAILDIR, opt);
+     fclose(fs);
++#ifdef ONCHANGE_SCRIPT
++    snprintf ( onchange_buf , MAX_BUFF , "%s" , opt ) ;
++    call_onchange ( "setdefault" ) ;
++#endif
+   }
+   show_users(Username, Domain, Mytime);
+   vclose();

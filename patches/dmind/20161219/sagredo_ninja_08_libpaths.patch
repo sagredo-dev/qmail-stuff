@@ -1,0 +1,11 @@
+diff -Nuar netqmail_sagredo.new/Makefile netqmail_sagredo.new.libpaths/Makefile
+--- netqmail_sagredo.new/Makefile	2016-11-03 10:56:10.718969949 +0100
++++ netqmail_sagredo.new.libpaths/Makefile	2016-11-01 18:03:59.000000000 +0100
+@@ -5,7 +5,7 @@
+ 
+ SMTPD_CHKUSER_OBJ=chkuser.o dns.o
+ 
+-LIBDOMAINKEYS=../libdomainkeys
++LIBDOMAINKEYS=/usr/lib
+ 
+ DEFINES=-DEXTERNAL_TODO # use to enable external todo

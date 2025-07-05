@@ -1,0 +1,53 @@
+#!/bin/sh
+#
+# Start/stop/restart clamav.
+#
+
+DAEMON=/usr/local/sbin/clamd
+
+# Start clamav:
+start() {
+  if [ -x $DAEMON ]; then
+    echo -n "Starting clamd daemon:  /usr/sbin/clamd "
+    $DAEMON
+    echo " done."
+  fi
+}
+
+# Stop clamav:
+stop() {
+   echo -n "Stopping clamd daemon ... "
+   killall -TERM clamd
+   echo " done."
+}
+
+# Restart clamav:
+restart() {
+   stop
+   sleep 1
+   start
+}
+
+# Help
+help() {
+   $DAEMON --help
+   exit
+}
+
+case "$1" in
+'start')
+  start
+  ;;
+'stop')
+  stop
+  ;;
+'restart')
+  restart
+  ;;
+'help')
+  help
+  ;;
+*)
+  echo "usage $0 start|stop|restart|help"
+esac
+

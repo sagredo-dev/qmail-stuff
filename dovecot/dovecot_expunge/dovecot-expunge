@@ -1,0 +1,54 @@
+#!/bin/bash
+#
+# Tx Tony Fung
+# More info here https://notes.sagredo.eu/en/qmail-notes-185/expunging-expired-junk-and-trash-emails-with-dovecot-124.html#comment1835
+#
+
+DOVEADM="/usr/local/dovecot/bin/doveadm"
+CONF="/usr/local/dovecot/etc/dovecot/dovecot-expunge.conf"
+LOG="/var/log/dovecot/dovecot-expunge.log"
+
+if [ ! -e "$CONF" ]; then
+   echo $(date +"%Y%m%d %T") \
+   "aborted with $CONF not found" >> $LOG
+   exit
+fi
+
+while read line; do
+         # Skip commented and blank lines:
+         if [[ ${line:0:1} = "#" ]] || [ -z "$line" ]; then
+            continue
+         fi
+
+         # Put fields to variables per line:
+         DOMAIN=$(echo $line|cut -d"|" -f1)
+         USER=$(echo $line|cut -d"|" -f2)
+         DAY=$(echo $line|cut -d"|" -f3)
+         FOLDER=$(echo $line|cut -d"|" -f4)
+
+         # List mailbox folders per user:
+         $DOVEADM mailbox list -u "$USER@$DOMAIN" | \
+         while read list; do
+                  if [[ "$USER" = "*" ]]; then
+                     u=$(echo $list|cut -d" " -f1)
+                     f=$(echo $list|sed 's/[^ ]* //')
+                  else
+                     u="$USER@$DOMAIN"
+                     f=$list
+                  fi
+
+                  if [[ "$FOLDER" = "*" ]]; then
+                     $DOVEADM expunge -u $u mailbox "$f" savedbefore "$DAY""d"
+                     echo $(date +"%Y%m%d %T") \
+                     "expunged $u:$f:$DAY days before" >> $LOG
+                  else
+                     if [ -z "${FOLDER##*$f*}" ]; then
+                        $DOVEADM expunge -u $u mailbox "$f" savedbefore "$DAY""d"
+                        echo $(date +"%Y%m%d %T") \
+                        "expunged $u:$f:$DAY days before" >> $LOG
+                     fi
+                  fi
+         done
+done < $CONF
+
+exit

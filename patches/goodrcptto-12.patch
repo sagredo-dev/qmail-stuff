@@ -1,0 +1,834 @@
+This is a goodrcptto patch for qmail-1.03 or netqmail-1.05:
+http://netdevice.com/qmail/patch/goodrcptto-12.patch
+See http://cr.yp.to/qmail.html or http://qmail.org/netqmail/.
+
+A qmail server will normally accept email for any recipient address at a domain.
+This patch causes the server to reject single recipient email to an invalid
+recipient, and filter out the invalid recipients from multiple recipient email,
+while accepting the message for the valid recipients.
+This occurs during the initial SMTP conversation for a reduction in disk I/O.
+The server rejects attempts to queue messages to non existent recipients, and
+joe job bounces to forged recipients, preventing them from becoming double
+bounces.
+To prevent dictionary attacks, the transmission channel is closed after the
+number of bad recipients set in control/brtlimit or BRTLIMIT, two by default.
+Repeated attempts from the same IPs may be handled by a cron that looks at the
+logs and updates tcprules accordingly.
+
+A goodrcptto list and or moregoodrcptto database is maintained.
+Relay and accept clients are not held to the address check, control/brtlimit or
+BRTLIMIT.
+If you need to wildcard domains, list them one per line like @example.net
+in control/goodrcptto only.
+Recipient addresses like name@example.com may be included in control/goodrcptto,
+but the check will run fastest if you put these into control/moregoodrcptto,
+then into control/moregoodrcptto.cdb using qmail-newmgrt.
+A check against a 50,000 address moregoodrcptto.cdb is virtually instantaneous
+on a 300Mhz machine.
+
+A user may want to participate in mailing list discussions, but doesn't want
+spam or off list replies to her now public address.
+Set ACCEPTCLIENT="" for the IPs of the mailing list servers with tcprules, and
+put the recipient address in control/protectedgood instead.
+
+For an example of how to automate this process, see the parent directory for an
+interactive user run script where one can remotely add, remove or list their
+disposable alias addresses, and the mail server cron that keeps the
+moregoodrcptto.cdb up to date.
+The patch assumes a Dave Sill type of installation with regards to extra control
+files concurrencyincoming and defaultdelivery, see http://lifewithqmail.org.
+
+Use http@ to get the patch onto your box, tab characters must be preserved.
+Here are examples of how to patch.
+
+Solaris:
+# gzip -cd qmail-1.03.tar.gz |tar -xf - ;cd qmail-1.03
+# gpatch </path/to/goodrcptto-12.patch
+or
+# gzip -cd netqmail-1.05.tar.gz |tar -xf - ;cd netqmail-1.05
+# sh -c "cat collate.sh |sed -e s/patch/gpatch/ >collate.sh"
+# ./collate.sh ;cd netqmail-1.05
+# gpatch </path/to/goodrcptto-12.patch
+
+Others:
+# gzip -cd qmail-1.03.tar.gz |tar -xf - ;cd qmail-1.03
+# patch </path/to/goodrcptto-12.patch
+or
+# gzip -cd netqmail-1.05.tar.gz |tar -xf - ;cd netqmail-1.05
+# ./collate.sh ;cd netqmail-1.05
+# patch </path/to/goodrcptto-12.patch
+
+Log example:
+2003-06-08 12:56:28.951415500 qmail-smtpd: !ok 29791 Bad recipient user nonexistent@example.com from DealsonWheels@321sm.com by 205.235.78.101 (HELO mx4.321sm.com).
+
+2003-06-08 01: Original version, based on John Levine's badrcptto patch:
+               http://www.iecc.com/bad-rcpt-noisy-patch.txt
+2003-06-15 02: Added support for domain wildcarding.
+2003-06-15 03: Running qmail-showctl also shows good recipient addresses.
+2003-07-01 04: The pid for the connection is included in the log.
+2003-07-11 05: Experimental.
+2003-07-13 06: Experimental.
+2003-07-20 07: Removed the message block on a mix of good and bad recipients.
+               Allowed for only using a goodrcptto list.
+               Corrected an error in the qmail-showctl.c patch.
+2003-09-02 08: Added publicly known recipient address protection using an
+               ACCEPTCLIENT tcprules variable.
+2003-10-04 09: Running qmail-showctl also shows protected recipient addresses.
+2003-11-07 10: Discontinued the non logging version of goodrcptto.
+               Added dictionary attack prevention within qmail-smtpd using
+               control/brtlimit and or BRTLIMIT.
+               Updated the qmail-smtpd.8 man page patch regarding ACCEPTCLIENT,
+               control/brtlimit and BRTLIMIT.
+               Updated the qmail-control.9 man page patch regarding brtlimit,
+               concurrencyincoming, defaultdelivery, goodrcptto, moregoodrcptto
+               and protectedgood.
+2004-02-14 11: Code cleanup and standardization with tcpserver logging at 
+               getpid.
+               This single patch works with both qmail-1.03 and netqmail-1.05.
+               The brtcount is continued across rsets.
+2004-03-05 12: No changes, matched version number with goodrcptto-ms-12.patch.
+
+Eben Pratt, goodrcptto at netdevice dot com
+_____
+
+diff -ur qmail-1.03.orig/Makefile qmail-1.03/Makefile
+--- qmail-1.03.orig/Makefile	Mon Jun 15 06:53:16 1998
++++ qmail-1.03/Makefile	Sat Feb 14 02:41:03 2004
+@@ -803,7 +803,7 @@
+ predate datemail mailsubj qmail-upq qmail-showctl qmail-newu \
+ qmail-pw2u qmail-qread qmail-qstat qmail-tcpto qmail-tcpok \
+ qmail-pop3d qmail-popup qmail-qmqpc qmail-qmqpd qmail-qmtpd \
+-qmail-smtpd sendmail tcp-env qmail-newmrh config config-fast dnscname \
++qmail-smtpd sendmail tcp-env qmail-newmrh qmail-newmgrt config config-fast dnscname \
+ dnsptr dnsip dnsmxip dnsfq hostname ipmeprint qreceipt qsmhook qbiff \
+ forward preline condredirect bouncesaying except maildirmake \
+ maildir2mbox maildirwatch qail elq pinq idedit install-big install \
+@@ -930,8 +930,8 @@
+ qmail-queue.0 qmail-inject.0 mailsubj.0 qmail-showctl.0 qmail-newu.0 \
+ qmail-pw2u.0 qmail-qread.0 qmail-qstat.0 qmail-tcpto.0 qmail-tcpok.0 \
+ qmail-pop3d.0 qmail-popup.0 qmail-qmqpc.0 qmail-qmqpd.0 qmail-qmtpd.0 \
+-qmail-smtpd.0 tcp-env.0 qmail-newmrh.0 qreceipt.0 qbiff.0 forward.0 \
+-preline.0 condredirect.0 bouncesaying.0 except.0 maildirmake.0 \
++qmail-smtpd.0 tcp-env.0 qmail-newmrh.0 qmail-newmgrt.0 qreceipt.0 qbiff.0 \
++forward.0 preline.0 condredirect.0 bouncesaying.0 except.0 maildirmake.0 \
+ maildir2mbox.0 maildirwatch.0 qmail.0 qmail-limits.0 qmail-log.0 \
+ qmail-control.0 qmail-header.0 qmail-users.0 dot-qmail.0 \
+ qmail-command.0 tcp-environ.0 maildir.0 mbox.0 addresses.0 \
+@@ -1241,6 +1241,31 @@
+ uint32.h substdio.h
+ 	./compile qmail-newmrh.c
+ 
++qmail-newmgrt: \
++load qmail-newmgrt.o cdbmss.o getln.a open.a cdbmake.a seek.a case.a \
++stralloc.a alloc.a strerr.a substdio.a error.a str.a auto_qmail.o
++	./load qmail-newmgrt cdbmss.o getln.a open.a cdbmake.a \
++	seek.a case.a stralloc.a alloc.a strerr.a substdio.a \
++	error.a str.a auto_qmail.o 
++
++qmail-newmgrt.0: \
++qmail-newmgrt.8
++	nroff -man qmail-newmgrt.8 > qmail-newmgrt.0
++
++qmail-newmgrt.8: \
++qmail-newmgrt.9 conf-break conf-spawn
++	cat qmail-newmgrt.9 \
++	| sed s}QMAILHOME}"`head -1 conf-qmail`"}g \
++	| sed s}BREAK}"`head -1 conf-break`"}g \
++	| sed s}SPAWN}"`head -1 conf-spawn`"}g \
++	> qmail-newmgrt.8
++
++qmail-newmgrt.o: \
++compile qmail-newmgrt.c strerr.h stralloc.h gen_alloc.h substdio.h \
++getln.h exit.h readwrite.h open.h auto_qmail.h cdbmss.h cdbmake.h \
++uint32.h substdio.h
++	./compile qmail-newmgrt.c
++
+ qmail-newu: \
+ load qmail-newu.o cdbmss.o getln.a open.a seek.a cdbmake.a case.a \
+ stralloc.a alloc.a substdio.a error.a str.a auto_qmail.o
+@@ -1767,7 +1792,7 @@
+ maildirwatch.1 mailsubj.1 mbox.5 preline.1 qbiff.1 qmail-clean.8 \
+ qmail-command.8 qmail-control.9 qmail-getpw.9 qmail-header.5 \
+ qmail-inject.8 qmail-limits.9 qmail-local.8 qmail-log.5 \
+-qmail-lspawn.8 qmail-newmrh.9 qmail-newu.9 qmail-pop3d.8 \
++qmail-lspawn.8 qmail-newmrh.9 qmail-newmgrt.9 qmail-newu.9 qmail-pop3d.8 \
+ qmail-popup.8 qmail-pw2u.9 qmail-qmqpc.8 qmail-qmqpd.8 qmail-qmtpd.8 \
+ qmail-qread.8 qmail-qstat.8 qmail-queue.8 qmail-remote.8 \
+ qmail-rspawn.8 qmail-send.9 qmail-showctl.8 qmail-smtpd.8 \
+@@ -1774,7 +1799,7 @@
+ qmail-start.9 qmail-tcpok.8 qmail-tcpto.8 qmail-users.9 qmail.7 \
+ qreceipt.1 splogger.8 tcp-env.1 config.sh config-fast.sh \
+ qmail-clean.c qmail-getpw.c qmail-inject.c qmail-local.c \
+-qmail-lspawn.c qmail-newmrh.c qmail-newu.c qmail-pop3d.c \
++qmail-lspawn.c qmail-newmrh.c qmail-newmgrt.c qmail-newu.c qmail-pop3d.c \
+ qmail-popup.c qmail-pw2u.c qmail-qmqpc.c qmail-qmqpd.c qmail-qmtpd.c \
+ qmail-qread.c qmail-qstat.sh qmail-queue.c qmail-remote.c \
+ qmail-rspawn.c qmail-send.c qmail-showctl.c qmail-smtpd.c \
+diff -ur qmail-1.03.orig/TARGETS qmail-1.03/TARGETS
+--- qmail-1.03.orig/TARGETS	Mon Jun 15 06:53:16 1998
++++ qmail-1.03/TARGETS	Sat Feb 14 02:41:03 2004
+@@ -257,6 +257,8 @@
+ tcp-env.o
+ remoteinfo.o
+ tcp-env
++qmail-newmgrt.o
++qmail-newmgrt
+ qmail-newmrh.o
+ qmail-newmrh
+ config
+@@ -352,6 +354,8 @@
+ qmail-qmtpd.0
+ qmail-smtpd.0
+ tcp-env.0
++qmail-newmgrt.8
++qmail-newmgrt.0
+ qmail-newmrh.8
+ qmail-newmrh.0
+ qreceipt.0
+diff -ur qmail-1.03.orig/conf-spawn qmail-1.03/conf-spawn
+--- qmail-1.03.orig/conf-spawn	Mon Jun 15 06:53:16 1998
++++ qmail-1.03/conf-spawn	Sat Feb 14 02:41:03 2004
+@@ -1,4 +1,4 @@
+-120
++255
+ 
+ This is a silent concurrency limit. You can't set it above 255. On some
+ systems you can't set it above 125. qmail will refuse to compile if the
+diff -ur qmail-1.03.orig/hier.c qmail-1.03/hier.c
+--- qmail-1.03.orig/hier.c	Mon Jun 15 06:53:16 1998
++++ qmail-1.03/hier.c	Sat Feb 14 02:41:03 2004
+@@ -109,6 +109,7 @@
+   c(auto_qmail,"bin","qmail-clean",auto_uido,auto_gidq,0711);
+   c(auto_qmail,"bin","qmail-send",auto_uido,auto_gidq,0711);
+   c(auto_qmail,"bin","splogger",auto_uido,auto_gidq,0711);
++  c(auto_qmail,"bin","qmail-newmgrt",auto_uido,auto_gidq,0700);
+   c(auto_qmail,"bin","qmail-newu",auto_uido,auto_gidq,0700);
+   c(auto_qmail,"bin","qmail-newmrh",auto_uido,auto_gidq,0700);
+   c(auto_qmail,"bin","qmail-pw2u",auto_uido,auto_gidq,0711);
+@@ -221,6 +222,8 @@
+   c(auto_qmail,"man/cat8","qmail-inject.0",auto_uido,auto_gidq,0644);
+   c(auto_qmail,"man/man8","qmail-showctl.8",auto_uido,auto_gidq,0644);
+   c(auto_qmail,"man/cat8","qmail-showctl.0",auto_uido,auto_gidq,0644);
++  c(auto_qmail,"man/man8","qmail-newmgrt.8",auto_uido,auto_gidq,0644);
++  c(auto_qmail,"man/cat8","qmail-newmgrt.0",auto_uido,auto_gidq,0644);
+   c(auto_qmail,"man/man8","qmail-newmrh.8",auto_uido,auto_gidq,0644);
+   c(auto_qmail,"man/cat8","qmail-newmrh.0",auto_uido,auto_gidq,0644);
+   c(auto_qmail,"man/man8","qmail-newu.8",auto_uido,auto_gidq,0644);
+diff -ur qmail-1.03.orig/install-big.c qmail-1.03/install-big.c
+--- qmail-1.03.orig/install-big.c	Mon Jun 15 06:53:16 1998
++++ qmail-1.03/install-big.c	Sat Feb 14 02:41:03 2004
+@@ -109,6 +109,7 @@
+   c(auto_qmail,"bin","qmail-clean",auto_uido,auto_gidq,0711);
+   c(auto_qmail,"bin","qmail-send",auto_uido,auto_gidq,0711);
+   c(auto_qmail,"bin","splogger",auto_uido,auto_gidq,0711);
++  c(auto_qmail,"bin","qmail-newmgrt",auto_uido,auto_gidq,0700);
+   c(auto_qmail,"bin","qmail-newu",auto_uido,auto_gidq,0700);
+   c(auto_qmail,"bin","qmail-newmrh",auto_uido,auto_gidq,0700);
+   c(auto_qmail,"bin","qmail-pw2u",auto_uido,auto_gidq,0711);
+@@ -221,6 +222,8 @@
+   c(auto_qmail,"man/cat8","qmail-inject.0",auto_uido,auto_gidq,0644);
+   c(auto_qmail,"man/man8","qmail-showctl.8",auto_uido,auto_gidq,0644);
+   c(auto_qmail,"man/cat8","qmail-showctl.0",auto_uido,auto_gidq,0644);
++  c(auto_qmail,"man/man8","qmail-newmgrt.8",auto_uido,auto_gidq,0644);
++  c(auto_qmail,"man/cat8","qmail-newmgrt.0",auto_uido,auto_gidq,0644);
+   c(auto_qmail,"man/man8","qmail-newmrh.8",auto_uido,auto_gidq,0644);
+   c(auto_qmail,"man/cat8","qmail-newmrh.0",auto_uido,auto_gidq,0644);
+   c(auto_qmail,"man/man8","qmail-newu.8",auto_uido,auto_gidq,0644);
+diff -ur qmail-1.03.orig/qmail-control.9 qmail-1.03/qmail-control.9
+--- qmail-1.03.orig/qmail-control.9	Mon Jun 15 06:53:16 1998
++++ qmail-1.03/qmail-control.9	Sat Feb 14 02:41:03 2004
+@@ -21,6 +21,7 @@
+ Comments are allowed
+ in
+ .IR badmailfrom ,
++.IR goodrcptto ,
+ .IR locals ,
+ .IR percenthack ,
+ .IR qmqpservers ,
+@@ -43,8 +44,11 @@
+ .I badmailfrom	\fR(none)	\fRqmail-smtpd
+ .I bouncefrom	\fRMAILER-DAEMON	\fRqmail-send
+ .I bouncehost	\fIme	\fRqmail-send
++.I brtlimit	\fR2	\fRqmail-smtpd
++.I concurrencyincoming	\fR40	\fRtcpserver
+ .I concurrencylocal	\fR10	\fRqmail-send
+ .I concurrencyremote	\fR20	\fRqmail-send
++.I defaultdelivery	\fR(none)	\fRqmail-start
+ .I defaultdomain	\fIme	\fRqmail-inject
+ .I defaulthost	\fIme	\fRqmail-inject
+ .I databytes	\fR0	\fRqmail-smtpd
+@@ -51,13 +55,16 @@
+ .I doublebouncehost	\fIme	\fRqmail-send
+ .I doublebounceto	\fRpostmaster	\fRqmail-send
+ .I envnoathost	\fIme	\fRqmail-send
++.I goodrcptto	\fR(none)	\fRqmail-smtpd
+ .I helohost	\fIme	\fRqmail-remote
+ .I idhost	\fIme	\fRqmail-inject
+ .I localiphost	\fIme	\fRqmail-smtpd
+ .I locals	\fIme	\fRqmail-send
++.I moregoodrcptto	\fR(none)	\fRqmail-smtpd
+ .I morercpthosts	\fR(none)	\fRqmail-smtpd
+ .I percenthack	\fR(none)	\fRqmail-send
+ .I plusdomain	\fIme	\fRqmail-inject
++.I protectedgood	\fR(none)	\fRqmail-showctl
+ .I qmqpservers	\fR(none)	\fRqmail-qmqpc
+ .I queuelifetime	\fR604800	\fRqmail-send
+ .I rcpthosts	\fR(none)	\fRqmail-smtpd
+diff -ur qmail-1.03.orig/qmail-newmgrt.9 qmail-1.03/qmail-newmgrt.9
+--- qmail-1.03.orig/qmail-newmgrt.9	Thu Jan  1 00:00:00 1970
++++ qmail-1.03/qmail-newmgrt.9	Sat Feb 14 02:41:04 2004
+@@ -0,0 +1,41 @@
++.TH qmail-newmgrt 8
++.SH NAME
++qmail-newmgrt \- prepare moregoodrcptto for qmail-smtpd
++.SH SYNOPSIS
++.B qmail-newmgrt
++.SH DESCRIPTION
++.B qmail-newmgrt
++reads the instructions in
++.B QMAILHOME/control/moregoodrcptto
++and writes them into
++.B QMAILHOME/control/moregoodrcptto.cdb
++in a binary format suited
++for quick access by
++.BR qmail-smtpd .
++
++If there is a problem with
++.BR control/moregoodrcptto ,
++.B qmail-newmgrt
++complains and leaves
++.B control/moregoodrcptto.cdb
++alone.
++
++.B qmail-newmgrt
++ensures that
++.B control/moregoodrcptto.cdb
++is updated atomically,
++so
++.B qmail-smtpd
++never has to wait for
++.B qmail-newmgrt
++to finish.
++However,
++.B qmail-newmgrt
++makes no attempt to protect against two simultaneous updates of
++.BR control/moregoodrcptto.cdb .
++
++The binary
++.B control/moregoodrcptto.cdb
++format is portable across machines.
++.SH "SEE ALSO"
++qmail-smtpd(8)
+diff -ur qmail-1.03.orig/qmail-newmgrt.c qmail-1.03/qmail-newmgrt.c
+--- qmail-1.03.orig/qmail-newmgrt.c	Thu Jan  1 00:00:00 1970
++++ qmail-1.03/qmail-newmgrt.c	Sat Feb 14 02:41:04 2004
+@@ -0,0 +1,70 @@
++#include "strerr.h"
++#include "stralloc.h"
++#include "substdio.h"
++#include "getln.h"
++#include "exit.h"
++#include "readwrite.h"
++#include "open.h"
++#include "auto_qmail.h"
++#include "cdbmss.h"
++
++#define FATAL "qmail-newmgrt: fatal: "
++
++void die_read()
++{
++  strerr_die2sys(111,FATAL,"unable to read control/moregoodrcptto: ");
++}
++void die_write()
++{
++  strerr_die2sys(111,FATAL,"unable to write to control/moregoodrcptto.tmp: ");
++}
++
++char inbuf[1024];
++substdio ssin;
++
++int fd;
++int fdtemp;
++
++struct cdbmss cdbmss;
++stralloc line = {0};
++int match;
++
++void main()
++{
++  umask(033);
++  if (chdir(auto_qmail) == -1)
++    strerr_die4sys(111,FATAL,"unable to chdir to ",auto_qmail,": ");
++
++  fd = open_read("control/moregoodrcptto");
++  if (fd == -1) die_read();
++
++  substdio_fdbuf(&ssin,read,fd,inbuf,sizeof inbuf);
++
++  fdtemp = open_trunc("control/moregoodrcptto.tmp");
++  if (fdtemp == -1) die_write();
++
++  if (cdbmss_start(&cdbmss,fdtemp) == -1) die_write();
++
++  for (;;) {
++    if (getln(&ssin,&line,&match,'\n') != 0) die_read();
++    case_lowerb(line.s,line.len);
++    while (line.len) {
++      if (line.s[line.len - 1] == ' ') { --line.len; continue; }
++      if (line.s[line.len - 1] == '\n') { --line.len; continue; }
++      if (line.s[line.len - 1] == '\t') { --line.len; continue; }
++      if (line.s[0] != '#')
++       if (cdbmss_add(&cdbmss,line.s,line.len,"",0) == -1)
++         die_write();
++      break;
++    }
++    if (!match) break;
++  }
++
++  if (cdbmss_finish(&cdbmss) == -1) die_write();
++  if (fsync(fdtemp) == -1) die_write();
++  if (close(fdtemp) == -1) die_write(); /* NFS stupidity */
++  if (rename("control/moregoodrcptto.tmp","control/moregoodrcptto.cdb") == -1)
++    strerr_die2sys(111,FATAL,"unable to move control/moregoodrcpto.tmp to control/moregoodrcptto.cdb");
++
++  _exit(0);
++}
+diff -ur qmail-1.03.orig/qmail-showctl.c qmail-1.03/qmail-showctl.c
+--- qmail-1.03.orig/qmail-showctl.c	Mon Jun 15 06:53:16 1998
++++ qmail-1.03/qmail-showctl.c	Sat Feb 14 02:41:04 2004
+@@ -142,6 +142,8 @@
+   direntry *d;
+   struct stat stmrh;
+   struct stat stmrhcdb;
++  struct stat stmgrt;
++  struct stat stmgrtcdb;
+ 
+   substdio_puts(subfdout,"qmail home directory: ");
+   substdio_puts(subfdout,auto_qmail);
+@@ -217,9 +219,12 @@
+   do_lst("badmailfrom","Any MAIL FROM is allowed.",""," not accepted in MAIL FROM.");
+   do_str("bouncefrom",0,"MAILER-DAEMON","Bounce user name is ");
+   do_str("bouncehost",1,"bouncehost","Bounce host name is ");
++  do_int("brtlimit","2","Transmission channel close after "," bad recipients");
++  do_int("concurrencyincoming","1","Incoming concurrency is ","");
+   do_int("concurrencylocal","10","Local concurrency is ","");
+   do_int("concurrencyremote","20","Remote concurrency is ","");
+   do_int("databytes","0","SMTP DATA limit is "," bytes");
++  do_str("defaultdelivery",1,"defaultdelivery","Default mailbox is "); 
+   do_str("defaultdomain",1,"defaultdomain","Default domain name is ");
+   do_str("defaulthost",1,"defaulthost","Default host name is ");
+   do_str("doublebouncehost",1,"doublebouncehost","2B recipient host: ");
+@@ -235,8 +240,8 @@
+   do_lst("qmqpservers","No QMQP servers.","QMQP server: ",".");
+   do_int("queuelifetime","604800","Message lifetime in the queue is "," seconds");
+ 
+-  if (do_lst("rcpthosts","SMTP clients may send messages to any recipient.","SMTP clients may send messages to recipients at ","."))
+-    do_lst("morercpthosts","No effect.","SMTP clients may send messages to recipients at ",".");
++  if (do_lst("rcpthosts","SMTP relay clients may send to any recipient.","SMTP relay clients may send to recipients at ","."))
++    do_lst("morercpthosts","No effect.","SMTP relay clients may send to recipients at ",".");
+   else
+     do_lst("morercpthosts","No rcpthosts; morercpthosts is irrelevant.","No rcpthosts; doesn't matter that morercpthosts has ",".");
+   /* XXX: check morercpthosts.cdb contents */
+@@ -255,6 +260,27 @@
+       else
+         substdio_puts(subfdout,"Modified recently enough; hopefully up to date.\n");
+ 
++  if (do_lst("goodrcptto","Oops? moregoodrcptto must exist if this doesn't.","SMTP clients may send to ","."))
++    do_lst("moregoodrcptto","No effect.","SMTP clients may send to ",".");
++  else
++    do_lst("moregoodrcptto","Oops? goodrcptto must exist if this doesn't.","SMTP clients may send to ",".");
++  /* XXX: check moregoodrcptto.cdb contents */
++  substdio_puts(subfdout,"\nmoregoodrcptto.cdb: ");
++  if (stat("moregoodrcptto",&stmgrt) == -1)
++    if (stat("moregoodrcptto.cdb",&stmgrtcdb) == -1)
++      substdio_puts(subfdout,"(Default.) No effect.\n");
++    else
++      substdio_puts(subfdout,"Oops! moregoodrcptto.cdb exists but moregoodrcptto doesn't.\n");
++  else
++    if (stat("moregoodrcptto.cdb",&stmgrtcdb) == -1)
++      substdio_puts(subfdout,"Oops! moregoodrcptto exists but moregoodrcptto.cdb doesn't.\n");
++    else
++      if (stmgrt.st_mtime > stmgrtcdb.st_mtime)
++        substdio_puts(subfdout,"Oops! moregoodrcptto.cdb is older than moregoodrcptto.\n");
++      else
++        substdio_puts(subfdout,"Modified recently enough; hopefully up to date.\n");
++
++  do_lst("protectedgood","No accept client addresses.","SMTP accept clients may send to ",".");
+   do_str("smtpgreeting",1,"smtpgreeting","SMTP greeting: 220 ");
+   do_lst("smtproutes","No artificial SMTP routes.","SMTP route: ","");
+   do_int("timeoutconnect","60","SMTP client connection timeout is "," seconds");
+@@ -265,19 +291,21 @@
+   while (d = readdir(dir)) {
+     if (str_equal(d->d_name,".")) continue;
+     if (str_equal(d->d_name,"..")) continue;
+-    if (str_equal(d->d_name,"bouncefrom")) continue;
+-    if (str_equal(d->d_name,"bouncehost")) continue;
+     if (str_equal(d->d_name,"badmailfrom")) continue;
+     if (str_equal(d->d_name,"bouncefrom")) continue;
+     if (str_equal(d->d_name,"bouncehost")) continue;
++    if (str_equal(d->d_name,"brtlimit")) continue;
++    if (str_equal(d->d_name,"concurrencyincoming")) continue;
+     if (str_equal(d->d_name,"concurrencylocal")) continue;
+     if (str_equal(d->d_name,"concurrencyremote")) continue;
+     if (str_equal(d->d_name,"databytes")) continue;
++    if (str_equal(d->d_name,"defaultdelivery")) continue;
+     if (str_equal(d->d_name,"defaultdomain")) continue;
+     if (str_equal(d->d_name,"defaulthost")) continue;
+     if (str_equal(d->d_name,"doublebouncehost")) continue;
+     if (str_equal(d->d_name,"doublebounceto")) continue;
+     if (str_equal(d->d_name,"envnoathost")) continue;
++    if (str_equal(d->d_name,"goodrcptto")) continue;
+     if (str_equal(d->d_name,"helohost")) continue;
+     if (str_equal(d->d_name,"idhost")) continue;
+     if (str_equal(d->d_name,"localiphost")) continue;
+@@ -285,8 +313,11 @@
+     if (str_equal(d->d_name,"me")) continue;
+     if (str_equal(d->d_name,"morercpthosts")) continue;
+     if (str_equal(d->d_name,"morercpthosts.cdb")) continue;
++    if (str_equal(d->d_name,"moregoodrcptto")) continue;
++    if (str_equal(d->d_name,"moregoodrcptto.cdb")) continue;
+     if (str_equal(d->d_name,"percenthack")) continue;
+     if (str_equal(d->d_name,"plusdomain")) continue;
++    if (str_equal(d->d_name,"protectedgood")) continue;
+     if (str_equal(d->d_name,"qmqpservers")) continue;
+     if (str_equal(d->d_name,"queuelifetime")) continue;
+     if (str_equal(d->d_name,"rcpthosts")) continue;
+diff -ur qmail-1.03.orig/qmail-smtpd.8 qmail-1.03/qmail-smtpd.8
+--- qmail-1.03.orig/qmail-smtpd.8	Mon Jun 15 06:53:16 1998
++++ qmail-1.03/qmail-smtpd.8	Sat Feb 14 02:41:04 2004
+@@ -50,6 +50,20 @@
+ meaning every address at
+ .IR host .
+ .TP 5
++.I brtlimit
++Number of bad recipients before closing the transmission channel.
++.B qmail-smtpd
++will close the transmission channel after 
++reaching the number of bad recipients in
++.IR brtlimit .
++
++If the environment variable
++.B BRTLIMIT 
++is set, it overrides
++.IR brtlimit .
++
++Default and minimum: 2.
++.TP 5
+ .I databytes
+ Maximum number of bytes allowed in a message,
+ or 0 for no limit.
+@@ -77,6 +91,50 @@
+ is set, it overrides
+ .IR databytes .
+ .TP 5
++.I goodrcptto 
++Allowed RCPT addresses.
++.B qmail-smtpd
++will reject
++any envelope recipient address not listed in
++.I goodrcptto
++or
++.IR moregoodrcptto .
++A line in
++.I goodrcptto 
++may be of the form
++.BR @\fIhost ,
++meaning every address at
++.IR host .
++
++.I goodrcptto
++format:
++
++.EX
++   @heaven.af.mil
++   box@heaven.af.mil
++.EE 
++
++Exceptions:
++If the environment variable
++.B RELAYCLIENT
++is set,
++.B qmail-smtpd
++will ignore
++.I goodrcptto
++and
++.IR moregoodrcptto ,
++and will append the value of
++.B RELAYCLIENT
++to each incoming recipient address.
++If the environment variable
++.B ACCEPTCLIENT
++is set,
++.B qmail-smtpd
++will ignore
++.I goodrcptto
++and
++.IR moregoodrcptto .
++.TP 5
+ .I localiphost
+ Replacement host name for local IP addresses.
+ Default:
+@@ -97,6 +155,38 @@
+ This is done before
+ .IR rcpthosts .
+ .TP 5
++.I moregoodrcptto
++Extra allowed RCPT addresses.
++If
++.I goodrcptto 
++and
++.I moregoodrcptto
++both exist,
++.I moregoodrcptto
++is effectively appended to
++.IR goodrcptto .
++
++.I moregoodrcptto
++format:
++
++.EX
++   box@heaven.af.mil
++.EE
++
++You must run
++.B qmail-newmgrt
++whenever
++.I moregoodrcptto
++changes.
++
++Rule of thumb:
++Put your
++.BR @\fIhost
++wildcarded domains into
++.IR goodrcptto ,
++and the rest into
++.IR moregoodrcptto .
++.TP 5
+ .I morercpthosts
+ Extra allowed RCPT domains.
+ If
+@@ -150,7 +240,7 @@
+ .EE
+ 
+ Envelope recipient addresses without @ signs are
+-always allowed through.
++allowed through if added to goodrcptto or moregoodrcptto.
+ .TP 5
+ .I smtpgreeting
+ SMTP greeting message.
+@@ -174,6 +264,7 @@
+ tcp-environ(5),
+ qmail-control(5),
+ qmail-inject(8),
++qmail-newmgrt(8),
+ qmail-newmrh(8),
+ qmail-queue(8),
+ qmail-remote(8)
+diff -ur qmail-1.03.orig/qmail-smtpd.c qmail-1.03/qmail-smtpd.c
+--- qmail-1.03.orig/qmail-smtpd.c	Mon Jun 15 06:53:16 1998
++++ qmail-1.03/qmail-smtpd.c	Sat Feb 14 03:12:49 2004
+@@ -23,11 +23,19 @@
+ #include "timeoutread.h"
+ #include "timeoutwrite.h"
+ #include "commands.h"
++#include "cdb.h"
+ 
+ #define MAXHOPS 100
+ unsigned int databytes = 0;
+ int timeout = 1200;
+ 
++char *remoteip;
++char *remotehost;
++char *remoteinfo;
++char *local;
++char *relayclient;
++char *acceptclient;
++
+ int safewrite(fd,buf,len) int fd; char *buf; int len;
+ {
+   int r;
+@@ -42,12 +50,39 @@
+ void flush() { substdio_flush(&ssout); }
+ void out(s) char *s; { substdio_puts(&ssout,s); }
+ 
++char sserrbuf[512];
++substdio sserr = SUBSTDIO_FDBUF(safewrite,2,sserrbuf,sizeof sserrbuf);
++
++char strnum[FMT_ULONG];
++void log(s) char *s; { substdio_putsflush(&sserr,s); }
++void logs(s1,s2,s3) char *s1; char *s2; char *s3; {
++  substdio_putsflush(&sserr,s1);
++  substdio_putsflush(&sserr,s2);
++  substdio_putsflush(&sserr,s3);
++}
++void pid() { log("qmail-smtpd: !ok "); strnum[fmt_ulong(strnum,getpid())] = 0; log(strnum); }
++
+ void die_read() { _exit(1); }
+-void die_alarm() { out("451 timeout (#4.4.2)\r\n"); flush(); _exit(1); }
+-void die_nomem() { out("421 out of memory (#4.3.0)\r\n"); flush(); _exit(1); }
+-void die_control() { out("421 unable to read controls (#4.3.0)\r\n"); flush(); _exit(1); }
+-void die_ipme() { out("421 unable to figure out my IP addresses (#4.3.0)\r\n"); flush(); _exit(1); }
+-void straynewline() { out("451 See http://pobox.com/~djb/docs/smtplf.html.\r\n"); flush(); _exit(1); }
++void die_alarm() {
++  pid(); logs(" Connection to ",remoteip," timed out.\n");
++  out("451 timeout (#4.4.2)\r\n"); flush(); _exit(1);
++}
++void die_nomem() {
++  pid(); logs(" Out of memory while connected to ",remoteip,"!\n");
++  out("421 out of memory (#4.3.0)\r\n"); flush(); _exit(1);
++}
++void die_control() {
++  pid(); log(" Unable to read controls!\n");
++  out("421 unable to read controls (#4.3.0)\r\n"); flush(); _exit(1);
++}
++void die_ipme() {
++  pid(); log(" Unable to figure out my IP addresses!\n");
++  out("421 unable to figure out my IP addresses (#4.3.0)\r\n"); flush(); _exit(1);
++}
++void straynewline() {
++  pid(); logs(" Stray newline from ",remoteip,".\n");
++  out("451 See http://pobox.com/~djb/docs/smtplf.html.\r\n"); flush(); _exit(1);
++}
+ 
+ void err_bmf() { out("553 sorry, your envelope sender is in my badmailfrom list (#5.7.1)\r\n"); }
+ void err_nogateway() { out("553 sorry, that domain isn't in my list of allowed rcpthosts (#5.7.1)\r\n"); }
+@@ -76,12 +111,6 @@
+   smtp_greet("221 "); out("\r\n"); flush(); _exit(0);
+ }
+ 
+-char *remoteip;
+-char *remotehost;
+-char *remoteinfo;
+-char *local;
+-char *relayclient;
+-
+ stralloc helohost = {0};
+ char *fakehelo; /* pointer into helohost, or 0 */
+ 
+@@ -96,6 +125,11 @@
+ int bmfok = 0;
+ stralloc bmf = {0};
+ struct constmap mapbmf;
++int grtok = 0;
++stralloc grt = {0};
++struct constmap mapgrt;
++int fdmgrt;
++int brtlimit = 0;
+ 
+ void setup()
+ {
+@@ -117,6 +151,19 @@
+   if (bmfok)
+     if (!constmap_init(&mapbmf,bmf.s,bmf.len,0)) die_nomem();
+  
++  grtok = control_readfile(&grt,"control/goodrcptto",0);
++  if (grtok == -1) die_control();
++  if (grtok)
++    if (!constmap_init(&mapgrt,grt.s,grt.len,0)) die_nomem();
++
++  fdmgrt = open_read("control/moregoodrcptto.cdb");
++  if (fdmgrt == -1) if (errno != error_noent) die_control();
++
++  if (control_readint(&brtlimit,"control/brtlimit") == -1) die_control();
++  x = env_get("BRTLIMIT");
++  if (x) { scan_ulong(x,&u); brtlimit = u; };
++  if (brtlimit <= 1) brtlimit = 2;
++
+   if (control_readint(&databytes,"control/databytes") == -1) die_control();
+   x = env_get("DATABYTES");
+   if (x) { scan_ulong(x,&u); databytes = u; }
+@@ -131,6 +178,7 @@
+   if (!remotehost) remotehost = "unknown";
+   remoteinfo = env_get("TCPREMOTEINFO");
+   relayclient = env_get("RELAYCLIENT");
++  acceptclient = env_get("ACCEPTCLIENT");
+   dohelo(remotehost);
+ }
+ 
+@@ -197,6 +245,16 @@
+   return 1;
+ }
+ 
++void err_brt(s1,s2,s3,s4) char *s1; char *s2; char *s3; char *s4; {
++  pid(); log(s1); log(s2); log(s3); log(s4); log(" by ");
++  log(remoteip); log(" (HELO "); log(helohost.s); log(").\n");
++}
++
++void die_attack() {
++  pid(); logs(" Too many bad recipients from ",remoteip,", closing connection.\n");
++  out("421 service shutting down and closing transmission channel (#4.3.0)\r\n"); flush(); _exit(1);
++}
++
+ int bmfcheck()
+ {
+   int j;
+@@ -208,6 +266,24 @@
+   return 0;
+ }
+ 
++int grtcheck()
++{
++  int g;
++  case_lowerb(addr.s,addr.len);
++  if (grtok) {
++    if (constmap(&mapgrt,addr.s,addr.len - 1)) return 1;
++    g = byte_rchr(addr.s,addr.len,'@');
++    if (g < addr.len)
++      if (constmap(&mapgrt,addr.s + g,addr.len - g - 1)) return 1;  
++  }
++  if (fdmgrt != -1) {
++    uint32 dlen;
++    g = cdb_seek(fdmgrt, addr.s, addr.len - 1, &dlen);
++    if (g) return g;
++  }
++  return 0;
++}
++
+ int addrallowed()
+ {
+   int r;
+@@ -221,6 +297,7 @@
+ int flagbarf; /* defined if seenmail */
+ stralloc mailfrom = {0};
+ stralloc rcptto = {0};
++int brtcount;
+ 
+ void smtp_helo(arg) char *arg;
+ {
+@@ -250,7 +327,10 @@
+ void smtp_rcpt(arg) char *arg; {
+   if (!seenmail) { err_wantmail(); return; }
+   if (!addrparse(arg)) { err_syntax(); return; }
+-  if (flagbarf) { err_bmf(); return; }
++  if (flagbarf) {
++    err_brt(" Bad envelope sender ",mailfrom.s," to ",addr.s);
++    err_bmf(); return;
++  }
+   if (relayclient) {
+     --addr.len;
+     if (!stralloc_cats(&addr,relayclient)) die_nomem();
+@@ -257,7 +337,23 @@
+     if (!stralloc_0(&addr)) die_nomem();
+   }
+   else
+-    if (!addrallowed()) { err_nogateway(); return; }
++    if (!addrallowed()) {
++      err_brt(" Bad recipient host ",addr.s," from ",mailfrom.s);
++      if (++brtcount == brtlimit) die_attack();
++      err_nogateway(); return;
++    }
++    else
++      if (!acceptclient) {
++        if (!grtcheck()) {
++          if (str_equal(mailfrom.s,"")) {
++            err_brt(" Forged recipient user ",addr.s," from ","null");
++          }
++          else
++            err_brt(" Bad recipient user ",addr.s," from ",mailfrom.s);
++          if (++brtcount == brtlimit) die_attack();
++          out("550 sorry, no mailbox here by that name (#5.1.1)\r\n"); return;
++        }
++      }
+   if (!stralloc_cats(&rcptto,"T")) die_nomem();
+   if (!stralloc_cats(&rcptto,addr.s)) die_nomem();
+   if (!stralloc_0(&rcptto)) die_nomem();

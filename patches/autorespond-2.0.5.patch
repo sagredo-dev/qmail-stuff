@@ -1,0 +1,15 @@
+solves error: conflicting types for 'strcasestr';
+https://notes.sagredo.eu/en/qmail-notes-185/autorespond-24.html#comment3929
+
+diff -ruN autorespond-2.0.5-original/autorespond.c autorespond-2.0.5/autorespond.c
+--- autorespond-2.0.5-original/autorespond.c	2003-09-18 22:17:57.000000000 +0200
++++ autorespond-2.0.5/autorespond.c	2024-03-30 19:02:26.546423832 +0100
+@@ -376,7 +376,7 @@
+ /*********************************************************
+ ** find string in string - ignore case **/
+ 
+-char *strcasestr( char *_s1, char *_s2 )
++char *strcasestr( const char *_s1, const char *_s2 )
+ {
+ 	char *s1;
+ 	char *s2;

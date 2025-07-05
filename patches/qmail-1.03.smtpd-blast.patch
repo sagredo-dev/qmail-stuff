@@ -1,0 +1,96 @@
+# qmail-1.03.smtpd-blast.patch
+#
+# This patch corrects a small programming error in
+# the blast() routine of qmail-smtpd.c.  This is
+# sometimes referred to as the "Guninski" bug,
+# in reference to its discoverer.
+#
+# The error is in the "pos" variable of the routine,
+# which in the original code may increment without bound.
+# On extremely large header lines (>2GB before newline),
+# the "pos" integer may wrap negative.
+# This leads to a segfault in the static array reference
+# which follows the "if (pos < 9)" test.
+#
+# The fix constrains the increment of "pos" within the
+# relevant range.
+#
+# The issue is not life-threatening.  On the occasions
+# that the error condition would manifest, only the
+# current smtp session is affected (crashing after
+# reading 2GB).  No exploit of the behavior has yet
+# been reported.
+#
+#   Note: because of the processing logic used
+#   in the way qmail-smtpd pipes to qmail-queue,
+#   neither the use of "control/databytes" nor
+#   "softlimit -f" will prevent the error.
+#
+#   Although an error condition is _flagged_ with
+#   qmail_fail() for either "control/databytes" or
+#   "disk full" errors, and disk writes suspended,
+#   the smtp session itself is not immediately
+#   terminated.
+#
+#   Instead, the entire message continues to be
+#   be processed through the blast() loop, giving
+#   rise to the possibility of wrapping "pos".
+#   Dang!
+#
+#   After this patch is applied and installed,
+#   qmail-smtpd will then be able to process single
+#   header lines of _any_ length without failure.
+#
+#   (So maybe it would be better if qmail-smtpd _did_
+#   crash at some point...)
+#
+#   If you never knew about this patch, you would be
+#   happier.
+#   
+# The discovery of the error is attributed to
+# Georgi Guninski.  For additional information,
+# please refer to his discussion:
+#
+#    http://www.guninski.com/qmailcrash.html
+#
+# The fix here is attributed to James Craig Burley,
+# who has included it within his "qmail-isoc.patch".
+# Please see his information at:
+#
+#    http://www.jcb-sc.com/qmail/patches/qmail-isoc.patch
+#
+# Note that the "qmail-isoc.patch" is also now included in
+# the "netqmail-1.05" patchset.  So you don't need this patch
+# if you prefer using either of the other two.
+#
+# The patch prepared here, in contrast to the other patches
+# mentioned above, provides ONLY the "smtpd-blast" fix.
+# It is intended for those who prefer a small patch to fix
+# only this particular problem.
+#
+# This patch affects only one line of code in only one file
+# of the qmail distribution.
+#
+# For additional information about qmail and patches,
+# please see:
+#
+#     http://www.thedjbway.org/qmail/patches.html
+#
+# PUBLIC DOMAIN.
+# NO WARRANTY, use at your own risk, etc.
+#
+# wcm, 2004.04.22 - 2004.04.22
+# ===
+diff qmail-1.03.orig/qmail-smtpd.c qmail-1.03/qmail-smtpd.c
+--- qmail-1.03.orig/qmail-smtpd.c	Mon Jun 15 13:52:55 1998
++++ qmail-1.03/qmail-smtpd.c	Thu Apr 22 17:53:25 2004
+@@ -316,8 +316,8 @@
+         if (flagmaybex) if (pos == 7) ++*hops;
+         if (pos < 2) if (ch != "\r\n"[pos]) flagmaybey = 0;
+         if (flagmaybey) if (pos == 1) flaginheader = 0;
++        ++pos;
+       }
+-      ++pos;
+       if (ch == '\n') { pos = 0; flagmaybex = flagmaybey = flagmaybez = 1; }
+     }
+     switch(state) {

@@ -1,0 +1,33 @@
+diff -ruN netqmail-1.06-old/qmail-smtpd.c netqmail-1.06/qmail-smtpd.c
+--- netqmail-1.06-old/qmail-smtpd.c	2022-02-25 16:29:28.449527113 +0100
++++ netqmail-1.06/qmail-smtpd.c	2022-05-22 12:06:35.739110694 +0200
+@@ -63,7 +63,6 @@
+ 
+ int spp_val;
+ 
+-static char strnum[FMT_ULONG];
+ unsigned int databytes = 0;
+ unsigned int greetdelay = 0;
+ unsigned int drop_pre_greet = 0;
+@@ -1870,7 +1869,6 @@
+ void acceptmessage(qp) unsigned long qp;
+ {
+   datetime_sec when;
+-  strnum[fmt_uint(strnum,(unsigned int) getpid())] = 0;
+   when = now();
+   out("250 ok ");
+   accept_buf[fmt_ulong(accept_buf,(unsigned long) when)] = 0;
+@@ -1879,13 +1877,6 @@
+   accept_buf[fmt_ulong(accept_buf,qp)] = 0;
+   out(accept_buf);
+   out("\r\n");
+-  substdio_puts(&sslog, "mail recv: pid ");
+-  substdio_puts(&sslog, strnum);
+-  substdio_puts(&sslog, " from <");
+-  substdio_puts(&sslog, mailfrom.s);
+-  substdio_puts(&sslog, "> qp ");
+-  substdio_puts(&sslog, accept_buf);
+-  substdio_putsflush(&sslog, "\n");
+ }
+ 
+ void smtp_data(arg) char *arg; {

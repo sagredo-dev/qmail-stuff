@@ -1,0 +1,78 @@
+tx Ali Erturk TURKER
+https://notes.sagredo.eu/qmail-notes-185/testing-esmtp-size-patch-for-qmail-139.html#comment2940
+
+diff -ruN netqmail-1.06-sagredo-org/qmail-smtpd.c netqmail-1.06-sagredo/qmail-smtpd.c
+--- netqmail-1.06-sagredo-org/qmail-smtpd.c	2023-03-18 20:21:39.713287500 +0400
++++ netqmail-1.06-sagredo/qmail-smtpd.c	2023-03-18 20:30:23.013991900 +0400
+@@ -917,40 +917,6 @@
+ }
+ /* rbl: end */
+ 
+-int sizelimit(arg)
+-char *arg;
+-{
+-  int i;
+-  long r;
+-  unsigned long sizebytes = 0;
+-
+-  i = str_chr(arg,'<');
+-  if (arg[i])
+-    arg += i + 1;
+-  else {
+-    arg += str_chr(arg,':');
+-    if (*arg == ':') ++arg;
+-    while (*arg == ' ') ++arg;
+-  }
+-
+-  arg += str_chr(arg,' ');
+-  if (*arg == ' ') while (*arg == ' ') ++arg;
+-  else return 1;
+-
+-  i = str_chr(arg,'=');
+-  arg[i] = 0;
+-  if (case_equals(arg,"SIZE")) {
+-    arg += i;
+-    while (*++arg && *arg > 47 && *arg < 58) {
+-      sizebytes *= 10;
+-      sizebytes += *arg - 48;
+-    }
+-    r = databytes - sizebytes;
+-    if (r < 0) return 0;
+-  }
+-  return 1;
+-}
+-
+ int addrallowed()
+ {
+   int r;
+@@ -1195,13 +1161,6 @@
+   if (bhelook) flagbarfbhelo = bmcheck(BMCHECK_BHELO);
+   if ((!flagbarfbhelo) && (bhelonrok) && (!relayclient)) flagbarfbhelo = bmcheck(BMCHECK_BHELONR);
+ }
+-char size_buf[FMT_ULONG];
+-void smtp_size()
+-{
+-  size_buf[fmt_ulong(size_buf,(unsigned long) databytes)] = 0;
+-  out("250 SIZE "); out(size_buf); out("\r\n");
+-}
+-
+ /* ESMTP extensions are published here */
+ void smtp_ehlo(arg) char *arg;
+ {
+@@ -1227,7 +1186,7 @@
+ #ifdef TLS
+   }
+ #endif
+-  smtp_size();
++  out("250 SIZE "); out(size); out("\r\n");
+   seenmail = 0; dohelo(arg);
+   if (bhelook) flagbarfbhelo = bmcheck(BMCHECK_BHELO);
+   if ((!flagbarfbhelo) && (bhelonrok) && (!relayclient)) flagbarfbhelo = bmcheck(BMCHECK_BHELONR);
+@@ -1252,7 +1211,6 @@
+   if (smtpauth)
+     if (smtpauth > 10 && !seenauth) { err_submission(); return; }
+   if (!addrparse(arg)) { err_syntax(); return; }
+-  if (databytes && !sizelimit(arg)) { err_size(); return; }
+ /* start chkuser code */
+   switch (chkuser_sender (&addr)) {
+     case CHKUSER_OK:

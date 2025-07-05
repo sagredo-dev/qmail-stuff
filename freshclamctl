@@ -1,0 +1,44 @@
+#!/bin/sh
+#
+# Start/stop/restart freshclam.
+#
+
+DAEMON=/usr/local/bin/freshclam
+
+# Start clamav:
+start() {
+  if [ -x $DAEMON ]; then
+    echo -n "Starting freshclam daemon ... "
+    $DAEMON -d
+    echo " done."
+  fi
+}
+
+# Stop clamav:
+stop() {
+    echo -n "Stopping freshclam daemon ... "
+    killall -TERM freshclam
+    echo " done."
+}
+
+# Restart clamav:
+restart() {
+  stop
+  sleep 1
+  start
+}
+
+case "$1" in
+'start')
+  start
+  ;;
+'stop')
+  stop
+  ;;
+'restart')
+  restart
+  ;;
+*)
+  echo "usage $0 start|stop|restart"
+esac
+

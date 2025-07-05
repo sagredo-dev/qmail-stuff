@@ -1,0 +1,29 @@
+--- ../qmail-1.03/qmail-smtpd.c	Mon Jun 15 12:53:16 1998
++++ qmail-smtpd.c	Fri Dec 22 18:08:55 2006
+@@ -26,6 +26,7 @@
+ 
+ #define MAXHOPS 100
+ unsigned int databytes = 0;
++unsigned int greetdelay = 0;
+ int timeout = 1200;
+ 
+ int safewrite(fd,buf,len) int fd; char *buf; int len;
+@@ -121,6 +122,9 @@
+   x = env_get("DATABYTES");
+   if (x) { scan_ulong(x,&u); databytes = u; }
+   if (!(databytes + 1)) --databytes;
++
++  x = env_get("GREETDELAY");
++  if (x) { scan_ulong(x,&u); greetdelay = u; }
+  
+   remoteip = env_get("TCPREMOTEIP");
+   if (!remoteip) remoteip = "unknown";
+@@ -414,6 +418,8 @@
+   if (chdir(auto_qmail) == -1) die_control();
+   setup();
+   if (ipme_init() != 1) die_ipme();
++  if (greetdelay) sleep(greetdelay);
++
+   smtp_greet("220 ");
+   out(" ESMTP\r\n");
+   if (commands(&ssin,&smtpcommands) == 0) die_read();
