@@ -1,2 +1,0 @@
-#!/bin/sh
-exec setuidgid qmaill /usr/local/bin/multilog d /var/log/qmail/vusaged

@@ -1,2 +1,0 @@
-#!/bin/sh
-exec /usr/local/bin/setuidgid qmaill /usr/local/bin/multilog d s16000000 n200 /var/log/qmail/dovecot
