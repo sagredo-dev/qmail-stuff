@@ -1,0 +1,154 @@
+Hi all,
+
+  I have written a patch that create log file for qmailadmin-1.2.9. When a
+  user's password or quota changed, a user deleted from the system or
+  a user created this patch logs the events. Sample lines from log file:
+
+[metin@enderunix ~]# cat /var/log/qmailadmin.log
+12/08/2007 00:27:32: postmaster@test.com logged in from IP: 10.0.0.13. Action: user added [met@test.com] 
+12/08/2007 00:28:00: postmaster@test.com logged in from IP: 85.105.4.65. Action: user deleted [metink@test.com]. 
+12/08/2007 00:28:38: metin@test.com logged in from IP: 127.0.0.1. Action: password changed for met@test.com 
+12/08/2007 10:28:45: mk@test.com logged in from IP: 127.0.0.1. Action: quota changed to 56 MB for met@test.com 
+12/08/2007 13:00:30: postmaster@domain.com logged in from IP: 72.56.12.23. Action: user deleted [aydin@domain.com]. And his/her mails were forwarded to alfonso@example.com.
+
+If a user was only deleted, the action is "user deleted [metink@test.com]".
+If a user was deleted and his/her mails are forwarded to some email
+address, then the action is "user deleted [aydin@domain.com]. And his/her mails were \
+forwarded to alfonso@example.com.".
+
+The log file has to be created before applying the patch and the owner
+of it must be vchkpw:vpopmail. And the name of the log file must be
+"/var/log/qmailadmin.log".
+
+[metin@enderunix ~]# ls -la /var/log/qmailadmin.log
+-rw------- 1 vpopmail vchkpw 448 Aug 12 00:28 /var/log/qmailadmin.log
+
+Metin KAYA
+EnderUNIX Software Developer           Endersys Software Engineer
+http://www.EnderUNIX.org/              http://www.Endersys.com.tr/
+
+
+["qmailadmin-logger.patch" (application/octet-stream)]
+
+qmailadmin-logger.patch written by Metin KAYA [metin@enderunix.org], Istanbul/TURKIYE
+
+Please create /var/log/qmailadmin.log file and change its owner like that:
+chmod vchkpw:vpopmail /var/log/qmailadmin.log
+
+--- user.c	2007-08-12 13:09:41.000000000 +0300
++++ user_enderunix.c	2007-08-12 13:10:41.000000000 +0300
+@@ -24,6 +24,7 @@
+ #include <sys/stat.h>
+ #include <sys/types.h>
+ #include <sys/wait.h>
++#include <sys/time.h>
+ #include <unistd.h>
+ #include <pwd.h>
+ #include <dirent.h>
+@@ -64,6 +65,35 @@
+ #define HOOK_LISTDELUSER "dellistuser"
+ #endif
+ 
++static void
++log_patch(char *msg)
++{
++    FILE *fp = NULL;
++    if ((fp = fopen("/var/log/qmailadmin.log", "a")) == NULL) {
++	fprintf(stderr, "File: %s -Line: %d: %s.\n", __FILE__, __LINE__, strerror(errno));
++	exit(-1);
++    }
++
++    const char *ip_addr = getenv("REMOTE_ADDR");
++    if (!ip_addr)
++        ip_addr = "127.0.0.1";
++
++    time_t tv;
++    struct tm tm;
++    char time_buf[64];
++
++    time(&tv);
++    localtime_r(&tv, &tm);
++    strftime(time_buf, sizeof(time_buf) - 2, "%d/%m/%Y %H:%M:%S", &tm);
++
++    fprintf(fp, "%s: %s@%s logged in from IP: %s. Action: %s\n", time_buf, Username, \
+Domain, ip_addr, msg); +
++    if (fclose(fp) != 0) {
++        fprintf(stderr, "File: %s -Line: %d: %s.\n", __FILE__, __LINE__, \
+strerror(errno)); +        exit(-1);
++    }
++}
++
+ void show_users(char *Username, char *Domain, time_t Mytime)
+ {
+   if (MaxPopAccounts == 0) return;
+@@ -506,6 +536,11 @@
+     snprinth (StatusMessage, sizeof(StatusMessage), "%s %H@%H (%H) %s",
+       html_text[2], Newu, Domain, Gecos,
+       html_text[119]);
++      
++      char log_buf[3 * MAX_BUFF];
++      memset(log_buf, 0x0, sizeof(log_buf));
++      snprintf(log_buf, sizeof(log_buf) - 2, "user added [%s@%s]", Newu, Domain);
++      log_patch(log_buf);
+ 
+   } else {
+     /* otherwise, report error */
+@@ -590,6 +625,12 @@
+ {
+  static char forward[200] = "";
+  static char forwardto[200] = "";
++ char log_buf[4 * MAX_BUFF];
++ char tmp_buf[MAX_BUFF];
++
++ memset(log_buf, 0x0, sizeof(log_buf));
++ memset(tmp_buf, 0x0, sizeof(tmp_buf));
++ snprintf(log_buf, sizeof(log_buf) - 2, "user deleted [%s@%s].", ActionUser, \
+Domain);
+      
+   if ( AdminType!=DOMAIN_ADMIN ) {
+     snprintf (StatusMessage, sizeof(StatusMessage), "%s", html_text[142]);
+@@ -612,8 +653,15 @@
+     if(adddotqmail_shared(ActionUser, forwardto, -1)!=0) {
+        snprintf (StatusMessage, sizeof(StatusMessage), html_text[315], forwardto);
+     }
++
++    if (strlen(forwardto) > 5) {
++    	snprintf(tmp_buf, sizeof(tmp_buf) - 2, " And his/her mails were forwarded to \
+%s.", forwardto); +   	strncat(log_buf, tmp_buf, sizeof(log_buf) - 2);
++    }
++
+   } 
+ 
++  log_patch(log_buf);
+   call_hooks(HOOK_DELUSER, ActionUser, Domain, forwardto, "");
+   show_users(Username, Domain, Mytime);
+ }
+@@ -814,6 +862,11 @@
+       /* snprinth (StatusMessage, sizeof(StatusMessage), "%s %H@%H.", \
+         html_text[139], 
+ ActionUser, Domain ); */
+       strcpy (StatusMessage, html_text[139]);
++
++      char log_buf[3 * MAX_BUFF];
++      memset(log_buf, 0x0, sizeof(log_buf));
++      snprintf(log_buf, sizeof(log_buf) - 2, "password changed for %s@%s", \
+ActionUser, Domain); +      log_patch(log_buf);
+     }
+   }
+ 
+@@ -842,6 +895,10 @@
+         snprintf (StatusMessage, sizeof(StatusMessage), "%s", html_text[307]);
+       } else { 
+         snprintf (StatusMessage, sizeof(StatusMessage), html_text[309], qconvert);
++        char log_buf[3 * MAX_BUFF];
++        memset(log_buf, 0x0, sizeof(log_buf));
++        snprintf(log_buf, sizeof(log_buf) - 2, "quota changed to %s MB for %s@%s", \
+Quota, ActionUser, Domain); +        log_patch(log_buf);
+       }
+     } else {
+       snprintf (StatusMessage, sizeof(StatusMessage), "%s", html_text[307]);
+@@ -1178,4 +1235,3 @@
+   }
+   
+ }
+-
