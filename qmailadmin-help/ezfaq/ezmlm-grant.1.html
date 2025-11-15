@@ -1,0 +1,52 @@
+  <TITLE>UNIX man pages : ./ezmlm-grant.1 ()</TITLE>
+  <hr>
+<PRE>
+
+ezmlm-grant(1)                                     ezmlm-grant(1)
+
+<H2>NAME</H2>
+       ezmlm-grant - grant SQL access to sublist user
+
+<H2>SYNOPSIS</H2>
+       <b>ezmlm-grant</b>  [  <b>-d</b>  <b>database</b> ] [ <b>-t</b> <b>table</b><i>_</i><b>root</b> ] <i>host</i> <i>user</i>
+       <i>password</i>
+
+<H2>DESCRIPTION</H2>
+       <b>ezmlm-grant</b> outputs the necessary SQL statements to  grant
+       sufficient  access  for  <i>user</i> with <i>password</i> on <i>host</i> to the
+       database in order to run an ezmlm sublist.
+
+       Usually, the output is piped to <b><A HREF="mysql.1.html">mysql(1)</A></b>.
+
+<H2>OPTIONS</H2>
+       NOTE: The arguments must be separated by a space from  the
+       respective switches.
+
+       <b>-d</b> <b>database</b>
+              Use  <i>database</i>  as  the  database,  rather  than the
+              default ``ezmlm''.
+
+       <b>-t</b> <b>table</b><i>_</i><b>root</b>
+              Use <i>table_root</i> as the table root name, rather  than
+              the default ``list''.
+
+<H2>USAGE</H2>
+       <b>ezmlm-grant</b> <b>-d</b> <b>db</b> <b>-t</b> <b>list</b> <b>host</b> <b>user</b> <b>password</b> <b>|</b> <b>\</b>
+        mysql -hdbh -uusr -p
+
+       This  connects  to  the mysql server on ``dbh'' as ``usr''
+       (prompting for the password) and in database  ``db''  cre-
+       ates  tables  gives  access  for  sublist user ``user'' on
+       ``host'' with password ``password'' to the database tables
+       with root ``list''.
+
+<H2>SEE ALSO</H2>
+       <A HREF="ezmlm-mktab.1.html">ezmlm-mktab(1)</A>, <A HREF="ezmlm-send.1.html">ezmlm-send(1)</A>, <A HREF="ezmlm.5.html">ezmlm(5)</A>, <A HREF="mysql.1.html">mysql(1)</A>
+
+                                                                1
+
+</PRE>
+  <hr>
+  <ADDRESS>
+  © 1994 <A HREF="http://www.ntua.gr/~christia/man-cgi.html">Man-cgi 1.15</A>, Panagiotis Christias &lt;christia@theseas.ntua.gr&gt;
+  </ADDRESS>

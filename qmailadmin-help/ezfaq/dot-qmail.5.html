@@ -1,0 +1,226 @@
+  <TITLE>UNIX man pages : ./dot-qmail.5 ()</TITLE>
+  <hr>
+<PRE>
+
+dot-qmail(5)                                         dot-qmail(5)
+
+<H2>NAME</H2>
+       dot-qmail - control the delivery of mail messages
+
+<H2>DESCRIPTION</H2>
+       Normally  the  <b>qmail-local</b>  program delivers each incoming
+       message to your  system  mailbox,  <i>homedir</i><b>/Mailbox</b>,  where
+       <i>homedir</i> is your home directory.
+
+       It  can  instead  write  the  mail  to a different file or
+       directory, forward it to another address, distribute it to
+       a  mailing  list, or even execute programs, all under your
+       control.
+
+<H2>THE QMAIL FILE</H2>
+       To change <b>qmail-local</b>'s behavior, set up a <b>.qmail</b> file  in
+       your home directory.
+
+       <b>.qmail</b>  contains one or more lines.  Each line is a deliv-
+       ery instruction.  <b>qmail-local</b> follows each instruction  in
+       turn.   There are five types of delivery instructions: (1)
+       comment; (2) program; (3) forward; (4) mbox; (5)  maildir.
+
+       (1)  A comment line begins with a number sign:
+
+                 # this is a comment
+
+            <b>qmail-local</b> ignores the line.
+
+       (2)  A program line begins with a vertical bar:
+
+                 |preline /usr/ucb/vacation djb
+
+            <b>qmail-local</b>  takes  the rest of the line as a command
+            to supply to <b>sh</b>.  See  <b><A HREF="qmail-command.8.html">qmail-command(8)</A></b>  for  further
+            information.
+
+       (3)  A forward line begins with an ampersand:
+
+                 &me@new.job.com
+
+            <b>qmail-local</b>  takes  the  rest  of  the line as a mail
+            address; it uses <b>qmail-queue</b> to forward  the  message
+            to  that  address.   The address must contain a fully
+            qualified domain name;  it  must  not  contain  extra
+            spaces, angle brackets, or comments:
+
+                 # the following examples are WRONG
+                 &me@new
+                 &&lt;me@new.job.com&gt;
+                 & me@new.job.com
+                 &me@new.job.com (New Address)
+
+            If  the  address  begins with a letter or number, you
+            may leave out the ampersand:
+
+                                                                1
+
+dot-qmail(5)                                         dot-qmail(5)
+
+                 me@new.job.com
+
+            Note that <b>qmail-local</b> omits its new <b>Return-Path</b>  line
+            when forwarding messages.
+
+       (4)  An <i>mbox</i> line begins with a slash or dot, and does not
+            end with a slash:
+
+                 /home/djb/Mailbox.sos
+
+            <b>qmail-local</b> takes the entire line as a filename.   It
+            appends  the  mail message to that file, using <b>flock</b>-
+            style file locking if possible.   <b>qmail-local</b>  stores
+            the  mail  message  in  <i>mbox</i>  format, as described in
+            <b><A HREF="mbox.5.html">mbox(5)</A></b>.
+
+            <b>WARNING:</b> On many systems, anyone who can read a  file
+            can <b>flock</b> it, and thus hold up <b>qmail-local</b>'s delivery
+            forever.  Do not deliver mail to a publicly  accessi-
+            ble file!
+
+            If  <b>qmail-local</b>  is  able  to  lock the file, but has
+            trouble writing to it (because, for example, the disk
+            is full), it will truncate the file back to its orig-
+            inal length.  However, it cannot prevent mailbox cor-
+            ruption if the system crashes during delivery.
+
+       (5)  A  <i>maildir</i>  line begins with a slash or dot, and ends
+            with a slash:
+
+                 /home/djb/Maildir/
+
+            <b>qmail-local</b> takes the entire line as the  name  of  a
+            directory  in <i>maildir</i> format.  It reliably stores the
+            incoming message in that directory.   See  <b><A HREF="maildir.5.html">maildir(5)</A></b>
+            for more details.
+
+       If <b>.qmail</b> has the execute bit set, it must not contain any
+       program lines, <i>mbox</i> lines, or <i>maildir</i>  lines.   If  <b>qmail-</b>
+       <b>local</b>  sees  any  such  lines, it will stop and indicate a
+       temporary failure.
+
+       If <b>.qmail</b> is completely empty (0 bytes long), or does  not
+       exist,  <b>qmail-local</b>  follows  the <i>defaultdelivery</i> instruc-
+       tions set by your system administrator; normally  <i>default-</i>
+       <i>delivery</i>  is  <b>./Mailbox</b>,  so  <b>qmail-local</b> appends the mail
+       message to <b>Mailbox</b> in <i>mbox</i> format.
+
+       <b>.qmail</b> may contain extra spaces and tabs at the end  of  a
+       line.  Blank lines are allowed, but not for the first line
+       of <b>.qmail</b>.
+
+       If <b>.qmail</b> is world-writable or group-writable, <b>qmail-local</b>
+       stops and indicates a temporary failure.
+
+                                                                2
+
+dot-qmail(5)                                         dot-qmail(5)
+
+<H2>SAFE QMAIL EDITING</H2>
+       Incoming  messages  can arrive at any moment.  If you want
+       to safely edit your <b>.qmail</b> file, first set the sticky  bit
+       on your home directory:
+
+            chmod +t $HOME
+
+       <b>qmail-local</b> will temporarily defer delivery of any message
+       to you if your home directory is sticky (or group-writable
+       or  other-writable, which should never happen).  Make sure
+       to
+
+            chmod -t $HOME
+
+       when you are done!  It's a good  idea  to  test  your  new
+       <b>.qmail</b> file as follows:
+
+            qmail-local -n $USER ~ $USER '' '' '' '' ./Mailbox
+
+<H2>EXTENSION ADDRESSES</H2>
+       In  the  <b>qmail</b>  system, you control all local addresses of
+       the form  <i>user</i><b>-</b><i>anything</i>,  as  well  as  the  address  <i>user</i>
+       itself,  where  <i>user</i>  is  your  account name.  Delivery to
+       <i>user</i><b>-</b><i>anything</i>   is   controlled   by   the   file    <i>home-</i>
+       <i>dir/</i><b>.qmail-</b><i>anything</i>.   (These  rules may be changed by the
+       system administrator; see <b>qmail-users</b>(5).)
+
+       The <b>alias</b> user controls all other addresses.  Delivery  to
+       <i>local</i>  is  controlled  by  the  file <i>homedir/</i><b>.qmail-</b><i>local</i>,
+       where <i>homedir</i> is <b>alias</b>'s home directory.
+
+       In the following description, <b>qmail-local</b>  is  handling  a
+       message  addressed  to  <i>local@domain</i>,  where <i>local</i> is con-
+       trolled by <b>.qmail-</b><i>ext</i>.  Here is what it does.
+
+       If <b>.qmail-</b><i>ext</i> is completely empty, <b>qmail-local</b> follows the
+       <i>defaultdelivery</i>  instructions  set by your system adminis-
+       trator.
+
+       If <b>.qmail-</b><i>ext</i> doesn't exist,  <b>qmail-local</b>  will  try  some
+       default  <b>.qmail</b>  files.   For  example, if <i>ext</i> is <b>foo-bar</b>,
+       <b>qmail-local</b> will try first  <b>.qmail-foo-bar</b>,  then  <b>.qmail-</b>
+       <b>foo-default</b>, and finally <b>.qmail-default</b>.  If none of these
+       exist, <b>qmail-local</b> will bounce the  message.   (Exception:
+       for  the basic <i>user</i> address, <b>qmail-local</b> treats a nonexis-
+       tent <b>.qmail</b> the same as an empty <b>.qmail</b>.)
+
+       <b>WARNING:</b> For security, <b>qmail-local</b> replaces  any  dots  in
+       <i>ext</i>  with  colons  before checking <b>.qmail-</b><i>ext</i>.  For conve-
+       nience, <b>qmail-local</b> converts any uppercase letters in  <i>ext</i>
+       to lowercase.
+
+       When  <b>qmail-local</b>  forwards  a  message  as  instructed in
+       <b>.qmail-</b><i>ext</i>  (or   <b>.qmail-default</b>),   it   checks   whether
+
+                                                                3
+
+dot-qmail(5)                                         dot-qmail(5)
+
+       <b>.qmail-</b><i>ext</i><b>-owner</b>   exists.    If   so,   it   uses  <i>local</i><b>-</b>
+       <b>owner@</b><i>domain</i> as the envelope sender for the forwarded mes-
+       sage.   Otherwise  it  retains  the envelope sender of the
+       original message.  Exception: <b>qmail-local</b>  always  retains
+       the original envelope sender if it is the empty address or
+       <b>#@[]</b>, i.e., if this is a bounce message.
+
+       <b>qmail-local</b> also supports <b>variable</b> <b>envelope</b>  <b>return</b>  <b>paths</b>
+       (VERPs):  if <b>.qmail-</b><i>ext</i><b>-owner</b> and <b>.qmail-</b><i>ext</i><b>-owner-default</b>
+       both exist, it uses <i>local</i><b>-owner-@</b><i>domain</i><b>-@[]</b> as  the  enve-
+       lope  sender.  This will cause a recipient <i>recip</i><b>@</b><i>reciphost</i>
+       to  see  an  envelope  sender  of  <i>local</i><b>-owner-</b><i>recip</i><b>=</b><i>reci-</i>
+       <i>phost</i><b>@</b><i>domain</i>.
+
+<H2>ERROR HANDLING</H2>
+       If a delivery instruction fails, <b>qmail-local</b> stops immedi-
+       ately and reports failure.  <b>qmail-local</b> handles forwarding
+       after all other instructions, so any error in another type
+       of delivery will prevent all forwarding.
+
+       If a program returns exit code 99, <b>qmail-local</b> ignores all
+       succeeding lines in <b>.qmail</b>, but it still pays attention to
+       previous forward lines.
+
+       To set up independent instructions, where a  temporary  or
+       permanent  failure  in one instruction does not affect the
+       others, move each instruction into a  separate  <b>.qmail-</b><i>ext</i>
+       file,  and  set  up a central <b>.qmail</b> file that forwards to
+       all of the <b>.qmail-</b><i>ext</i>s.  Note that <b>qmail-local</b> can  handle
+       any number of forward lines simultaneously.
+
+<H2>SEE ALSO</H2>
+       <A HREF="envelopes.5.html">envelopes(5)</A>,  <A HREF="maildir.5.html">maildir(5)</A>, <A HREF="mbox.5.html">mbox(5)</A>, <A HREF="qmail-users.5.html">qmail-users(5)</A>, <A HREF="qmaillocal.8.html">qmaillocal(8)</A>
+       ,   <A HREF="qmail-command.8.html">qmail-command(8)</A>,    <A HREF="qmail-queue.8.html">qmail-queue(8)</A>,    <A HREF="qmaillspawn.8.html">qmaillspawn(8)</A>
+       
+
+                                                                4
+
+</PRE>
+  <hr>
+  <ADDRESS>
+  © 1994 <A HREF="http://www.ntua.gr/~christia/man-cgi.html">Man-cgi 1.15</A>, Panagiotis Christias &lt;christia@theseas.ntua.gr&gt;
+  </ADDRESS>

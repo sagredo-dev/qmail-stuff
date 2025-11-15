@@ -1,0 +1,89 @@
+  <TITLE>UNIX man pages : ./ezmlmsubrc.5 ()</TITLE>
+  <hr>
+<PRE>
+
+ezmlmsubrc(5)                                       ezmlmsubrc(5)
+
+<H2>NAME</H2>
+       ezmlmsubrc - set up a minimal sublist
+
+<H2>SYNOPSIS</H2>
+       <b>ezmlm-make</b> <b>-C</b> <b>ezmlmsubrc</b> <b>-options</b> <i>dir</i> <i>dot</i> <i>local</i> <i>host</i>
+
+<H2>DESCRIPTION</H2>
+       <b>ezmlmglrc</b>  instructs <b><A HREF="ezmlm-make.1.html">ezmlm-make(1)</A></b> to create <i>dir</i> and files
+       within it to support the <i>local</i><b>@</b><i>host</i> sublist.  The  sublist
+       handles bounces, but not subscriptions. It is intended for
+       creation of sublists that are part of an SQL database sup-
+       ported  distributed  ezmlm  list.  For creation of regular
+       sublists, use <b><A HREF="ezmlm-make.1.html">ezmlm-make(1)</A></b> with <b><A HREF="ezmlmrc.5.html">ezmlmrc(5)</A></b>.
+
+<H2>REQUIRED SWITCHES</H2>
+       While these switches can be omitted,  the  list  will  not
+       function unless they are specified.
+
+       <b>-3</b> <i>mainlocal</i>
+              Local  name of the main list for which this list is
+              a sublist. If the sublist is a sublist for digests,
+              <i>mainlocal</i>  should  refer  to  the  mail  list, i.e.
+              stripped of ``-digest''. This is required in  order
+              for  the  bounce  texts  to  refer  to  the correct
+              archive. Use the <b>-d</b> switch!
+
+       <b>-4</b> <i>mainhost</i>
+              Host name of the main list for which this list is a
+              sublist.
+
+       <b>-6</b> <i>host:port:user:pass:db:table</i>
+              SQL  connect  info.  Specifies the host and port to
+              connect to, the user/password to use, the  database
+              name,  and  the root table name.  The host defaults
+              to  ``localhost'',  the  database  and   table   to
+              ``ezmlm''.  The port default is the default for the
+              particular SQL server type used. For sublists  dis-
+              seminating   a   digest,   ``table''  will  end  in
+              ``_digest''.
+
+<H2>OPTIONS</H2>
+       <b>-d</b>     This sublist is a sublist of a digest list.  The <b>-3</b>
+              argment  used  should be the local name of the main
+              list, rather than the digest list, i.e. the  termi-
+              nal ``-digest'' should be stripped.
+
+       <b>-5</b> <i>owner</i>
+              The  address  to  which  to  redirect  mail send to
+              <i>local-</i><b>owner@</b><i>host</i>.  The default is the owner address
+              for the main list.
+
+<H2>USAGE</H2>
+       A  common  task  is  to create both a sublist for the main
+       list and a sublist for the corresponding digest. Note that
+
+                                                                1
+
+ezmlmsubrc(5)                                       ezmlmsubrc(5)
+
+       the  local  list  names  are given as is, whereas the main
+       list name always refers to the main list itself  (and  not
+       its  digest).  The main list is  ``mainloc@mainhost'', the
+       local sublist is ``me-sub1@myhost''; the  main  digest  is
+       ``mainloc-digest@mainhost''  and  the local digest sublist
+       is ``me-sub1-digest@myhost''.
+
+       ezmlm-make -Cezmlmsubrc -3 mainloc -4  mainhost  -6  main-
+       host::user:pw:db:tab ~/DIR ~me/.qmail-sub1 me-sub1 myhost
+
+       ezmlm-make -Cezmlmsubrc -d -3 mainloc -4 mainhost -6 main-
+       host::user:pw:db:tab -d ~/DIR  ~me/.qmail-sub1-digest  me-
+       sub1-digest myhost
+
+<H2>SEE ALSO</H2>
+       <A HREF="ezmlm-make.1.html">ezmlm-make(1)</A>, <A HREF="ezmlm.5.html">ezmlm(5)</A>, <A HREF="ezmlmrc.5.html">ezmlmrc(5)</A>
+
+                                                                2
+
+</PRE>
+  <hr>
+  <ADDRESS>
+  © 1994 <A HREF="http://www.ntua.gr/~christia/man-cgi.html">Man-cgi 1.15</A>, Panagiotis Christias &lt;christia@theseas.ntua.gr&gt;
+  </ADDRESS>

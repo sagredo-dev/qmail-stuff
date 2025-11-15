@@ -1,0 +1,151 @@
+  <TITLE>UNIX man pages : ./ezmlm-store.1 ()</TITLE>
+  <hr>
+<PRE>
+
+ezmlm-store(1)                                     ezmlm-store(1)
+
+<H2>NAME</H2>
+       ezmlm-store  -  store messages posted to a moderated lists
+       and send moderation requests to the moderator(s).
+
+<H2>SYNOPSIS</H2>
+       <b>ezmlm-store</b> <b>[-cCmMpPrRsSvV]</b> <i>dir</i>
+
+<H2>DESCRIPTION</H2>
+       <b>ezmlm-store</b>  reads  a  mail  message  and  stores  it   in
+       <i>dir</i><b>/mod/pending/.</b>   <b>ezmlm-store</b>  also  sends  a moderation
+       request with a copy of the message to the list of  modera-
+       tors  stored in <i>dir</i><b>/mod/subscribers/.</b>  If <i>dir</i><b>/modpost</b> con-
+       tains a directory name, <i>moddir</i>,  with  a  leading  forward
+       slash,  the moderator list in <i>/moddir/subscribers/</i> is used
+       instead. This allows separate sets of moderators for  sub-
+       scription  and  message  moderation, as well as the use of
+       the same moderator list for several <b>ezmlm</b>  mailing  lists,
+       owned by the same user. If the <b>-s</b> switch is used, the mod-
+       erators are divided into two sets.  Those  pointed  to  by
+       <i>dir</i><b>/modpost</b>  which  will receive confirmation requests for
+       posts with their SENDER address, and those stored with the
+       base  directory  <i>dir</i><b>/mod/</b>  which  will  receive moderation
+       requests for messages posted from SENDERs not part of  the
+       first  group.  This  can  be used to have a set of trusted
+       users (``moderating'' themselves to thwart SENDER faking),
+       and  a  set  of more traditional moderators, which receive
+       approval requests for other posts.
+
+       <b>Note:</b> The contents of <i>dir</i><b>/modpost</b> do not affect the  loca-
+       tion of the message moderation queue.
+
+       If SENDER is a moderator, the request is sent to that mod-
+       erator only.
+
+       The moderation request includes cookies for message rejec-
+       tion and acceptance.  The moderator can take either action
+       by replying to the  appropriate  address.   For  moderator
+       convenience,  the  <i>accept</i> address is given in the ``Reply-
+       To:'' header, and the  <i>reject</i>  address  in  the  ``From:''
+       header.
+
+       The  (default)  subject of all message moderation requests
+       is <b>MODERATE</b> <b>for</b> <i>listname@host.</i>
+
+       Once the request has been successfully sent to the modera-
+       tors,  <b>ezmlm-store</b>  sets the owner-execute bit of the mes-
+       sage in <i>dir</i><b>/mod/pending/.</b>  Messages without this  bit  set
+       are the result of incomplete executions of <b>ezmlm-store</b> and
+       are ignored.
+
+       At the beginning of the message, <b>ezmlm-store</b> prints a  new
+       <b>Mailing-List</b>  field  with the contents of <i>dir</i><b>/mailinglist</b>.
+       It rejects the message if there is already a  <b>Mailing-List</b>
+       field.
+
+                                                                1
+
+ezmlm-store(1)                                     ezmlm-store(1)
+
+       <b>ezmlm-store</b>  does  not  distribute bounce messages: if the
+       environment variable <b>SENDER</b> is set, and is either empty or
+       <b>#@[]</b>, <b>ezmlm-store</b> rejects the message.
+
+<H2>OPTIONS</H2>
+       <b>-cCrR</b>  Passed  on to <b><A HREF="ezmlm-send.1.html">ezmlm-send(1)</A></b> in case this program is
+              executed. This happens only if <i>dir</i><b>/modpost</b> does not
+              exist.
+
+       <b>-m</b>     (Default.)  The post is sent as a MIME enclosure.
+
+       <b>-M</b>     The post is appended to the message.
+
+       <b>-s</b>     The   contents  of  <i>dir</i><b>/modpost</b>  with  the  default
+              <i>dir</i><b>/mod/</b> are used as the base directory  for  self-
+              approving  users,  whereas  <i>dir</i><b>/mod/</b> is used as the
+              base directory for the moderators to whom  approval
+              requests for other posts are sent.
+
+       <b>-S</b>     (Default.)   The  contents  of <i>dir</i><b>/modpost</b> with the
+              default <i>dir</i><b>/mod/</b> are used as the base directory for
+              the moderators for all moderator functions.
+
+       <b>-p</b>     (Default.)   Anyone  can  post.  Posts that are not
+              from a moderator are sent out to all moderators for
+              approval.  Posts that are from a moderator are sent
+              only to that moderator.
+
+       <b>-P</b>     Only moderators can post. Those posts are  sent  to
+              the  posting  moderator  for  approval.  Posts from
+              other addresses are bounced. This can  be  used  to
+              relatively  securely  restrict  posts  to  messages
+              originating from a given set of addresses.
+
+       <b>-v</b>     Display <b>ezmlm-manage</b> version information.
+
+       <b>-V</b>     Display <b>ezmlm-manage</b> version information.
+
+<H2>USAGE</H2>
+       First of all, remember that <b>ezmlm-store</b> will  simply  exe-
+       cute  <b><A HREF="ezmlm-send.1.html">ezmlm-send(1)</A></b>  unless  <i>dir</i><b>/modpost</b>  exists.  For the
+       switches, use <b>-P</b> for lists where only moderators can  post
+       securely,  i.e.  they are asked to approve their own posts
+       after posting, whereas other  SENDERs  are  rejected.  For
+       low-security  more  convenient  versions  of  this type of
+       restriction, see <b><A HREF="ezmlm-gate.1.html">ezmlm-gate(1)</A></b>.
+
+       Normally (no switches), posts from moderators are sent for
+       approval only to the sending moderator, whereas posts from
+       other addresses are sent to all moderators.  Thus, you can
+       set  up  an  announcement  list  by  adding  all potential
+       posters as moderators. However, you may also want to allow
+       others  to  post,  as long as the posts are approved. This
+       would be default <b>ezmlm-store</b> function.
+
+                                                                2
+
+ezmlm-store(1)                                     ezmlm-store(1)
+
+       To make the set of ``approved posters'' who approve  their
+       own  posts,  different  from  the  set  of  addresses that
+       approve posts from other users, use the <b>-s</b> switch.  Add  a
+       directory name to <i>dir</i><b>/modpost</b>.  This directory is the base
+       directory of the ``approved posters''  database.  Add  the
+       moderators for other posts to <i>dir</i><b>/mod/</b> using <b><A HREF="ezmlm-sub.1.html">ezmlm-sub(1)</A></b>.
+
+<H2>CHARACTER SETS</H2>
+       If <i>dir</i><b>/charset</b> exists, <b>ezmlm-store</b> will use the  character
+       set  listed for all messages. Otherwise, the default ``us-
+       ascii'' will be used. The character set can be suffixed by
+       ``:''  followed  by a code. If the code is ``Q'', outgoing
+       messages are sent as ``Quoted-Printable'', if it is  '`B''
+       they are sent ``base64'' encoded.  Otherwise, text is sent
+       as is.
+
+<H2>SEE ALSO</H2>
+       <A HREF="ezmlm-clean.1.html">ezmlm-clean(1)</A>, <A HREF="ezmlm-manage.1.html">ezmlm-manage(1)</A>, <A HREF="ezmlm-make.1.html">ezmlm-make(1)</A>, <A HREF="ezmlm-moderate.1.html">ezmlm-moderate(1)</A>
+       , <A HREF="ezmlm.5.html">ezmlm(5)</A>
+
+                                                                3
+
+</PRE>
+  <hr>
+  <ADDRESS>
+  © 1994 <A HREF="http://www.ntua.gr/~christia/man-cgi.html">Man-cgi 1.15</A>, Panagiotis Christias &lt;christia@theseas.ntua.gr&gt;
+  </ADDRESS>

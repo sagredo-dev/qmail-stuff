@@ -1,0 +1,125 @@
+  <TITLE>UNIX man pages : ./ezmlm-test.1 ()</TITLE>
+  <hr>
+<PRE>
+
+ezmlm-test(1)                                       ezmlm-test(1)
+
+<H2>NAME</H2>
+       ezmlm-test - test ezmlm programs
+
+<H2>SYNOPSIS</H2>
+       <b>ezmlm-test</b> [ <b>-on</b> ][ <b>-h</b> <i>host</i> ][ <b>-u</b> <i>user</i> ][ <b>-l</b> <i>sqluser</i> ][ <b>-t</b>
+       <i>sqltable</i> ][ <b>-d</b> <i>sqldatabase</i> ][ <b>-p</b> <i>sqlpassword</i> ][ <b>-s</b> <i>section</i>
+       ] <i>dir</i>
+
+<H2>DESCRIPTION</H2>
+       <b>ezmlm-test</b>  is run from the ezmlm build directory. It will
+       test most of the functions of  most  of  the  programs  in
+       ezmlm-idx&gt;=0.313. The program prints status and error mes-
+       sages to stdout. It requires that qmail runs on  the  host
+       and  that  mail  delivery  to  a  local user functions. By
+       default, it runs as the user ``eztest''  who  should  have
+       read  and  execute  permission  to  the files in the build
+       directory.
+
+       For  testing  with  an  SQL  database   (requires   ezmlm-
+       idx&gt;=0.32;  see  <b>-p</b>),  you  need to have first created the
+       tables in the database, e.g. using <b>ezmlm-mktab</b>.  A  number
+       of switches allow overriding the default connection infor-
+       mation.
+
+       <b>ezmlm-test</b> creates the list  ``eztest-__tstlist@host''  in
+       the   directory   ``~/__TSTDIR''.   This   directory   and
+       ``~/.qmail-__tstlist*'' will be overwritten/removed by the
+       program.  In addition, the file ``~/__TSTDIR_err'' is cre-
+       ated. In cases of error, it often contains the error  mes-
+       sage form the failing program.
+
+       <b>ezmlm-test</b> should complete without error.  As many invoca-
+       tions of the programs test several  functions  it  is  not
+       easy  to  determine  what  went wrong if <b>ezmlm-test</b> fails.
+       Usually, ``~/__TSTDIR__err'' gives some  leads,  but  then
+       debugging  of the particular program is required. Usually,
+       this  involves  recreating  the   failing   circumstances,
+       including environment variables.
+
+<H2>OPTIONS</H2>
+       <b>-d</b> <i>sqldatabase</i>
+              If  SQL  support  is tested, use <i>sqldatabase</i> as the
+              database, overriding the default ``ezmlm''. See <b>-p</b>.
+
+       <b>-h</b> <i>host</i>
+              Connect  to  an  SQL  server  on  <i>host</i>,  if  an SQL
+              database is used (see  <b>-p</b>).   Default  is  ``local-
+              host''.   To   specify   a  non-default  port,  add
+              ``:port'' to the host name.
+
+       <b>-l</b> <i>sqluser</i>
+              Connect as <i>sqluser</i> to the SQL  server,  if  an  SQL
+              database  is  used (see <b>-p</b>).  By default, it is the
+              same as the executing user as specified by  the  <b>-u</b>
+
+                                                                1
+
+ezmlm-test(1)                                       ezmlm-test(1)
+
+              switch or the default ``eztest''.
+
+       <b>-n</b>     Test assuming qmail&gt;=1.02 and ezmlm-idx&gt;=0.32. Nor-
+              mally, this is auto-detected.  This switch  is  for
+              testing  of <b>ezmlm-test</b> and unlikely to be generally
+              useful.
+
+       <b>-o</b>     Test assuming an old (&lt;1.02) version of qmail which
+              does  not support the DEFAULT environment variable.
+              Normally, this is auto-detected, and  DEFAULT  sup-
+              port  is  used  if qmail&gt;=1.02 and ezmlm-idx&gt;=0.32.
+              The ``old'' style works with all versions of qmail,
+              but   requires  adjustments  for  virtual  domains.
+              DEFAULT support makes  these  adjustments  unneces-
+              sary.
+
+       <b>-p</b> <i>sqlpassword</i>
+              Test  with  SQL support, and use <i>sqlpassword</i> as the
+              connection password. By default,  local  databases,
+              rather than an SQL database are used for testing.
+
+       <b>-s</b> <i>section</i>
+              Restart  <b>ezmlm-test</b> from section <i>section</i>.  This can
+              be used to resume execution if the 30 s  given  for
+              mail  delivery was not sufficient for the test mes-
+              sage to be delivered. ``9'' can be used to clean up
+              any  files  remaining after incomplete execution of
+              <b>ezmlm-test</b>.  This option should not be needed.
+
+       <b>-t</b> <i>sqltable</i>
+              Use <i>sqltable</i> as the table root  name  for  the  SQL
+              database  tables,  if  an SQL database is used (see
+              <b>-p</b>).  Default is ``list''.
+
+       <b>-u</b> <i>user</i>
+              Execute <b>ezmlm-test</b> as <i>user</i>.  Default is ``eztest''.
+              The  program  refuses  to run, unless the effective
+              user name matches this user name.
+
+<H2>BUGS</H2>
+       On some systems, some of the  tests  give  a  broken  pipe
+       error.  This  is  because  code  needs  to be added to the
+       make_message function to capture  error  messages.   These
+       errors can be safely ignored for now.
+
+<H2>SEE ALSO</H2>
+       <A HREF="ezmlm.5.html">ezmlm(5)</A>,   <A HREF="ezmlm-clean.1.html">ezmlm-clean(1)</A>,  <A HREF="ezmlm-gate.1.html">ezmlm-gate(1)</A>,  <A HREF="ezmlm-get.1.html">ezmlm-get(1)</A>,
+       <A HREF="ezmlm-idx.1.html">ezmlm-idx(1)</A>,   <A HREF="ezmlm-issubn.1.html">ezmlm-issubn(1)</A>,   <A HREF="ezmlm-list.1.html">ezmlm-list(1)</A>,   <A HREF="ezmlmmake.1.html">ezmlmmake(1)</A>
+       ,   <A HREF="ezmlm-manage.1.html">ezmlm-manage(1)</A>,  <A HREF="ezmlm-mktab.1.html">ezmlm-mktab(1)</A>,  <A HREF="ezmlm-moderate.1.html">ezmlm-moderate(1)</A>
+       , <A HREF="ezmlm-request.1.html">ezmlm-request(1)</A>, <A HREF="ezmlm-return.1.html">ezmlm-return(1)</A>,  <A HREF="ezmlm-send.1.html">ezmlm-send(1)</A>,
+       <A HREF="ezmlm-split.1.html">ezmlm-split(1)</A>,  <A HREF="ezmlm-store.1.html">ezmlm-store(1)</A>,  <A HREF="ezmlm-sub.1.html">ezmlm-sub(1)</A>, <A HREF="ezmlm-tstdig.1.html">ezmlm-tstdig(1)</A>
+       , <A HREF="ezmlm-unsub.1.html">ezmlm-unsub(1)</A>, <A HREF="ezmlm-warn.1.html">ezmlm-warn(1)</A>
+
+                                                                2
+
+</PRE>
+  <hr>
+  <ADDRESS>
+  © 1994 <A HREF="http://www.ntua.gr/~christia/man-cgi.html">Man-cgi 1.15</A>, Panagiotis Christias &lt;christia@theseas.ntua.gr&gt;
+  </ADDRESS>

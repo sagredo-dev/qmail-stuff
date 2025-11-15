@@ -1,0 +1,167 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<HTML>
+<HEAD>
+ <META NAME="GENERATOR" CONTENT="SGML-Tools 1.0.7">
+ <TITLE>EZFAQ 0.32 - ezmlm-idx and ezmlm FAQ: Migration to Ezmlm from other Mailing List Managers.</TITLE>
+ <LINK HREF="FAQ-16.html" REL=next>
+ <LINK HREF="FAQ-14.html" REL=previous>
+ <LINK HREF="FAQ.html#toc15" REL=contents>
+</HEAD>
+<BODY vlink="#004400" link="#008800" bgcolor="#ffffff" alink="#ff0000"><FONT FACE="helvetica,times,arial">
+<A HREF="FAQ-16.html">Next</A>
+<A HREF="FAQ-14.html">Previous</A>
+<A HREF="FAQ.html#toc15">Contents</A>
+<HR>
+<H2><A NAME="s15">15. Migration to Ezmlm from other Mailing List Managers.</A></H2>
+
+<P>This section describes differences and similarities between ezmlm and other
+mailing list managers. It also details functions of ezmlm-idx that allow
+you to configure ezmlm to respond to commands utilized by such other mailing
+list managers so the command syntax will be familiar to such users. 
+Contributions to complete this sections are welcome.
+<P>
+<H2><A NAME="ss15.1">15.1 Basic Concepts.</A>
+</H2>
+
+<P>Ezmlm is different from other mailing list managers in that it is
+<EM>list-centric</EM> rather than <EM>host-centric</EM>. With a
+<EM>list-centric</EM> interface, you address the list directly with
+administrative commands. With ezmlm, the command is embedded in the list 
+address thus becoming part of it (i.e., the ``command address''.) 
+With smartlist, again you address the list, but send all administrative 
+commands to the <CODE>list-request</CODE> address. Ezmlm lists can support this 
+if you use the <a href="ezmlm-make.1.html">ezmlm-make(1)</a> ``-q'' switch to configure <a href="ezmlm-request.1.html">ezmlm-request(1)</a> 
+in <B>DIR/manager</B>.
+<P>Other mailing list managers are <EM>host-centric</EM>, i.e.
+administrative commands for any list on that particular host are addressed to a
+central address such as <CODE>majordomo@host</CODE>, <CODE>listserv@host</CODE>, or
+<CODE>listproc@host</CODE>. Then the user is required to place the command in either
+the subject header or more commonly in the body text of the message. The
+listname has to be included with the command. [<EM>Note:</EM> The above
+concept is not universally applicable to all host-centric mailing lists.
+While intended to to used in a host-centric manner, many such mailing list
+managers also support <CODE>listname-request@host</CODE> addressing. See the
+applicable list manger documentation for details. Coverage of this aspect of
+other mailing list manager functionality is beyond the scope of this FAQ.]
+To make the migration to ezmlm easier, support for a
+<EM>host-centric</EM> style mailing list manger is available. This is based on
+the use of <a href="ezmlm-request.1.html">ezmlm-request(1)</a> with the ``-f <B>config_file</B>'' switch.
+<P>
+<H2><A NAME="ezdomo"></A> <A NAME="ss15.2">15.2 Setting up ezmlm to respond to host-centric commands.</A>
+</H2>
+
+<P><a href="ezmlm-request.1.html">ezmlm-request(1)</a> can be used a a ``majordomo/listserv-emulator''. You can
+create the necessary accessory files manually. However, ezmlm-idx&gt;=0.32
+contains <a href="ezmlmglrc.5.html">ezmlmglrc(5)</a> which makes is very easy for you:
+<BLOCKQUOTE><CODE>
+<PRE>
+        % su
+        # su alias
+        # ezmlm-make -C/usr/local/bin/ezmlmglrc dir dot local host
+</PRE>
+</CODE></BLOCKQUOTE>
+
+where ``local'' may be e.g. ``majordomo''. Even easier is to set it up under
+a virtual domain ``host'' controlled by a user ``user''. Just put ``user''
+in place of ``alias'' in the example.
+<P>If you use a character set other than US-ASCII, put it's name, optionally
+followed by ``:'' and the desired content-transfer-encoding character (``Q'' for
+quoted-printable and ``B'' for base64) into <B>ezdomo/charset</B>.
+<P>All that remains is to set up <B>DIR/ezdomo.cf</B> with information on the
+lists (local and/or remote) that you want to make accessible via this
+interface. Another script, <a href="ezmlm-glconf.1.html">ezmlm-glconf(1)</a> can help you with this for
+your local lists. To configure for all your lists:
+<BLOCKQUOTE><CODE>
+<PRE>
+        ezmlm-glmake ~/ > ~/dir/ezdomo.cf
+</PRE>
+</CODE></BLOCKQUOTE>
+
+See man page for details. Alternatively, do it manually:
+<P>The <B>DIR/ezdomo.cf</B> contains a list of mailing lists which
+the ``majordomo'' (in this case) can provide information about
+in the following syntax:
+<BLOCKQUOTE><CODE>
+<PRE>
+  list@host:listdir:description
+</PRE>
+</CODE></BLOCKQUOTE>
+
+To show a list in ``lists'', but not include it in a ``which''
+search,
+simply omit the ``listdir''
+for that line:
+<BLOCKQUOTE><CODE>
+<PRE>
+  list@host::description
+</PRE>
+</CODE></BLOCKQUOTE>
+<P>For the ``which'' command to work, the <B>DIR/</B>, which contains
+the subscriber database, must be readable by the user under which mail
+is delivered. This means that ``which'' is usually limited to lists
+owned by the user or virtual domain under which the ``ezdomo'' interface
+is set up.
+<P>
+<H2><A NAME="ss15.3">15.3 Commands of other mailinglist managers recognized by ezmlm.</A>
+</H2>
+
+<P>
+<H3>Listproc/Listserv.</H3>
+
+<P>When set up as above, substituting ``listproc'' or ``listserv'' for
+``majordomo'' as appropriate, ezmlm will recognize and respond to the
+following commands placed in the body of the e-mail with the syntax below.
+<B>Note: ezmlm will only respond to one command per message.</B>
+<P><B>syntax: command listname [subscriber@host]</B>
+<P>
+<DL>
+<DT><B>Supported commands</B><DD><P>subscribe, sub, unsubscribe, unsub, list, help, review.
+<DT><B>Additional supported commands</B><DD><P>All ezmlm commands, such as ``thread'', ``index'' and ``get'' as well as the
+list owner's commands.
+</DL>
+<P>This interfaced makes information available via command messages to the
+appropriate mailing list.
+Thus, ``list'' and ``review'' will send a subscriber list only to
+remote administrators and only if specifically allowed by the list owner.
+<P>
+<H3>Majordomo.</H3>
+
+<P><B>syntax: command listname [subscriber@host]</B>
+<P>
+<DL>
+<DT><B>Supported commands</B><DD><P>lists, subscribe, unsubscribe, help, which, who.
+<DT><B>Additional supported commands</B><DD><P>All ezmlm user and ezmlm owner commands.
+</DL>
+<P>This interfaced makes information available via command messages to the
+appropriate mailing list.
+Thus, ``who'' will send a subscriber list only to
+remote administrators and only if specifically allowed by the list owner.
+<P>
+<H3>Smartlist.</H3>
+
+<P>Unlike ``listproc/listserv'' or ``majordomo'', ``smart-list'' does not
+provide ``host-centric'' services. Rather, commands are addressed to
+<CODE>listname-request@host</CODE> and the command placed
+on the ``Subject:'' line:
+<BLOCKQUOTE><CODE>
+<PRE>
+  To: listname-request@host
+  Subject: command [subscriber@host]
+</PRE>
+</CODE></BLOCKQUOTE>
+
+The body of the message is normally ignored.
+If the subject is empty, the first body line that starts with a letter is
+interpreted.
+<P>
+<DL>
+<DT><B>Supported commands</B><DD><P>subscribe, unsubscribe.
+<DT><B>Additional Supported Commands</B><DD><P>All ezmlm user and ezmlm owner commands.
+</DL>
+<P>
+<HR>
+<A HREF="FAQ-16.html">Next</A>
+<A HREF="FAQ-14.html">Previous</A>
+<A HREF="FAQ.html#toc15">Contents</A>
+</BODY>
+</HTML>

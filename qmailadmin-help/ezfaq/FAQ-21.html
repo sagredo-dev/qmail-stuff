@@ -1,0 +1,359 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<HTML>
+<HEAD>
+ <META NAME="GENERATOR" CONTENT="SGML-Tools 1.0.7">
+ <TITLE>EZFAQ 0.32 - ezmlm-idx and ezmlm FAQ: Ezmlm-idx security.</TITLE>
+ <LINK HREF="FAQ-20.html" REL=previous>
+ <LINK HREF="FAQ.html#toc21" REL=contents>
+</HEAD>
+<BODY vlink="#004400" link="#008800" bgcolor="#ffffff" alink="#ff0000"><FONT FACE="helvetica,times,arial">
+Next
+<A HREF="FAQ-20.html">Previous</A>
+<A HREF="FAQ.html#toc21">Contents</A>
+<HR>
+<H2><A NAME="security"></A> <A NAME="s21">21. Ezmlm-idx security.</A></H2>
+
+<P>
+<H2><A NAME="ss21.1">21.1 General assumptions.</A>
+</H2>
+
+<P>This document discusses security aspects of ezmlm-idx addition to
+the ezmlm-0.53 mailing list manager. This is the authors'
+understanding of security aspects of ezmlm-idx functions and not
+to be taken as a warranty. If you find any errors in this
+document or the ezmlm-idx package in general, please inform the
+authors.
+<P>In general, ezmlm with or without the ezmlm-idx package is more
+secure and less resource hungry than most other mailing list
+managers. Better security than afforded by ezmlm +/- ezmlm-idx
+would require encryption or PGP/digital signatures. Such an addition 
+would make
+it difficult, if not impossible, to run the mailing list from a standard
+MUA. The ezmlm-idx package adds a number of functions and
+options, which under some conditions may decrease security. The
+purpose of this document is to discuss security aspects of
+using/enabling these different functions.
+<P>
+<H2><A NAME="ss21.2">21.2 SENDER manipulation.</A>
+</H2>
+
+<P>We assume that the cost of manipulating/falsifying the SENDER
+address of a message is zero. Thus, any mechanism relying on
+SENDER alone is  insecure. However, such a
+mechanism may help in case of simple mailer or user errors. We
+also assume that the "cookies" used by ezmlm are secure, i.e.
+that it is very hard for someone to generate a valid cookie for a
+given address. SENDER is used to identify a moderator for remote
+administration of subscriptions. The result of the action or the
+confirmation request are sent back to that moderator address.
+Thus, providing a false SENDER is useless, unless the attacker
+can also read that moderator's mail.
+<P>
+<H2><A NAME="ss21.3">21.3 ezmlm cookies.</A>
+</H2>
+
+<P>Since ezmlm doesn't rely on the SENDER, the security lies
+entirely within the action-time-cookie-address combination.
+Anyone obtaining a valid "combination" can do whatever the
+combination is meant to do, but nothing else. Also, the cookie
+times out 1000000 seconds (approximately 11.6 days) after it was
+issued. Since the "combinations" are specific for a particular
+action and address, they can only be reused for that particular
+purpose, and within 11.6 days. Ezmlm (un)subscriptions for a
+given address are usually pointless to repeat. Message moderation
+"combinations" are useless after they've been used, since the
+message is no longer in the moderation queue.
+<P>
+<H2><A NAME="ss21.4">21.4 Lists without remote admin/subscription moderation.</A>
+</H2>
+
+<P>Maliciously (un)subscribing an address with ezmlm-0.53 requires
+that the attacker is able to read mail sent to the subscription
+address.
+<P>With the ezmlm-idx add-on, a non-moderated list works exactly the
+same way. Ezmlm-idx introduces the moderator for moderated and
+remote admin lists. For any moderator functions, an attacker
+needs to be able to read mail sent to a moderator's address. If
+s/he can do this, the attacker can affect anything the moderator
+is allowed to do (since falsifying SENDER is trivial). To
+minimize risks, give moderators only the power they need, do not
+use more moderators than necessary, and use moderators whose mail
+is hard to intercept (on the same machine/same internal/secure
+network or by encryption via e.g. ssh).
+<P>
+<H2><A NAME="ss21.5">21.5 Message moderation.</A>
+</H2>
+
+<P>A basic message moderated list keeps ezmlm subscriber security,
+but interpolates the moderator(s) between the address of the list
+and the list itself. An attacker able to read moderator mail can
+accept/reject a post, if s/he can do it before a regular
+moderator has taken action. The potential for abuse can be
+minimized by using few and local moderators. Mail logs are needed
+to trace which moderator address was misused.
+<P>
+<H2><A NAME="ss21.6">21.6 Subscription moderation.</A>
+</H2>
+
+<P>A basic subscription moderated list retains ezmlm subscriber
+security, but adds a moderator handshake. An attacker would need
+to be able to both read mail to the subscriber address and to at
+least one moderator.
+<P>
+<H2><A NAME="ss21.7">21.7 Remote administration.</A>
+</H2>
+
+<P>A remote admin (-r) list adds the ability of the moderator to
+(un)subscribe any address. The price of this is that an attacker
+able to read moderator mail can (un)subscribe any address. The
+moderator handshake message will be delivered to the abused
+moderator address, which will alert that moderator and reveal the
+compromise. Another basic assumption is that action-date-cookie-address
+combinations are only sent to the target address or a
+moderator and that moderator action "combinations" are never sent
+to non-moderators. 
+<P>
+<H2><A NAME="remote_edit"></A> <A NAME="ss21.8">21.8 Remote editing of ezmlm text files.</A>
+</H2>
+
+<P><a href="ezmlm-manage.1.html">ezmlm-manage(1)</a> can allow remote administrators to
+edit files in <B>DIR/text</B>.
+First, this option is disabled by default. Second, the ``-edit'' command
+is accepted only when the target (the recipient) is a remote administrator.
+Third, only existing files within <B>DIR/text</B> are editable.
+It is not possible to create files.
+<P>ezmlm replies to a valid request with an informative message and the contents
+of the file. In addition, the ``Reply-To:'' address contains a cookie
+based on the file name and contents, as well as the current time.
+Anyone possessing this cookie can save a new version of the text file. As
+with other ezmlm security, the security of this process depends on only
+the remote administrator receiving remote administrator mail. If this
+is not sufficiently secure for you, do not enable this option. As always,
+an increase in accessibility results results in a decrease in security.
+<P>Cookies for editing expire in approximately 27 hours. Also, as soon as
+a file is changed, the cookie is invalidated since the file contents change.
+This also means that an outstanding edit request cannot be completed if
+the files has been updated in the interim.
+<P>A potential attacker obtaining a valid cookie has a window of opportunity
+while you edit the file, or for at most 27 hours. S/he can overwrite
+and existing text file with potentially offensive material. Usually, this
+can be achieved more easily by posting to the list. S/he can also
+potentially fill your disk with a large amount of
+data (up to two times 10240 bytes (limited by MAXEDIT in <B>idx.h</B>))
+and could
+put part of this data onto messages leaving the list. Again, this is
+much more easily achieved by e.g. sending the equivalently sized message to
+your list.
+<P>
+<H2><A NAME="ss21.9">21.9 Digest generation and archive retrieval.</A>
+</H2>
+
+<P>The archive retrieval functions added by ezmlm-idx are digests
+(protected by a "code") and other functions. Anyone who knows the
+digest code (through reading mail logs, reading <B>DIR/manager</B> of
+the list, or reading any scripts used to send digest triggering
+messages) can trigger a digest. Protect these locations accordingly!
+For default lists with digests triggered from <B>DIR/editor</B> via
+<a href="ezmlm-tstdig.1.html">ezmlm-tstdig(1)</a> and <a href="ezmlm-get.1.html">ezmlm-get(1)</a>, you do not need the digest code and can
+thus disable the possibility to trigger digest by mail.
+For other functions, the output is sent to SENDER and can be
+restricted to subscribers (the ``-s'' switch). <a href="ezmlm-get.1.html">ezmlm-get(1)</a> functions
+(apart from digest) can be entirely disabled with the i``-C'' switch,
+or restricted to moderators with the ``-P'' switch or by removing
+<B>DIR/public</B>. Other sections of this document discuss several other
+options. All switches are documented in the man pages.
+<P>The moderator support functions added by the ezmlm-idx package
+(extended help and subscriber list) are sent only to a moderator
+address, i.e. an attacker again needs to be able to read
+moderator mail to read the output. The help info (<B>DIR/text/mod-help</B>)
+should not contain secrets. The ``-list'' function is normally
+disabled, but can be enabled with the ezmlm-manage -l switch to
+aid the remote administrator(s).
+<P>
+<H2><A NAME="ss21.10">21.10 Convenience for security: the ezmlm-manage ``-S'' and ``-U'' switches.</A>
+</H2>
+
+<P><a href="ezmlm-manage.1.html">ezmlm-manage(1)</a> functions can be made more convenient, at the
+expense of security. There have been many requests for these
+options, so they have been added, although we recommend against
+using them:
+<P>The <a href="ezmlm-manage.1.html">ezmlm-manage(1)</a> ``-S'' switch eliminates the subscriber handshake from
+subscribe requests. Thus, it is no longer necessary for the
+subscriber to confirm the subscription. This is not secure, but
+may be convenient for some moderated lists.
+Use only with extreme caution. The <a href="ezmlm-manage.1.html">ezmlm-manage(1)</a> ``-U'' switch
+similarly eliminates subscriber confirmation from unsubscribe
+requests. Again, this is insecure and useful only under special
+circumstances. If the list has any moderators (remote or modsub),
+requests to (un)subscribe an address other than sender are still
+routed to a moderator. This is similar to how some other lists
+work. Naturally, this is insecure because it relies on SENDER.
+Unsubscribe requests are always non-moderated, since, IOHO, it seems
+un-ethical to force a subscriber to remain on a list. Where an
+unsubscribe confirm request is sent out it is (also) sent to the
+target, except when the request was initiated by a moderator on a
+list with remote administration (<B>DIR/remote</B> exists).
+<P>The (un)subscription target is always informed about completed
+(un)subscribe request, whether initiated by that address, another
+address, or by a moderator. Thus, attempts of a user or moderator
+to subscribe an address will be brought to the attention of the
+user receiving mail at that address.
+<P>
+<H2><A NAME="ss21.11">21.11 Denial of service.</A>
+</H2>
+
+<P><a href="ezmlm-get.1.html">ezmlm-get(1)</a> archive retrieval functions can be used to deplete
+system resources. However, this can also be done by posting
+messages to lists, mail bombing, etc. If you are worried about
+this, you can use a combination of ezmlm-manage/ezmlm-get ``-C'', ``-s'',
+and ``-P'' switches, removal of <B>DIR/public</B>, and removal of the
+mail-triggered digest
+function (by removing the digest code from the <a href="ezmlm-get.1.html">ezmlm-get(1)</a> command
+line) to decrease availability of these functions (see man
+pages). Digest can also be triggered by direct execution of
+ezmlm-get from within a script
+from <B>DIR/editor</B> as in the default setup with the
+<a href="ezmlm-make.1.html">ezmlm-make(1)</a> ``-d'' switch.
+<P>
+<H2><A NAME="ss21.12">21.12 Moderator anonymity.</A>
+</H2>
+
+<P>Anyone getting messages from the list can see the ``Delivered-To:
+Moderator for ...'' header and realize that the list is moderated.
+In the authors opinion, this is fair and appropriate. If this 
+bothers you, edit the source of <B>ezmlm-store.c</B>.
+<P>While the fact that the list is moderated will be disclosed by
+the headers, the moderator(s)' identity will not be disclosed by the
+header. Moderators are anonymous to anyone who cannot
+directly read the mail log, the moderator list, or monitor your
+outgoing and incoming mail. Anyone intercepting the acting
+moderators' mail or able to read the mail log can determine who
+took a particular action.
+<P>Moderator E-mail addresses are not (to our knowledge) disclosed by any
+ezmlm mechanism. Thus, the poster does not know who
+rejected/accepted the message. Other moderators can find out that
+the message was accepted (by seeing it on the list or by
+themselves committing to a reject/accept reply) or rejected (by
+being informed by the poster or by themselves committing to a
+reject/accept reply). If no moderator takes any action for a
+given time (120 h - configurable to anything 24-240 h via
+<B>DIR/modtime</B> - and the parameters are likewise configurable at compile
+time via <B>idx.h</B>) the message times out, an act for which no particular
+moderator can be held accountable.
+<P>Subscription requests are acted upon only if a moderator
+completes the transaction by approving the requests. Requests can
+not be directly disapproved, but the associated cookie becomes
+invalid after approximately 11.6 days. Neither the subscriber nor
+the other moderators know which moderator accepted the
+subscription request. Requests to unsubscribe from the list are
+never moderated or otherwise controlled, except by requiring
+confirmation from the subscriber (normal unsubscribe) or the
+moderator that initiated the request (remote administration). If
+several moderators approve the same subscribe request, the user
+gets multiple notifications.
+<P>The triggering message (the moderation approval or the moderator's
+completion of the subscription request) are not returned or
+logged. This protects moderator anonymity, but makes it harder to
+track down the offender in case of abuse. Only a good mail log
+will help. IOHO, abuse of these mechanisms requires considerably
+more effort that it is worth to (un)subscribe someone to a list.
+Also, IOHO, moderator anonymity is more important. If this
+increased difficulty in tracking down abusive behavior bothers
+you, don't use the remote administration and moderated
+subscription features.
+<P>
+<H2><A NAME="ss21.13">21.13 Confidentiality of subscriber E-mail addresses.</A>
+</H2>
+
+<P>The optional ``-list'' command enabled by the ``-l'' <a href="ezmlm-manage.1.html">ezmlm-manage(1)</a> command
+line switch returns a subscriber list to the moderator. Again,
+anyone who can intercept a moderators' mail can fake SENDER and
+use this command to obtain a subscriber list. The use of local
+moderators minimize the risk. If the risk of subscriber disclosure
+is not worth this convenience, do not enable this feature.
+<P>
+<H2><A NAME="ss21.14">21.14 Help message for moderators.</A>
+</H2>
+
+<P>ezmlm-manage sends <B>DIR/text/mod-help</B>,
+rather than <B>DIR/text/help</B> in
+reply to messages to <CODE>list-help@host</CODE> if the target address is a
+moderator.
+<B>DIR/text/mod-help</B> should not contain secrets or other confidential
+information.
+<P>
+<H2><A NAME="ss21.15">21.15 Sublists.</A>
+</H2>
+
+<P>ezmlm sublists require that the message envelope sender is the main list,
+and that the message has a ``Mailing-List:'' header. Both are easy to fake,
+allowing an attacker to inject messages at the sublist level. Other than
+the possible ramifications of only a subset of subscribers seeing the message,
+this is of no concern for open lists. For a ``subscriber-only'' list based
+on SENDER checks, it is no harder to set SENDER to the address of a subscriber
+than to fake the headers required by the sublist. However, for a moderated
+list the mainlist to sublist communication becomes the weakest link. Sublists
+using a SQL database also use better authentication in this
+step (see 
+<A HREF="FAQ-5.html#sql">SQL-enabled ezmlm lists</A>).
+<P>A sublist user can unsubscribe a normal ezmlm sublist from the main list. To
+guard against this, you need to prevent propagation of unsubscribe confirm
+requests by the sublist. Easiest is to add a line to <B>DIR/editor</B>
+before the <a href="ezmlm-send.1.html">ezmlm-send(1)</a> line:
+<BLOCKQUOTE><CODE>
+<PRE>
+        |grep -i '^Subject: CONFIRM' >/dev/null 2>&amp;1 &amp;&amp; exit 99; exit 0
+</PRE>
+</CODE></BLOCKQUOTE>
+
+Another option would be to take advantage of the fact that
+<B>DIR/headeradd</B> headers at the main list are added to normal messages,
+but not to administrative messages. Thus, one could discard messages that
+lack the default ``Precedence: bulk'' header:
+<BLOCKQUOTE><CODE>
+<PRE>
+        |grep -i '^Precedence: bulk' >/dev/null 2>&amp;1 || exit 99; exit 0
+</PRE>
+</CODE></BLOCKQUOTE>
+
+For lists with SQL-support, users cannot unsubscribe
+sublists (see 
+<A HREF="FAQ-5.html#sql">SQL-enabled ezmlm lists</A>).
+<P>Break-in at a sublist host for normal ezmlm lists leads to loss/compromise
+of the addresses handled by the sublist. For MySQL-enabled lists, the
+sublist access credentials give DELETE and SELECT access to all addresses
+serviced by the list. Thus, a successful sublist attacker can completely
+disable the list. The MySQL log (if used) will reveal from which host
+the attack was done. Although the potential damage to a SQL-enabled list is
+greater, the results are of the same order of magnitude. The risk in minimized
+by keeping control over all sublist hosts. A successful
+sublist attacker cannot normally add addresses, since the sublist users by
+default are set up without INSERT privileges to the address database.
+<P>
+<H2><A NAME="ss21.16">21.16 SQL databases.</A>
+</H2>
+
+<P>For SQL-enabled lists, the database contains all list information. Subversion
+of your database server allows an attacker to add/remove addresses at will.
+This is also true for normal ezmlm lists. In addition, modification of
+the ``*_name'', ``*_cookie'', and ``*_mlog'' tables can cause the list to
+misbehave in a manner that doesn't immediately suggest a security breach.
+Keep your ezmlm list and database servers secure.
+<P>
+<H2><A NAME="ss21.17">21.17 Reporting security problems.</A>
+</H2>
+
+<P>Please send private E-mail about any security problems with the
+ezmlm-idx additions to
+Fred Lindberg, <CODE>
+<A HREF="mailto:lindberg@id.wustl.edu">lindberg@id.wustl.edu</A></CODE>.
+For ezmlm, please send them
+via private E-mail to Dan J. Bernstein, the author of ezmlm
+proper.
+<P>
+<HR>
+Next
+<A HREF="FAQ-20.html">Previous</A>
+<A HREF="FAQ.html#toc21">Contents</A>
+</BODY>
+</HTML>

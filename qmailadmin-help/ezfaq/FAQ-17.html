@@ -1,0 +1,221 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<HTML>
+<HEAD>
+ <META NAME="GENERATOR" CONTENT="SGML-Tools 1.0.7">
+ <TITLE>EZFAQ 0.32 - ezmlm-idx and ezmlm FAQ: Miscellaneous.</TITLE>
+ <LINK HREF="FAQ-18.html" REL=next>
+ <LINK HREF="FAQ-16.html" REL=previous>
+ <LINK HREF="FAQ.html#toc17" REL=contents>
+</HEAD>
+<BODY vlink="#004400" link="#008800" bgcolor="#ffffff" alink="#ff0000"><FONT FACE="helvetica,times,arial">
+<A HREF="FAQ-18.html">Next</A>
+<A HREF="FAQ-16.html">Previous</A>
+<A HREF="FAQ.html#toc17">Contents</A>
+<HR>
+<H2><A NAME="s17">17. Miscellaneous.</A></H2>
+
+<P>
+<H2><A NAME="quick_change"></A> <A NAME="ss17.1">17.1 How do I quickly change the properties of my list?</A>
+</H2>
+
+<P>
+<BLOCKQUOTE><CODE>
+<PRE>
+        ezmlm-make -+ [changed_switches] dir
+</PRE>
+</CODE></BLOCKQUOTE>
+
+<a href="ezmlm-make.1.html">ezmlm-make(1)</a> stores configuration info in <B>DIR/config</B> and
+uses that info as the default when you use the ``-+'' switch. If the list
+was created with a very old version or ezmlm-0.53 <a href="ezmlm-make.1.html">ezmlm-make(1)</a> you have
+to restate all arguments the first time you edit the list.
+<P>The ``-e'' switch works the same, without stickiness for switches.
+<P>A message arriving during reconfiguration may be handled incorrectly. The
+prudent user will set the sticky bit on the home directory to prevent
+delivery, then clear it after the list has been changed.
+<P>
+<H2><A NAME="ss17.2">17.2 Open archived list with daily digests.</A>
+</H2>
+
+<P>This is the default setup. The main list generates digests in response to
+a mailed request or when a message arrives and the amount of messages since 
+the last digest exceeds set limits (see <a href="ezmlm-tstdig.1.html">ezmlm-tstdig(1)</a>).
+Alternatively, <a href="ezmlm-get.1.html">ezmlm-get(1)</a> can be invoked from the command line. In both
+cases, the generated digest message is disseminated to the subscribers stored
+in <B>DIR/digest/subscribers/</B>, i.e. the subscriber database with the
+base directory <B>DIR/digest/</B>.
+<UL>
+<LI>See 
+<A HREF="FAQ-12.html#setup_diglist">setting up a digest list</A> on how to set
+up the lists.</LI>
+</UL>
+<P>
+<H2><A NAME="ss17.3">17.3 Variations in moderation</A>
+</H2>
+
+<P>You can set up lists with combinations of message moderation,
+subscription moderation, and remote administration, easiest by
+combining <a href="ezmlm-make.1.html">ezmlm-make(1)</a> ``-m'' ,``-s'', and ``-r'' switches. You can use a
+non-default moderator db, by specifying a directory starting
+with a slash in <B>DIR/modsub</B> or <B>DIR/remote</B> (for remote admin and
+subscription moderation - always the same db for both
+functions) or in <B>DIR/modpost</B> for message moderation. You can
+point several lists to the same moderator db, thus using the
+same moderators for several lists. <EM>NOTE:</EM> The user controlling
+the list must have read/write access to the files
+(specifically, must be able to write the lock file).
+<P>Some of these setups are not trivial. However, you can make
+them trivial by modifying <a href="ezmlmrc.5.html">ezmlmrc(5)</a> so that <a href="ezmlm-make.1.html">ezmlm-make(1)</a> can set
+up the desired lists by default or when the user uses e.g. the
+``-y'' or ``-z'' switches
+(see 
+<A HREF="FAQ-7.html#make_cust">Customizing ezmlm-make operation</A>).
+<P>
+<H2><A NAME="ss17.4">17.4 Lists that allow remote admin, but not user initiated subscription or archive retrieval.</A>
+</H2>
+
+<P>Create a regular remote admin list, but remove <B>DIR/public</B>.
+This allows moderators to (un)subscribe users and have archive
+access, but rejects all user requests. Posts work as usual.
+Naturally, this can be combined with message moderation or
+ezmlm-issub SENDER checks
+(see 
+<A HREF="FAQ-8.html#restr_msgs">Restricting message posting to the list</A>).
+<P>
+<H2><A NAME="ss17.5">17.5 Lists that allow remote admin, user archive retrieval, but not user-initiated subscription.</A>
+</H2>
+
+<P>Create a regular remote admin list, remove <B>DIR/public</B>, and add
+the ``-p'' [public] switch to the <a href="ezmlm-get.1.html">ezmlm-get(1)</a> command line in
+<B>DIR/manager</B>. This overrides the normal <B>DIR/public</B> effect on
+<a href="ezmlm-get.1.html">ezmlm-get(1)</a> and archive retrieval, allowing full archive access
+to anyone, but rejecting user -help and subscription commands.
+It is assumed that the users know archive retrieval commands
+without help. If you want to provide specific help, just link
+<B>~/.qmail-listname-help</B> to <B>DIR/help</B>,
+and invoke a script that
+copies help info from there. See <a href="ezmlm-check.1.html">ezmlm-check(1)</a> for an example.
+<P>
+<H2><A NAME="ss17.6">17.6 Lists that restrict archive retrieval to subscribers.</A>
+</H2>
+
+<P>Use a standard list, but add the <a href="ezmlm-get.1.html">ezmlm-get(1)</a> ``-s'' command line
+switch in <B>DIR/manager</B>. Only subscribers can receive archive
+excerpts. Digests work as usual. This can be set up using the
+<a href="ezmlm-make.1.html">ezmlm-make(1)</a> ``-g'' switch.
+<P>
+<H2><A NAME="ss17.7">17.7 Lists that do not allow archive retrieval at all.</A>
+</H2>
+
+<P>Use a standard list, but add the ``-C'' switch to both the
+<a href="ezmlm-get.1.html">ezmlm-get(1)</a> and <a href="ezmlm-manage.1.html">ezmlm-manage(1)</a> command lines in <B>DIR/manager</B>. No
+archive retrieval commands will be honored. Digest can be
+created as usual
+(See 
+<A HREF="FAQ-11.html#restr_arch">Restricting archive retrieval</A>).
+<P>
+<H2><A NAME="ss17.8">17.8 Lists that do not allow archive retrieval and do not allow digest triggering per mail.</A>
+</H2>
+
+<P>For maximal archive security, set up a normal indexed and
+archived list, then remove the <a href="ezmlm-get.1.html">ezmlm-get(1)</a> line from <B>DIR/manager</B>
+and add the ``-C'' switch to the <a href="ezmlm-manage.1.html">ezmlm-manage(1)</a> command line. You
+can still create digests by direct invocation of <a href="ezmlm-get.1.html">ezmlm-get(1)</a>
+from a script or crontab entry.
+<P>
+<H2><A NAME="ss17.9">17.9 Lists that allow archive retrieval only to moderators, but allow user-initiated subscription.</A>
+</H2>
+
+<P>Create a normal remote admin (+ subscription moderated) list,
+and add the ``-P'' (not public) switch to the <a href="ezmlm-get.1.html">ezmlm-get(1)</a> command
+line in <B>DIR/manager</B>. Subscription will not be affected, but
+<a href="ezmlm-get.1.html">ezmlm-get(1)</a> will send archive excerpts only to moderators.
+Digests are unaffected.
+<P>
+<H2><A NAME="ss17.10">17.10 Lists that do not require user confirmation for (un)subscription.</A>
+</H2>
+
+<P>The need for a user handshake can be eliminated by the
+<a href="ezmlm-manage.1.html">ezmlm-manage(1)</a> ``-S'' (subscribe) and/or ``-U'' (unsubscribe) switches. Alone,
+this is very insecure. However, there may be some use for it
+in local lists with subscription moderation, or alone for
+notifications where ease of use is more
+important than preventing users from (un)subscribing others. If
+the list has subscription moderation or remote administration,
+any user subscribe or unsubscribe request is forwarded to the
+moderators if the SENDER and target address do not match, even
+if the ``-U/-S'' switches are specified. This is put in place to
+make a ``-U/-S'' list similar to other list managers, not for
+security (it's not secure, since a malicious outsider can
+easily fake the SENDER address). Unsubscribe confirmations are
+sent also to the target in this case, to avoid situations
+where the user needs moderator ``permission'' to get off the
+list.
+<P>
+<H2><A NAME="ss17.11">17.11 Announcement lists for a small set of trusted posters</A>
+</H2>
+
+<P>Set up the list with <a href="ezmlm-store.1.html">ezmlm-store(1)</a> ``-P'' and
+add the ``trusted E-mail addresses'' to
+<B>DIR/mod/</B> with
+<BLOCKQUOTE><CODE>
+<PRE>
+% ezmlm-sub DIR/mod address@host
+</PRE>
+</CODE></BLOCKQUOTE>
+
+A post from a ``trusted address'' is sent back to that address for approval,
+assuring that the user at that address really sent the post. Posts from
+other e-mail addresses are rejected.
+<P>
+<H2><A NAME="ss17.12">17.12 Announcement lists allowing moderated posts from anyone.</A>
+</H2>
+
+<P>This is useful in many circumstances. A list announcing new programs for a
+system, where both the main developers and other users may have contributed
+programs.
+<P>Set up the list with <a href="ezmlm-store.1.html">ezmlm-store(1)</a> and the main developers as moderators. When
+any of these posts, that user alone is asked to confirm. Posts from other
+E-mail addresses are sent to all moderators/developers.
+To use a different set of 
+E-mail addresses as ``trusted e-mail addresses'' and
+moderators for other posts, use the
+<a href="ezmlm-store.1.html">ezmlm-store(1)</a> ``-S'' switch and make a separate address database
+for the ``trusted E-mail addresses''.
+Put the name of the basedir for the ``trusted e-mail addresses''
+database in <B>DIR/modpost</B> (needs leading ``/''),
+and add the post moderator(s)
+to <B>DIR/mod/</B> using <a href="ezmlm-sub.1.html">ezmlm-sub(1)</a> as shown above.
+<P>
+<H2><A NAME="ss17.13">17.13 Announcement lists with less security and more convenience.</A>
+</H2>
+
+<P>A general solution for SENDER checking is to configure list with <a href="ezmlm-gate.1.html">ezmlm-gate(1)</a>.
+<a href="ezmlm-gate.1.html">ezmlm-gate(1)</a> takes as arguments any number of basedirs
+for subscriber lists. Posts from SENDERs that are found are posted. For
+others <a href="ezmlm-store.1.html">ezmlm-store(1)</a> is invoked. If <B>DIR/modpost</B> exists,
+<a href="ezmlm-store.1.html">ezmlm-store(1)</a> will send
+out other messages for moderation.
+To bounce such messages, create <B>DIR/modpost</B>,
+and use the <a href="ezmlm-gate.1.html">ezmlm-gate(1)</a> ``-P''
+switch (will be passed on to <a href="ezmlm-store.1.html">ezmlm-store(1)</a> to bounce
+any posts not from a moderator).
+<P>By default, <a href="ezmlm-gate.1.html">ezmlm-gate(1)</a> accepts messages from subscribers. However, this is
+overridden if any ``basedirs'' are put on the <a href="ezmlm-gate.1.html">ezmlm-gate(1)</a> command line. Common
+would be to create a address list and put its ``basedir'' on the <a href="ezmlm-gate.1.html">ezmlm-gate(1)</a>
+command line. Trusted E-mail addresses can then be added with:
+<BLOCKQUOTE><CODE>
+<PRE>
+% ezmlm-sub basedir trusted@host
+</PRE>
+</CODE></BLOCKQUOTE>
+
+As this relies on SENDER checks it is less secure than the ezmlm-store based
+confirmation-requiring setup.
+<P>
+<HR>
+<A HREF="FAQ-18.html">Next</A>
+<A HREF="FAQ-16.html">Previous</A>
+<A HREF="FAQ.html#toc17">Contents</A>
+</BODY>
+</HTML>

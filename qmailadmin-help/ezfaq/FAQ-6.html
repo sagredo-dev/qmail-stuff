@@ -1,0 +1,852 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<HTML>
+<HEAD>
+ <META NAME="GENERATOR" CONTENT="SGML-Tools 1.0.7">
+ <TITLE>EZFAQ 0.32 - ezmlm-idx and ezmlm FAQ: Possible error conditions in ezmlm lists.</TITLE>
+ <LINK HREF="FAQ-7.html" REL=next>
+ <LINK HREF="FAQ-5.html" REL=previous>
+ <LINK HREF="FAQ.html#toc6" REL=contents>
+</HEAD>
+<BODY vlink="#004400" link="#008800" bgcolor="#ffffff" alink="#ff0000"><FONT FACE="helvetica,times,arial">
+<A HREF="FAQ-7.html">Next</A>
+<A HREF="FAQ-5.html">Previous</A>
+<A HREF="FAQ.html#toc6">Contents</A>
+<HR>
+<H2><A NAME="s6">6. Possible error conditions in ezmlm lists.</A></H2>
+
+<P>
+<H2><A NAME="ss6.1">6.1 What do I do if ezmlm doesn't work?</A>
+</H2>
+
+<P>Try to determine where the problem occurs and how to reproduce it: 
+<UL>
+<LI>Do messages to ezmlm return an error message to the sender or not?</LI>
+<LI>What is/are the error message(s)?</LI>
+<LI>What does ezmlm log into the mail log?</LI>
+<LI>Are you using a setup with virtual domains, and qmail&lt;1.02
+or ezmlm-idx&lt;0.31? If so, have you
+adjusted <B>DIR/inlocal</B>
+(see 
+<A HREF="FAQ-7.html#make_virt">Adapting ezmlm-make for virtual domains</A>)?</LI>
+<LI>Are posts sent out to the subscribers?</LI>
+<LI>Are there subscribers?
+<BLOCKQUOTE><CODE>
+<PRE>
+%  ezmlm-list DIR
+</PRE>
+</CODE></BLOCKQUOTE>
+</LI>
+<LI>Are there moderators?
+<BLOCKQUOTE><CODE>
+<PRE>
+% ezmlm-list moddir
+</PRE>
+</CODE></BLOCKQUOTE>
+
+where ``moddir'' is the contents of <B>DIR/remote</B> (for remote admin
+lists), of <B>DIR/modsub</B> (for subscription moderated lists) or
+<B>DIR/modpost</B> (for message moderation), if and only if the
+contents start with a forward slash. The default in all cases is
+<B>DIR/mod/</B>. If both <B>DIR/modsub</B> and <B>DIR/remote</B>
+contain directory names,
+the one in <B>DIR/modsub</B> is used for both subscription
+moderation and remote admin.</LI>
+<LI>Are the ownerships of all files correct, i.e. read/writable
+for the owner?
+<BLOCKQUOTE><CODE>
+<PRE>
+% chown -R user DIR
+</PRE>
+</CODE></BLOCKQUOTE>
+
+For lists under alias:
+<BLOCKQUOTE><CODE>
+<PRE>
+% chown -R alias DIR
+</PRE>
+</CODE></BLOCKQUOTE>
+
+If you use custom moderator databases, those directories and
+all their contents must also be readable for the user under
+which the list operates (i.e. the user qmail changes to during
+the delivery).</LI>
+<LI>Read the qmail log and capture relevant parts.</LI>
+<LI>Did you customize the package at all? If so, try the default
+settings which are known to work.</LI>
+<LI>Did you customize <B><a href="ezmlmrc.5.html">ezmlmrc(5)</a></B>? Try to use the default copy (skip
+the -c switch).</LI>
+<LI>Did your customization of <B>.ezmlmrc</B> fail to have an effect?
+Remember to use the -c switch. The <B>.ezmlmrc</B> file used is the
+one in ``dotdir'', i.e. the directory where the <B>.qmail</B> files go,
+usually, but
+NOT necessarily, the one in your home
+directory.</LI>
+<LI>Make sure you followed the instructions in man pages and
+other documentation. Most of the problems are due to not
+closely following the instructions. Try again with a new test
+list.</LI>
+<LI>Make sure to take notes of how the list was created (which
+flags you used, etc.).</LI>
+<LI>use <a href="ezmlm-check.1.html">ezmlm-check(1)</a> (see
+<A HREF="#check_find">Using ezmlm-check to find setup errors</A>).
+and compare the variables identified by ezmlm-check to <B>DIR/inlocal</B>,
+etc. If you don't
+get a reply from ezmlm-check, then message was not delivered
+properly. Check your qmail setup.</LI>
+<LI>Try to find your problem or a question/item close to it in the
+FAQ.</LI>
+<LI>If this didn't resolve the problem,
+post to the ezmlm mailing list, describing how
+you set up the list, your general setup (especially the
+relevant control files for a virtual domain), what works and
+what doesn't and what results from different actions (log
+entries, error messages).</LI>
+</UL>
+<P>If you have solved a problem that you believe might be more
+general, please send a description of the problem and its
+solution to the authors, ideally as a FAQ item.
+<P>
+<H2><A NAME="ss6.2">6.2 How do I report ezmlm bugs?</A>
+</H2>
+
+<P>If you have found a bug in the ezmlm-idx additions, please
+send a bug report by E-mail to <CODE>lindberg@id.wustl.edu</CODE>. Describe
+the error, your setup, and your system in sufficient detail so
+that it can be reproduced by third parties. Include relevant sections
+of mail log, and information about any error messages
+returned. If you ran into a problem and resolved it on your own,
+include a fix as a context diff against the distribution.
+<P>If you have found a bug in ezmlm proper (unlikely), please send a similar
+bug report to <CODE>djb@cr.yp.to</CODE> or
+<CODE>djb-ezmlm@cr.yp.to</CODE>. If you're unsure where the bug is,
+you can start with <CODE>lindberg@id.wustl.edu</CODE>.
+If you have problems and questions, please refer to the
+documentation, then to mailing list archives, then E-mail the
+ezmlm mailing list or the authors.
+<P>
+<H2><A NAME="ss6.3">6.3 Where do I send suggestions for ezmlm-idx improvements?</A>
+</H2>
+
+<P>E-mail to <CODE>lindberg@id.wustl.edu</CODE>, ideally with a context diff.
+For ezmlm proper, <CODE>ezmlm@list.cr.yp.to</CODE> may be
+better.
+<P>
+<H2><A NAME="ss6.4">6.4 Using ezmlm-test to check the ezmlm(-idx) programs.</A>
+</H2>
+
+<P><a href="ezmlm-test.1.html">ezmlm-test(1)</a> tests the different ezmlm(-idx) programs. It is useful to
+test your installation. If this program succeeds, it is not likely that
+you have problems due to platform-specific ezmlm(-idx) bugs. If <a href="ezmlm-test.1.html">ezmlm-test(1)</a>
+fails, this is the place to start. The program is good at finding problems
+but not that easy to use to determine the cause. Start by finding the place
+where it fails, recreate the conditions (add ``exit 0'' just before the
+point of failure and set the environment variables as set by the script), then
+try to run the command manually. <B>~/__TSTDIR__err</B> may contain
+a relevant error message.
+For further help, E-mail <CODE>lindberg@id.wustl.edu</CODE>.
+<P>
+<H2><A NAME="check_find"></A> <A NAME="ss6.5">6.5 Using ezmlm-check to find setup errors.</A>
+</H2>
+
+<P><a href="ezmlm-check.1.html">ezmlm-check(1)</a> is included in the ezmlm-idx
+distribution. <a href="ezmlm-check.1.html">ezmlm-check(1)</a> is an evolving shell script which
+when put into a <B>.qmail</B> file of a mailing list will return
+information about the environment variables passed by qmail to ezmlm as well as
+the list setup. It also attempts to check for common error
+conditions, such as HOST and <B>DIR/inhost</B> mismatch, missing
+files, etc. To use <a href="ezmlm-check.1.html">ezmlm-check(1)</a>, place a line:
+<BLOCKQUOTE><CODE>
+<PRE>
+|/usr/local/bin/ezmlm/ezmlm-check 'DIR'
+</PRE>
+</CODE></BLOCKQUOTE>
+
+where ``DIR'' is the list directory, as the first line in
+<B>DIR/editor</B> (for mail to list),
+<B>DIR/manager</B> (for mail to <CODE>list-subscribe</CODE>,
+list-help, etc), <B>DIR/moderator</B> (for mail to <CODE>list-accept</CODE>,
+<CODE>list-reject</CODE>).
+<a href="ezmlm-check.1.html">ezmlm-check(1)</a> will send its output to
+SENDER. The rest of the <B>.qmail</B> file will be ignored.
+If you use a non-standard
+ezmlm binary directory, change the <a href="ezmlm-check.1.html">ezmlm-check(1)</a> path accordingly.
+<P><a href="ezmlm-check.1.html">ezmlm-check(1)</a> in combination with mail logs and ezmlm error
+messages should make it easy to diagnose setup problems. When
+done, don't forget to remove the <a href="ezmlm-check.1.html">ezmlm-check(1)</a> line. It is not
+security-proofed against SENDER manipulation and with it in
+place, the list won't work.
+<P><a href="ezmlm-check.1.html">ezmlm-check(1)</a> does not check all aspects of list generation, but catches
+all common errors when lists are created with <a href="ezmlm-make.1.html">ezmlm-make(1)</a>, an many other
+errors as well. The <a href="ezmlm-check.1.html">ezmlm-check(1)</a> reply is also very valuable for support
+via E-mail.
+<P>
+<H2><A NAME="ss6.6">6.6 Posts are rejected: Sorry, no mailbox here by that name (#5.1.1).</A>
+</H2>
+
+<P>qmail tried to deliver the mail, but there is no
+mailbox with that name.
+<a href="ezmlm-make.1.html">ezmlm-make(1)</a> was used with incorrect arguments, often in conjunction with
+a virtual domain setup. If the list is in a virtual domain,
+the ``host'' argument for <a href="ezmlm-make.1.html">ezmlm-make(1)</a> should be the virtual domain,
+not the real host name.
+See 
+<A HREF="FAQ-4.html#what_names">What names can I use for my mailing lists?</A>
+and 
+<A HREF="FAQ-4.html#virtual_domain">Lists in virtual domains</A> for more info.
+<P>Other possibilities are that your qmail setup is incorrect.
+For a virtual domain controlled by user ``virt'', create
+<B>~virt/.qmail-test</B>
+containing ``|/bin/echo &quot;It worked&quot;;
+exit 100''. Now send mail to <CODE>test@virtual.dom</CODE>. If delivery works,
+you should get an error message ``It worked'' back. If you get anything
+else, you need to adjust your qmail setup. Similarly, for a normal user,
+create <B>~user/.qmail-test</B> and mail <CODE>user-test@host</CODE> to test
+that you control extension addresses. If this fails, contact your system
+administrator or adjust your qmail setup.
+<P>If these tests worked, but your list still does not, you most likely supplied
+an incorrect ``dot'' argument for <a href="ezmlm-manage.1.html">ezmlm-manage(1)</a>. It should be
+<B>~virt/.qmail-test</B> for the list <CODE>test@virtual.dom</CODE> and
+<B>~user/.qmail-test</B> for the list <CODE>user-test@host</CODE>.
+<P>
+<H2><A NAME="ss6.7">6.7 Post are not sent to subscribers.</A>
+</H2>
+
+<P>
+<DL>
+<DT><B>Non-moderated lists</B><DD><P>
+<OL>
+<LI>Read the qmail log. Is your message delivered to the list? You
+can also:
+<BLOCKQUOTE><CODE>
+<PRE>
+      
+% cat DIR/num
+</PRE>
+</CODE></BLOCKQUOTE>
+</LI>
+<LI>Send a message to the list.</LI>
+<LI>See if it was received/processed:
+<BLOCKQUOTE><CODE>
+<PRE>
+      
+% cat DIR/num
+</PRE>
+</CODE></BLOCKQUOTE>
+</LI>
+</OL>
+
+If the number was incremented, the message went to the
+list, and was successfully sent out in the opinion of <a href="ezmlm-send.1.html">ezmlm-send(1)</a>
+(<a href="ezmlm-send.1.html">ezmlm-send(1)</a> doesn't mind if there are no subscribers, so check that
+there really are both moderators and subscribers. These are added with
+<a href="ezmlm-sub.1.html">ezmlm-sub(1)</a>. You can not just put addresses into a text file!).
+<P>
+<DT><B>Message moderated lists</B><DD><P>
+<OL>
+<LI>Check number of queued messages awaiting moderation:
+<BLOCKQUOTE><CODE>
+<PRE>
+     
+% ls -l DIR/mod/pending
+</PRE>
+</CODE></BLOCKQUOTE>
+</LI>
+<LI>Send a message to the list.</LI>
+<LI>Check if another message was added to the queue:
+<BLOCKQUOTE><CODE>
+<PRE>
+     
+% ls -l DIR/mod/pending
+</PRE>
+</CODE></BLOCKQUOTE>
+ 
+A new file should have appeared. If this file has the owner
+execute bit set, it was successfully processed by <a href="ezmlm-store.1.html">ezmlm-store(1)</a>.
+If this is true, but no moderation request was sent, then
+continue with
+<A HREF="#no_requests">Messages posted to the list do not result in moderation requests</A>. If there is no new file, the message did
+not reach <a href="ezmlm-store.1.html">ezmlm-store(1)</a>, or <a href="ezmlm-store.1.html">ezmlm-store(1)</a> failed early. In both cases,
+the mail log should tell you more.
+
+If the message is
+there, but the owner execute bit is not set, <a href="ezmlm-store.1.html">ezmlm-store(1)</a> failed.
+Check the mail log. Possible reasons include a failure to find
+the <a href="ezmlm-send.1.html">ezmlm-send(1)</a> binary or <B>DIR/msgsize</B> is specified
+and the message body
+size is outside of the allowed range (again,
+this is accompanied by an error message and mail log entry).</LI>
+</OL>
+<P>
+<DT><B>General</B><DD><P>
+<OL>
+<LI>If the message was not received/processed, there should be an
+error message in the mail log.</LI>
+<LI>Fix temporary and permanent
+errors with the help of qmail and ezmlm
+documentation.</LI>
+<LI>If there is no log entry at all, then the mail
+went to another host. Check your qmail setup.</LI>
+<LI>If mail was delivered to the list, but not forwarded to the
+subscribers (check the qmail log - there should be an entry
+for a new delivery to the 
+list), <B>the most common error is that there are no subscribers.</B>
+In this case, <a href="ezmlm-send.1.html">ezmlm-send(1)</a> sends a message from <CODE>list-help@host</CODE>,
+and logs success, but no recipients are logged. To qmail, it is perfectly
+acceptable to send a message without recipients, so no error message
+is logged.</LI>
+<LI>Check subscribers:
+<BLOCKQUOTE><CODE>
+<PRE>
+     
+        % ezmlm-list DIR
+</PRE>
+</CODE></BLOCKQUOTE>
+</LI>
+<LI>Assure that ownerships are correct on the list directories:
+<BLOCKQUOTE><CODE>
+<PRE>
+        % chown -R user DIR
+</PRE>
+</CODE></BLOCKQUOTE>
+
+For lists owned by the ``alias'' user (in ~alias):
+<BLOCKQUOTE><CODE>
+<PRE>
+        % chown -R alias DIR
+</PRE>
+</CODE></BLOCKQUOTE>
+</LI>
+<LI>Most other problems should be easily corrected with the help
+of the qmail log.</LI>
+</OL>
+</DL>
+<P>
+<H2><A NAME="ss6.8">6.8 ezmlm-make fails: usage: ezmlm-make ...</A>
+</H2>
+
+<P>The command line you specified is incomplete. Usually, a command
+line argument has been omitted or a switch was placed after the other
+arguments rather than before.
+<P>The same error is issued when you attempt to invoke <a href="ezmlm-make.1.html">ezmlm-make(1)</a> with only
+the ``DIR'' argument without using the ``-e'' or ``-+'' switch.
+Other command line
+arguments can be omitted only when editing lists created or previously
+edited with ezmlm-make from ezmlm-idx&gt;=0.23.
+<P>Some special situations use <a href="ezmlm-make.1.html">ezmlm-make(1)</a> as a general script processor, e.g.
+the setting up of sublists with <a href="ezmlmsubrc.5.html">ezmlmsubrc(5)</a> and of a global interface
+with <a href="ezmlmglrc.5.html">ezmlmglrc(5)</a>. Here, there is no ``memory'' so all arguments have to
+be specified, even when using the ``-e'' or ``-+'' switches.
+<P>
+<H2><A NAME="ss6.9">6.9 ezmlm-make fails: Unable to create ...</A>
+</H2>
+
+<P>This error occurs when ezmlm-make is used to set up a list, and it
+tries to create a directory or a <B>.qmail-list</B> link that already exists.
+Usually,
+this occurs because the list already exists. If you are creating a new list,
+first erase remnants of any old test lists by deleting the list directory
+and the link files:
+<EM>NOTE: DO NOT USE THESE COMMANDS WITHOUT UNDERSTANDING THEM.</EM>
+You may erase more than you intended!
+<BLOCKQUOTE><CODE>
+<PRE>
+      
+% rm -rf DIR
+% rm -rf ~/.qmail-list ~/.qmail-list-*
+</PRE>
+</CODE></BLOCKQUOTE>
+
+If you want to save some files (such as in <B>DIR/text/</B>), make
+backup copies first, run ezmlm-make, then copy the backups to
+<B>DIR/text/</B>. Of course, it is usually easier to create a custom
+<B>.ezmlmrc</B>,
+and than use that for all your lists.
+<P>To use <a href="ezmlm-make.1.html">ezmlm-make(1)</a> to modify an existing list, without
+changing the subscriber or moderator lists or the message
+archive, use the ezmlm-make ``-e'' switch. NOTE: any customization
+that you've made that is not specified by the <B><a href="ezmlmrc.5.html">ezmlmrc(5)</a></B> file
+used will be
+overwritten. For instance, if you manually added checks to
+<B>DIR/editor</B>, a pointer to a custom moderator database in e.g.
+<B>DIR/modsub</B>,
+or made a change to a <B>DIR/text/</B> file (such as adding a ``welcome''
+message to <B>DIR/text/sub-ok</B>) these changes will be lost.
+To retain such changes
+(especially ones that are common for several of your lists),
+place them in a local <B>~/.ezmlmrc</B> file instead. You can either
+make such changes the default for your lists, or you can configure
+<B>~/.ezmlmrc</B> so that they are added only if a specific ezmlm-make
+switch is used.
+(see 
+<A HREF="FAQ-7.html#make_cust">Customizing ezmlm-make operation</A>).
+<P>
+<H2><A NAME="ss6.10">6.10 ezmlm-make fails: ... ezmlmrc does not exist</A>
+</H2>
+
+<P>There is no readable <a href="ezmlmrc.5.html">ezmlmrc(5)</a> file in <B>/etc/</B> nor in the ezmlm binary
+directory. If you have <B>.ezmlmrc</B> in ``dotdir''
+(see 
+<A HREF="FAQ-1.html#dotdir">Terminology: dotdir</A>) use the
+<a href="ezmlm-make.1.html">ezmlm-make(1)</a> ``-c'' switch
+(see 
+<A HREF="FAQ-7.html#make_cust">Customizing ezmlm-make operation</A>).
+<P>
+<H2><A NAME="ss6.11">6.11 Index/get/thread requests fail quietly or with errors from ezmlm-manage.</A>
+</H2>
+
+<P>Make sure this is an indexed list and has an ``ezmlm-get'' line first
+in <B>DIR/manager</B>. If not, your commands are fed directly to
+<a href="ezmlm-manage.1.html">ezmlm-manage(1)</a>. If they contain ``-'', ezmlm-manage interprets the
+rest as an address to which it sends the error message.
+Usually, this results in a &quot;trash address&quot; mail log entry and
+a bounce, which is why you don't see any error message. The
+same happens if you send non-existing commands followed by ``-'' and
+arguments. Thus,
+<CODE>list-gugu-54@host</CODE> results in an ezmlm-manage error, resulting in
+help text being sent to <CODE>54@localhost</CODE> ... When testing, try
+using syntax with a ``.'', not a ``-'', after the action command,
+e.g. <CODE>list-get.54_60@host</CODE>. This will assure that error messages
+get back to you.
+<P>
+<H2><A NAME="ss6.12">6.12 Digest triggering requests fail.</A>
+</H2>
+
+<P>(Digest triggering by mail is a relic from older versions. Use the
+standard setup with <a href="ezmlm-tstdig.1.html">ezmlm-tstdig(1)</a> as by <a href="ezmlm-make.1.html">ezmlm-make(1)</a> ``-d'', or
+run <a href="ezmlm-get.1.html">ezmlm-get(1)</a> directly from the command line via <a href="crond.8.html">crond(8)</a>.)
+<P>If you get an error message, it tells you why the request
+failed. If you do not, see the previous item. Try using syntax
+without ``-'' after the ``dig'' command. Also, requests that would
+result in an empty digest are silently ignored, but the reason
+why no digest was created is logged to the mail log. This is
+done so that cron scripts generating daily digest will just
+fail silently, rather than generating an error, for what isn't really one.
+<P>
+<H2><A NAME="ss6.13">6.13 Remote administration (un)subscribe confirm requests go to the user, not the moderator.</A>
+</H2>
+
+<P>Either the list is not set up for remote administration (i.e.
+<B>DIR/remote</B> does not exist), or the moderator is sending the
+request from an address that is not in the moderator database
+(e.g. from <CODE>Fred@host.dom</CODE>, when <CODE>fred@host.dom</CODE> is in the
+moderator db, but <CODE>Fred@host.dom</CODE> is not). <a href="ezmlm-manage.1.html">ezmlm-manage(1)</a> has no
+way of knowing that the SENDER is a moderator and treats the
+request as coming from a regular user, i.e. it sends a
+confirmation request to the target address. Correct the SENDER
+address, the address in the moderator db, or create
+<B>DIR/remote</B>. If you are using a non-default moderator db
+location, make sure that the moddir name is in <B>DIR/remote</B> (for
+remote admin only) or <B>DIR/modsub</B> (if there is subscription
+moderation as well). In both cases, the contents will be
+ignored unless they start with a ``/''.
+<P>
+<H2><A NAME="ss6.14">6.14 (Un)subscribers does not receive a (un)subscribe acknowledgement</A>
+</H2>
+
+<P>With normal ezmlm lists, a subscriber confirming a subscription or a
+non-subscriber confirming a unsubscribe request results in a message to
+the target address. This message is suppressed when the list is set up
+for subscription and/or remote administration, so that
+confirmations from multiple moderators do not result in multiple messages
+to the target address. The target address is always notified if the
+subscriber status of the address changes (from non-subscriber to subscriber
+or vice versa).
+<P>
+<H2><A NAME="ss6.15">6.15 Messages posted to a moderated list are sent out without moderation.</A>
+</H2>
+
+<P>The list is not set up as a moderated list. Check <B>DIR/editor</B>.
+If should contain
+a <a href="ezmlm-store.1.html">ezmlm-store(1)</a> line after the ezmlm-reject line if it is a
+moderated list. No <a href="ezmlm-send.1.html">ezmlm-send(1)</a> line should be in <B>DIR/editor</B>.
+If there is, the list is not moderated. Also, <B>DIR/modpost</B> must exist. If
+it does not, <a href="ezmlm-store.1.html">ezmlm-store(1)</a> will post the messages directly (via <a href="ezmlm-send.1.html">ezmlm-send(1)</a>)
+without sending them out for moderation first. This makes it easy to
+temporarily remove message moderation by simply removing <B>DIR/modpost</B>,
+but may be confusing if the user is unaware of this <a href="ezmlm-store.1.html">ezmlm-store(1)</a> feature.
+<P>
+<H2><A NAME="no_requests"></A> <A NAME="ss6.16">6.16 Messages posted to a moderated list do not result in moderation requests.</A>
+</H2>
+
+<P>
+<UL>
+<LI>Check that <B>~/.qmail-list</B> is a link to <B>DIR/editor</B>.</LI>
+<LI>Check that <B>DIR/editor</B> contains <a href="ezmlm-store.1.html">ezmlm-store(1)</a>
+and not <a href="ezmlm-send.1.html">ezmlm-send(1)</a>.
+If this is not the case, the list is not message moderated.</LI>
+<LI>Check for the presence of <B>DIR/modpost</B>. If this file is missing,
+the list is not moderated, even if <B>DIR/editor</B> is set up with
+<a href="ezmlm-store.1.html">ezmlm-store(1)</a>.</LI>
+<LI>Check qmail logs for error conditions during post delivery
+and correct these. If the messages are delivered correctly,
+verify that <a href="ezmlm-store.1.html">ezmlm-store(1)</a> generated the
+moderation requests to the moderators.</LI>
+<LI>Check to see that there are indeed moderators:
+<BLOCKQUOTE><CODE>
+<PRE>
+      
+% ezmlm-list moddir
+</PRE>
+</CODE></BLOCKQUOTE>
+
+where ``moddir'' is the contents of <B>DIR/modpost</B> if they start
+with a ``/'', otherwise those of <B>DIR/remote</B> (same ``/''
+requirement), and <B>DIR/mod/</B> by default.
+</LI>
+<LI>Check file ownerships.
+
+Another common problem is directory ownerships, especially
+for lists under ~alias. To correct this error, issue the
+following command while in the ~alias
+directory (User the user/group of the list owner;
+for ~alias lists user=alias, group=qmail):
+<BLOCKQUOTE><CODE>
+<PRE>
+% chown -R user DIR
+</PRE>
+</CODE></BLOCKQUOTE>
+</LI>
+</UL>
+<P>
+<H2><A NAME="ss6.17">6.17 Moderation request replies do not result in the appropriate action.</A>
+</H2>
+
+<P>
+<UL>
+<LI>Check that the address in the moderation request is correct.</LI>
+<LI>Check that the <B>~/.qmail-list-accept-default</B> and
+<B>~./qmail-list-reject-default</B> links exists and point to
+<B>DIR/moderator</B>.</LI>
+<LI>Check that <B>DIR/moderator</B> invokes <a href="ezmlm-moderate.1.html">ezmlm-moderate(1)</a>, and that
+there is a copy of <a href="ezmlm-send.1.html">ezmlm-send(1)</a> in the ezmlm binary directory.</LI>
+<LI>Check the qmail log to see that the replies were delivered to
+this address.</LI>
+<LI>Check directory ownerships. For lists under alias:
+<BLOCKQUOTE><CODE>
+<PRE>
+     
+% chown -R alias DIR
+</PRE>
+</CODE></BLOCKQUOTE>
+
+<EM>NOTE:</EM>
+This needs to be done every time you add/remove moderators as
+``root''. For user-controlled lists (i.e. you are ``user'' when
+running e.g. <a href="ezmlm-sub.1.html">ezmlm-sub(1)</a>) this is not a problem.
+
+If setting up lists for <EM>alias</EM>, you can avoid many problems by
+setting them up as ``alias'', i.e. use ``su alias'' not ``su''.
+
+If setting up lists for a user controlling a virtual domain,
+you can avoid many problems by assuming that uid (``su user'')
+before making any changes.
+</LI>
+<LI>Check the qmail logs: After the delivery of the moderation   
+request, <a href="ezmlm-send.1.html">ezmlm-send(1)</a> should run to send messages to all the
+list subscribers.</LI>
+<LI>Make sure there are list subscribers:
+<BLOCKQUOTE><CODE>
+<PRE>
+     
+% ezmlm-list DIR
+</PRE>
+</CODE></BLOCKQUOTE>
+</LI>
+</UL>
+
+Most error conditions, incorrect request cookies, etc, should
+result in informative error messages in the mail log.
+<P>
+<H2><A NAME="ss6.18">6.18 Moderator comments with moderation request replies are not added to the post/sent to the poster.</A>
+</H2>
+
+<P>Moderator comments are where the moderator chooses to ``reject'' the message
+and inform the person posting which his/her message was inappropriate.
+However, if a moderator wants to
+comment on <B>accepted</B> posts,
+the moderator may only do so via a follow-up post
+to the list. This is to avoid anonymously tagged-on text to posts. If a 
+moderator has something to say to the list, they should (and can only)
+do so in regular posts. If you want to edit posts before sending them to
+the list, set up a moderated list with you as the only moderator. Into
+<B>DIR/editor</B> before the <a href="ezmlm-store.1.html">ezmlm-store(1)</a> line, put a <a href="condredirect.1.html">condredirect(1)</a>
+line that redirects all messages with a SENDER other than you to your
+address. You can edit the contents ands repost, the message will pass
+<a href="condredirect.1.html">condredirect(1)</a>, and hit <a href="ezmlm-store.1.html">ezmlm-store(1)</a>. You will be asked to
+confirm (needed to assure that nobody else can post directly) and when you
+do, the messages is posted.
+<P>Moderator comments for ``reject(ed)'' posts need to be enclosed between
+two lines (yes, the end marker is required),
+having ``%%%'' starting on one of the first 5 positions
+of the line. If there are characters before the marker, these will be removed
+from any comment line that starts with the same characters (e.g. the
+characters before ``comment2'' in the example below will be removed):
+<P>
+<PRE>
+%%%
+comment
+%%%
+</PRE>
+
+or:
+<PRE>
+     
+> %%%
+comment
+> comment2
+> %%%
+</PRE>
+
+but not:
+<PRE>
+%%
+COMMENT
+%%
+</PRE>
+
+and not:
+<PRE>
+%%% this is my comment %%%
+</PRE>
+
+or
+<PRE>
+ezmlm said>%%%
+comment
+ezmlm said>%%%
+</PRE>
+<P>
+<H2><A NAME="ss6.19">6.19 Some headers are missing from messages in the digest.</A>
+</H2>
+
+<P>By default, only a subset of message headers are sent out in
+any digest and archive retrieval requests. First, headers in
+<B>DIR/headerremove</B> are stripped. Most non-essential
+headers are excluded when the default archive retrieval format (``m'') is
+used.
+Use the ``v'' or ``n'' format (see <a href="ezmlm-get.1.html">ezmlm-get(1)</a>) to get all message
+headers that are in the archive.
+<P>
+<H2><A NAME="ss6.20">6.20 Some Received: headers are missing from messages.</A>
+</H2>
+
+<P>ezmlm-idx&gt;=0.313 removes all but the latest ``Received:'' header from
+messages sent to the list. This is done since messages, especially sent
+via sublists, may have so many ``Received:'' headers that MTAs with
+primitive ``loop detection'' erroneously reject them. The subscriber can
+subscribe, since those messages have fewer such headers, and will receive
+warning and probe messages, but never see any posts.
+<P>To see all headers of a message for diagnostic purposes, mail
+<CODE>mainlist-getv.num@mainhost</CODE>, where ``num'' is the message number.
+All ``Received:'' headers are stored in the archive copy of the message.
+<P>To disable ``Received:'' header pruning, use the <a href="ezmlm-send.1.html">ezmlm-send(1)</a> ``-r'' switch. 
+<P>
+<H2><A NAME="ss6.21">6.21 My Mutt users cannot thread their digest messages.</A>
+</H2>
+
+<P>The digest by default removed non-essential headers like ``In-Reply-To:''
+from messages. Modern MUAs, like <EM>Mutt</EM> can split out messages from a
+digest and then thread them based on such headers. To include these and
+all other headers in the digest messages, use the ``v'' or ``n'' format
+as described on the <a href="ezmlm-get.1.html">ezmlm-get(1)</a> man page. Normally, the threading done by
+ezmlm is sufficient and the default format preferred to reduce message and
+digest size, often by 25% or more.
+<P>
+<H2><A NAME="ss6.22">6.22 Posts fail: Message already has Mailing-List (#5.7.2).</A>
+</H2>
+
+<P>The list you are trying to post to is used as a sublist (a list fed
+with messages from another (ezmlm) list), but not properly set
+up as a sublist. Put  the name of the parent list (``origlist@orighost'') 
+which exactly matches the SENDER of the original (or parent) list into
+<B>DIR/sublist</B>.
+Check the ownership of <B>DIR/sublist</B>, to make sure that the user
+controlling the list can read it.
+<P>Alternatively, use the <a href="ezmlm-make.1.html">ezmlm-make(1)</a> ``-0 <CODE>origlist@orighost</CODE>'' switch
+(see 
+<A HREF="FAQ-7.html#make_cust">Customizing ezmlm-make operation</A>).
+<P>
+<H2><A NAME="ss6.23">6.23 The last line of a <B>DIR/text/</B> file is ignored.</A>
+</H2>
+
+<P>Only complete lines ending with ``newline'' are copied. The last line in
+the <B>DIR/text/</B> file
+most likely lacks a terminal ``newline''.
+<P>
+<H2><A NAME="ss6.24">6.24 No CONFIRM requests are sent to moderators.</A>
+</H2>
+
+<P>Assuming that the user initiated the subscribe request, got a
+``confirm'' request, and replied correctly, there are two
+possible causes for the problem: Either the list is not
+subscription moderated (in this case the user is subscribed
+and received a note saying so) or the list is subscription
+moderated but no moderators have been added (<a href="ezmlm-manage.1.html">ezmlm-manage(1)</a> sends
+out the request and doesn't mind that there are no
+recipients).
+<P>Check that the list is subscription moderated:
+<BLOCKQUOTE><CODE>
+<PRE>
+% cat DIR/modsub
+</PRE>
+</CODE></BLOCKQUOTE>
+
+If this fails the list is not subscription moderated. If it
+succeeds with a directory name with a leading ``/'', this is
+your ``moddir''. If not:
+<BLOCKQUOTE><CODE>
+<PRE>
+     
+% cat DIR/remote
+</PRE>
+</CODE></BLOCKQUOTE>
+
+If this succeeds with a directory name with a leading ``/'',
+this is your moddir, otherwise the moddir is ``<B>DIR/mod/</B>''.
+<P>Check for moderators:
+<BLOCKQUOTE><CODE>
+<PRE>
+     
+% ezmlm-list moddir
+</PRE>
+</CODE></BLOCKQUOTE>
+
+If there are none, this is your problem. If there are some,
+check the mail log to see what happened when the CONFIRM
+requests was supposed to have gone out. Assure correct
+ownerships for the moderator db:
+<BLOCKQUOTE><CODE>
+<PRE>
+     
+% chown -R user moddir
+</PRE>
+</CODE></BLOCKQUOTE>
+
+For ~alias:
+<BLOCKQUOTE><CODE>
+<PRE>
+     
+ # chown -R alias moddir
+</PRE>
+</CODE></BLOCKQUOTE>
+
+Another possible problem is that you are trying to use the
+remote admin feature to subscribe a user, but you get no
+CONFIRM request. Usually, this is due to your SENDER address
+not being in the moderator database.
+The CONFIRM request went to the
+target address instead, since as far as ezmlm is concerned,
+you are a regular user.
+<P>
+<H2><A NAME="ss6.25">6.25 Deliveries fail ``temporary qmail-queue error''</A>
+</H2>
+
+<P>Usually, this is due to a corrupted qmail queue (should affect all mail)
+or a corrupted ezmlm subscriber database
+(See 
+<A HREF="#corrupt_sub">How to deal with corrupted subscriber lists</A>).
+<P>
+<H2><A NAME="corrupt_sub"></A> <A NAME="ss6.26">6.26 How to deal with corrupted subscriber lists</A>
+</H2>
+
+<P>Dan has made ezmlm very robust, but a subscriber list can still become
+corrupted due to e.g. disk errors. Usually, this will lead to a
+``temporary qmail-queue error'' because an address does not conform to
+the standard format. Occasionally, two E-mail addresses are fused, e.g.
+``<CODE>addr1@host</CODE>T<CODE>addr2@host</CODE>''.
+To diagnose and fix this type of error,
+disable deliveries (easiest is to ``chmod 0 DIR/lock''),
+back up the contents of <B>DIR/subscribers/</B>, then:
+<P>
+<BLOCKQUOTE><CODE>
+<PRE>
+% ezmlm-list DIR > tmp.tmp
+
+        ( edit tmp.tmp to fix any problems )
+
+% rm -rf DIR/subscribers/*
+% xargs ezmlm-sub DIR &lt; tmp.tmp
+</PRE>
+</CODE></BLOCKQUOTE>
+<P>This will list all E-mail addresses, allow you to edit them, then re-subscribe them.
+Don't forget to re-enable deliveries. 
+<P>
+<H2><A NAME="ss6.27">6.27 Vacation program replies are treated as bounces by ezmlm.</A>
+</H2>
+
+<P>Standard vacation programs do not reply to messages that contain
+a ``Precedence: bulk'' header. ezmlm-idx&gt;=0.23 sets up lists with this
+header in <B>DIR/headeradd</B>. For older lists,
+use ``ezmlm-make -+'' or ``ezmlm-make -e'' to update
+them, or just add a ``Precedence: bulk'' line to <B>DIR/headeradd</B>.
+<P>
+<H2><A NAME="ss6.28">6.28 Digests do not come at regular hours.</A>
+</H2>
+
+<P>In the default setup, <a href="ezmlm-tstdig.1.html">ezmlm-tstdig(1)</a> determines if a new digest is due
+every time a message arrives to the list. Thus, even though ezmlm-tstdig
+is set to produce digests 48 hours after the previous digest, the digest
+will not be generated until a message arrives. If you'd like digests
+at a specific time each day, use <a href="crond.8.html">crond(8)</a> and <a href="crontab.1.html">crontab(1)</a> to daily run:
+<BLOCKQUOTE><CODE>
+<PRE>
+        % ezmlm-get DIR
+</PRE>
+</CODE></BLOCKQUOTE>
+<P>
+<H2><A NAME="ss6.29">6.29 Preventing loops from misconfigured subscriber addresses.</A>
+</H2>
+
+<P>Occasionally, a subscriber address is misconfigured and automatically
+sends a message back to the list. Sometimes, the subscriber's setup
+has removed headers that ezmlm uses for loop detection or the generated
+messages has nothing in common with the send-out. To block such mail
+at the list, include the <a href="ezmlm-make.1.html">ezmlm-make(1)</a> ``-k'' (kill) switch and add the
+offending address to <B>DIR/deny/</B> with
+<BLOCKQUOTE><CODE>
+<PRE>
+        % ezmlm-sub DIR/deny badadr@badhost
+</PRE>
+</CODE></BLOCKQUOTE>
+
+<a href="ezmlm-unsub.1.html">ezmlm-unsub(1)</a> and <a href="ezmlm-list.1.html">ezmlm-list(1)</a> can be used similarly to remove or list the
+addresses. If your list is configured for remote administration (see
+<A HREF="FAQ-4.html#how_remote">How remote administration works</A>), and you
+are a remote administrator, you can
+add the address by sending mail
+to <CODE>list-deny-badadr=badhost@listhost</CODE>. Other subscriber database
+commands work as well for <CODE>list-deny</CODE>.
+<P>In other instances, a configuration error somewhere close to the subscriber
+creates a local mail loop throwing off messages to you. They are often
+bounces that are sent to the list address or to ``list-help'' due to
+configuration errors. Rather than accepting these, or the often resulting
+double bounces to ``postmaster'', just add a ``|/path/ezmlm-weed'' line first
+to <B>DIR/editor</B> or <B>DIR/manager</B>. This discards the
+bounce messages generated by the looping systems. <a href="ezmlm-weed.1.html">ezmlm-weed(1)</a> is also useful
+in other settings where excessive numbers of error messages are sent to
+the wrong address.
+<P>
+<H2><A NAME="ss6.30">6.30 A user can subscribe and receives warning and probe messages, but no messages from the list.</A>
+</H2>
+
+<P>ezmlm lists (ezmlm-idx&gt;=0.31) remove ``Received:'' headers from incoming
+messages by default. This can be prevented with the <a href="ezmlm-send.1.html">ezmlm-send(1)</a> ``-r'' switch.
+When the headers are propagated,
+especially sublist message may have many (15-20 or more), ``Received:'' headers.
+If there is a poorly configured sendmail host with a ``hopcount'' set too
+low, it will bounce these messages, incorrectly believing that the
+many ``Received:'' headers are due to a mail loop.
+The reason that administrative from the list do not bounce is that they have
+fewer ``Received:'' headers, since they originate from the sublist.
+<P>The message with all headers including the removed ``Received:'' headers can
+be retrieved from the list archive with the <EM>-getv</EM> command. The
+top incoming ``Received:'' header is added by qmail at the receipt to the
+list (or last sublist) host. This header is not removed, to allow the recipient
+to determine when the message reached the list.
+<P>
+<HR>
+<A HREF="FAQ-7.html">Next</A>
+<A HREF="FAQ-5.html">Previous</A>
+<A HREF="FAQ.html#toc6">Contents</A>
+</BODY>
+</HTML>

@@ -1,0 +1,124 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<HTML>
+<HEAD>
+ <META NAME="GENERATOR" CONTENT="SGML-Tools 1.0.7">
+ <TITLE>EZFAQ 0.32 - ezmlm-idx and ezmlm FAQ: Optimizing list performance.</TITLE>
+ <LINK HREF="FAQ-17.html" REL=next>
+ <LINK HREF="FAQ-15.html" REL=previous>
+ <LINK HREF="FAQ.html#toc16" REL=contents>
+</HEAD>
+<BODY vlink="#004400" link="#008800" bgcolor="#ffffff" alink="#ff0000"><FONT FACE="helvetica,times,arial">
+<A HREF="FAQ-17.html">Next</A>
+<A HREF="FAQ-15.html">Previous</A>
+<A HREF="FAQ.html#toc16">Contents</A>
+<HR>
+<H2><A NAME="s16">16. Optimizing list performance.</A></H2>
+
+<P>Ezmlm-idx is designed to make it as easy as possible to set up mailing lists.
+The default setup works well for small and medium-sized lists. For large lists,
+the lists can be made more efficient with a few simple changes.
+<P>
+<H2><A NAME="ss16.1">16.1 Crond-generated digests for better performance.</A>
+</H2>
+
+<P>With the default setup, <a href="ezmlm-tstdig.1.html">ezmlm-tstdig(1)</a> in <B>DIR/editor</B> tests if a
+digest should be sent out. On lists with a lot of traffic this is inefficient.
+Also, you may want digests to be delivered as a specific time. To do this,
+use <a href="crond.8.html">crond(8)</a> to execute <a href="ezmlm-get.1.html">ezmlm-get(1)</a> directly, as described
+elsewhere.
+<P>
+<H2><A NAME="ss16.2">16.2 Optimizing execution of <a href="ezmlm-warn.1.html">ezmlm-warn(1)</a>.</A>
+</H2>
+
+<P>ezmlm-idx&gt;=0.32 comes with much improved bounce handling. Modification
+as described below should be considered only when you expect thousands
+of bouncing addresses (virtually never). The description remains, for users
+of ezmlm-0.53 or earlier versions of ezmlm-idx. For users of ezmlm-0.53
+alone, we recommend a patch (
+<A HREF="ftp://ftp.id.wustl.edu/pub/patches/ezmlm-return.diff">ftp://ftp.id.wustl.edu/pub/patches/ezmlm-return.diff</A> which
+fixes a bug in ezmlm-0.53 bounce handling. The patch is superseded by
+ezmlm-idx.
+<P>To redistribute the load of bounce warning and probe addresses to off-peak
+hours, you may want to set up the list without <a href="ezmlm-warn.1.html">ezmlm-warn(1)</a> by using
+the ezmlm-make ``-w'' switch, and instead execute ``ezmlm-warn DIR''
+via <a href="crond.8.html">crond(8)</a>. You also need to run ``ezmlm-warn -d DIR'' for digest bounces
+if your list is configured with digests. Normal ezmlm list with
+ezmlm-idx&gt;=0.32 will have an insignificant bounce load, except if you
+bulk add addresses, e.g. from a MLM without bounce handling. In the latter
+case, the load will be higher for the first 2-4 weeks, then decrease
+drastically. If you feel you need to run <a href="ezmlm-warn.1.html">ezmlm-warn(1)</a> from <a href="crond.8.html">crond(8)</a>, you
+should seriously consider sublisting your lists.
+<P><EM>Note:</EM> the <a href="ezmlm-make.1.html">ezmlm-make(1)</a> ``-w'' switch has a special meaning if
+used at the same time as enabling SQL-support (``-6''; see man pages).
+<P>
+<H2><A NAME="ss16.3">16.3 Decreasing ezmlm-warn time out to increase performance.</A>
+</H2>
+
+<P>With ezmlm-idx, you may alter the <a href="ezmlm-warn.1.html">ezmlm-warn(1)</a> timeout to a number of
+seconds with the ``-t seconds'' switch.
+The default is 1,000,000 seconds or about
+11.6 days. This is the time from the first bounce until <a href="ezmlm-warn.1.html">ezmlm-warn(1)</a> sends
+a warning message and the time from the warning message bounce until
+<a href="ezmlm-warn.1.html">ezmlm-warn(1)</a> sends a probe (which if bounced leads to removal of the address
+from the subscriber list).
+If you have a digest list, remember to execute
+<a href="ezmlm-warn.1.html">ezmlm-warn(1)</a> with the ``-d'' switch as well.
+<P>Decreasing the default to e.g. 5 days will cut in half the average number
+of files in the bounce directory and the number of messages sent at
+each <a href="crond.8.html">crond(8)</a>-directed invocation of <a href="ezmlm-warn.1.html">ezmlm-warn(1)</a>. The trade-off is that
+worst case, a subscriber may be unsubscribed if his/her mail path is
+defective for more than twice the timeout. Removing a subscriber after
+10 days seems reasonable on a busy list. Do this by adding the ``-t'' switch
+to all the <a href="ezmlm-warn.1.html">ezmlm-warn(1)</a> invocations. This timeout should be larger than
+the interval between <a href="ezmlm-warn.1.html">ezmlm-warn(1)</a> invocation.
+<P>To be aggressive, use ``ezmlm-warn -t0''. This will minimize the time your
+lists spends servicing bounces, but will for some errors lead to subscribers
+to be also lead to subscribers being removed if messages to them bounce
+for two consecutive <a href="ezmlm-warn.1.html">ezmlm-warn(1)</a> runs. This is useful to rapidly clean up
+a low quality address collection.
+<P>
+<H2><A NAME="ss16.4">16.4 Use ezmlm without ezmlm-idx for maximum performance.</A>
+</H2>
+
+<P>ezmlm-idx adds a number of functions to ezmlm. It indexes the archive, and
+adds an index entry for each message, it can remove MIME parts, it can
+add a subject prefix and message trailer, decode rfc2047-encoded subjects, etc.
+Although designed to impact minimally on performance, these options when
+used take time. Even when they are not used, time is spent looking for
+e.g. the prefix. However, the performance penalty is small, as the absolutely
+dominating cost of a mailing list is the work qmail does to deliver the
+messages to subscribers.
+<P>In bench marking, we have not found a significant difference in performance
+between ezmlm-0.53 and ezmlm-0.53+ezmlm-idx-0.32 when ezmlm-idx features are
+not used. Thus, a non-indexed list with ezmlm-idx-0.32 performs the same
+as the corresponding ezmlm-0.53 list. Adding an index adds the overhead of
+another safe write (the index file). Use of other features adds very marginally
+to execution time. For virtually all lists, the ezmlm execution time is
+negligible compared to the resources needed by qmail to disseminate the message
+to the subscribers.
+<P>
+<H2><A NAME="ss16.5">16.5 Not archiving to maximize performance.</A>
+</H2>
+
+<P>An archived list needs to write the message to the archive. If you don't need
+an archive, don't archive. However, the archive is very useful to allow
+users to catch up on messages that they didn't receive due to delivery
+problems.
+<P>
+<H2><A NAME="ss16.6">16.6 Sublists to maximize performance.</A>
+</H2>
+
+<P>Consider splitting your list into sublists, ideally geographically. The main
+list deals only with a subset of subscribers (or only the sublists), and
+each sublist deals with a subset of subscribers, bounces, etc. This is the
+most rational way to scale ezmlm to large lists (see
+<A HREF="FAQ-4.html#how_sublist">How sublists work</A> for more info on how
+sublists work and
+<A HREF="FAQ-14.html#sublists">Sublists</A> on how to set up sublists).
+<P>
+<HR>
+<A HREF="FAQ-17.html">Next</A>
+<A HREF="FAQ-15.html">Previous</A>
+<A HREF="FAQ.html#toc16">Contents</A>
+</BODY>
+</HTML>

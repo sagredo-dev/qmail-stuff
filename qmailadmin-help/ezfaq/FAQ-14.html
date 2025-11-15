@@ -1,0 +1,487 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<HTML>
+<HEAD>
+ <META NAME="GENERATOR" CONTENT="SGML-Tools 1.0.7">
+ <TITLE>EZFAQ 0.32 - ezmlm-idx and ezmlm FAQ: Sublists.</TITLE>
+ <LINK HREF="FAQ-15.html" REL=next>
+ <LINK HREF="FAQ-13.html" REL=previous>
+ <LINK HREF="FAQ.html#toc14" REL=contents>
+</HEAD>
+<BODY vlink="#004400" link="#008800" bgcolor="#ffffff" alink="#ff0000"><FONT FACE="helvetica,times,arial">
+<A HREF="FAQ-15.html">Next</A>
+<A HREF="FAQ-13.html">Previous</A>
+<A HREF="FAQ.html#toc14">Contents</A>
+<HR>
+<H2><A NAME="sublists"></A> <A NAME="s14">14. Sublists.</A></H2>
+
+<P>A sublist is a list that receives its input from another mailing list, rather
+than from users directly. The sublist is just a regular subscriber
+of the main list. A sublist in e.g. Tasmania is very useful since only
+one message is sent from the main list and then the sublists servers all
+subscribers in Tasmania. Bounces and all administration is handled
+locally. The local sublist can have a digest, even though the main list
+may not.
+(See 
+<A HREF="FAQ-4.html#how_sublist">How sublists work</A> for more info on how
+sublists work).
+<P>
+<H2><A NAME="ss14.1">14.1 Sublists of ezmlm lists.</A>
+</H2>
+
+<P>To set up a sublist to an ezmlm list, just use the
+ezmlm-make ``-5 mainlist@mainhost'' switch. This will configure your list
+as a sublist to the <CODE>mainlist@mainhost</CODE> mailing list.
+<P>
+<H2><A NAME="ss14.2">14.2 Sublists of non-ezmlm lists.</A>
+</H2>
+
+<P>To set up a sublist to an ezmlm list, just use the
+ezmlm-make ``-5 mainlist@mainhost'' switch. This will configure your list
+as a sublist to the <CODE>mainlist@mainhost</CODE> mailing list. Since the
+main list may not use the ``Mailing-List'' header, you must identify another
+header that the main list adds to all messages. See the <a href="ezmlm-reject.1.html">ezmlm-reject(1)</a>
+man page for examples. Next, edit <B>DIR/editor</B> of your sublist and add
+a ``-h <EM>Listprocessor-Version:</EM>'' option to the <a href="ezmlm-send.1.html">ezmlm-send(1)</a> line, but
+replacing ``<EM>Listprocessor-Version:</EM>'' with your mainlist header.
+<P>Now your list will accept only messages from <CODE>mainlist@mainhost</CODE>
+and with the header specified.
+<P>
+<H2><A NAME="std_split"></A> <A NAME="ss14.3">14.3 How to set up a cluster of list and sublists with standard databases.</A>
+</H2>
+
+<P>ezmlm-0.53 allows sublists. The difference between a sublist and a main list
+is that the sublist requires that the SENDER of the message is the main list
+and that the message has a ``Mailing-List:'' header. Sublist messages have
+their own subscriber database and subscription mechanism, and use their own
+message number. This is very convenient if you want to create a private sublist.
+Since the subscribers have to interact with the appropriate sublist, it is
+difficult to administrate if you want to use it to distribute the load of a
+very large list, since users will have to address administrative requests
+such as unsubscribe to the correct sublist. Also, bounce messages refer to the
+sublist archive with sublist message numbers.
+<P>ezmlm-idx modifies this in several ways: First, the message number of the
+incoming message is used also for the outgoing message so that subscribers
+see the same message number no matter which sublist they get it from. For
+security reasons, this is enabled only if the sublist is NOT ARCHIVED. With
+this feature, bounce messages can refer the user to the main list archive
+instead, obviating multiple archives.
+<P>Second, <a href="ezmlm-split.1.html">ezmlm-split(1)</a> can be used to forward administrative requests
+sent to the
+main list, to the appropriate sublist. Thus, subscribers interact only with
+the main list, and do not need to know which sublist that servers them. With
+bounce and administrative messages referring them to the main list, subscribers
+will usually be unaware of the sublisting.
+<P>To set this up:
+<UL>
+<LI>
+<DL>
+<DT><B>create the main list</B><DD><P>
+<BLOCKQUOTE><CODE>
+<PRE>
+        ezmlm-make dir dot local host
+</PRE>
+</CODE></BLOCKQUOTE>
+</DL>
+</LI>
+<LI>
+<DL>
+<DT><B>add an <a href="ezmlm-split.1.html">ezmlm-split(1)</a> invocation</B><DD><P>Before the <a href="ezmlm-manage.1.html">ezmlm-manage(1)</a> line in <B>DIR/manager</B> add:
+<BLOCKQUOTE><CODE>
+<PRE>
+        |/path/ezmlm-split dir
+</PRE>
+</CODE></BLOCKQUOTE>
+</DL>
+</LI>
+<LI>
+<DL>
+<DT><B>decide how to split the load</B><DD><P>The main list sends to sublists and to any addresses not covered by the
+split table. You can split the load by domain (``geographically''),
+and any domain (including '') can be subdivided by ``hash'' by using
+different parts of the 0-52 range. Of course, you can also use hash alone.
+The request will go to the first row that matches, so although overlaps
+are not advisable (in case you later want to add sublists of switch
+to an SQL server-based system (see 
+<A HREF="FAQ-5.html#sql">sql</A>
+)), they have no negative
+effects. The domain for ezmlm-split can be the last TWO parts,
+i.e. ``edu.wustl'' to handle all *.wustl.edu subscribers.
+This is useful, but remember that the SQL version supports only one level.
+<P>An example:
+<BLOCKQUOTE><CODE>
+<PRE>
+   domain:hash_lo:hash_hi:sublistname
+   edu:0:52:sub1@here.edu
+   com:0:26:sub2@there.net
+   com:27:52:sub3@some.com
+   :0:13:sub4@what.org
+   :14:39:sub5@what.org
+</PRE>
+</CODE></BLOCKQUOTE>
+
+As you can see, the entire ``edu'' domain is handled by
+<CODE>sub1@here.edu</CODE>.
+The ``com'' domain is about evenly split between <CODE>sub2@there.net</CODE>
+and <CODE>sub3@some.com</CODE>.
+Everything else is split so that approximately 1/4 goes
+to <CODE>sub4@what.org</CODE>,
+1/2 to <CODE>sub5@what.org</CODE> and the rest falls through, i.e. is handled by
+the main list.
+<P>Why are there 2 sublists on the same host? This is in preparation of adding
+a host. It easy to just move the entire <CODE>sub5@what.org</CODE>
+list to a new host.
+All we have to do it to set up the new list, copy over the subscribers,
+and change the name in the split table entry.
+<P>To split the split the <CODE>sub5@what.org</CODE> load onto 2 lists
+requires a little
+more work. First, create a dummy split table in a directory ``temp'':
+<BLOCKQUOTE><CODE>
+<PRE>
+   :14:26:new1@new.net
+   :27:39:new1@other.net
+</PRE>
+</CODE></BLOCKQUOTE>
+
+Next, split the subscribers of sub5@what.org into these 2 groups, as
+detailed in the <a href="ezmlm-split.1.html">ezmlm-split(1)</a> man page. Create the two new lists, add
+the respective subscribers, and replace the <CODE>sub5@what.org</CODE> line with
+the two lines above.
+<P>To add a totally new domain, e.g. <CODE>jp:0:52:sub6@niko.jp</CODE> requires
+collection or subscribers from all lists that currently handle these
+subscribers, (the ones with blank domain in the example), re-splitting
+them, and adjusting the subscribers. Easiest here is to just unsubscribe
+the <CODE>sub6@niko.jp</CODE> subscribers to be from the other
+list with <a href="ezmlm-sub.1.html">ezmlm-sub(1)</a>.
+Since that program will silently ignore any addresses that are not on the
+respective list, it will work fine.
+</DL>
+</LI>
+<LI>
+<DL>
+<DT><B>Create the sublists</B><DD><P>Use ezmlmsubrc which sets up a minimal non-archived
+sublist with bounce texts pointing to the main list:
+<P>
+<BLOCKQUOTE><CODE>
+<PRE>
+        % ezmlm-make -Cezmlmsubrc -3mainlocal -4mainhost \
+                DIR dot sub1local sub1host
+</PRE>
+</CODE></BLOCKQUOTE>
+</DL>
+</LI>
+<LI>
+<DL>
+<DT><B>subscribe the respective sublists to the main list</B><DD><P>If you forget, the sublist will not get any messages to distribute. Add these
+addresses with <a href="ezmlm-sub.1.html">ezmlm-sub(1)</a> as subscribers to the main list.
+</DL>
+</LI>
+</UL>
+<P>A strong point of this system is that it is relatively simple and that only
+a fraction of the addresses are available to any given sublist. Thus,
+compromised security at a sublist threatens only the addresses and functions
+handled by that sublist.
+<P>As you can see, this works quite well, but it's not trivial to change the setup.
+If you modify it while the list is running, some subscribers may get duplicate
+messages or miss messages. Therefore, you should disable deliveries to the
+main list before the final step of the changes (removal of subscribers from old
+lists and adding new lists as subscribers to the main list). For most lists,
+this should work flawlessly, and some minimal planning and extra lines in
+``split'' can markedly facilitate future expansion.
+<P>Another weak point is the authentication of messages between list and sublist.
+The requirements the sublist places on the message can be easily faked. This
+allows injection of messages at the sublist level as a way to circumvent
+moderation or other access control.
+<P>An associated disadvantage is that not even the main list has access to all
+the addresses. Thus, SENDER checks for archive access (relatively secure) and
+posts (relatively insecure) cannot directly be used. Also, sublist cooperation
+is required to determine the number of subscribers, or to access subscriber
+addresses for a purpose other than distribution of list messages.
+<P>
+<H2><A NAME="ss14.4">14.4 Setting up an ezmlm list ``cluster'' of main list and sublists using a central SQL server.</A>
+</H2>
+
+<P>
+<P>This is a little more complicated. Instead of forwarding (un)subscribe requests
+to a sublist, all administrative requests are handled locally working against
+a central SQL database. All addresses are stored in the same table. Which
+addresses are served by a particular sublist is decided at the time of
+processing. In order to be compatible with how ezmlm works with normal
+databases, SQL-based ezmlm list clusters use 2 communication channels. One
+is the message itself, the other is the communication with the SQL server.
+<P>
+<H3>Advantages.</H3>
+
+<P>The main advantage is ease of administration. It is easy to add
+new sublists, temporarily work around a defective sublist, etc. Backups
+of addresses can be centralized. Subscriber-only restrictions are more
+easily enforced since the main list has access to all addresses. Also,
+the 2 band communication allows better monitoring of sublist function
+and better authentication between list and sublist.
+<P>
+<H3>Disadvantages.</H3>
+
+<P>Clearly, this is more complicated to set up. First, you need to run a SQL
+server. Second, you need to be able to reconfigure the list to take advantage
+of the ability to work around broken sublists and add new ones on-the-fly.
+Another disadvantage comes from centralization. Each sublist needs to have
+access to the address table. Thus, compromise of any sublist access credentials
+reveals all subscriber addresses. Since sublists handle their own bounces,
+sublists must also have DELETE access to the addresses. Thus, a sublist
+compromise allows the attacker to remove all addresses, not just those
+handled by the sublist. There are various ways around this. Some make
+administration much harder, others require special programming. For now, you
+have to trust your sublists. This is no concern if what you have is 5 local
+hosts that you'd like to share the burden of a few lists.
+<P>
+<H3><A NAME="sql_split"></A> Setting up a list cluster using a SQL database.</H3>
+
+<P>
+<DL>
+<DT><B>Create the database</B><DD><P>Use commands appropriate for the SQL server, and set up a user-id with
+appropriate access restrictions for the administrator of the list cluster.
+Minimally, this includes SELECT privileges to all tables, INSERT and DELETE
+privileges to address tables, and ``*_name'' tables, as well as INSERT
+privileges to all ``*_slog'' tables. We usually grant this user full access
+to the specific tables and use the same uid for the main list.
+<P>
+<DT><B>Create the tables for the list cluster</B><DD><P>You need to specify the ``table root'', i.e. the name of the main list address
+table, which will be used as the name root for all other tables. Thus,
+with a table root of ``list'' the digest list subscriber log would
+be ``list_digest_slog''. This creates tables with the root ``list'' in
+the preexisting database ``ezmlm''. The ``-d'' switch will cause removal
+of any preexisting tables with the same name.
+<BLOCKQUOTE><CODE>
+<PRE>
+        % ezmlm-mktab -d table | mysql -uuser -ppw -hhost -f ezmlm
+</PRE>
+</CODE></BLOCKQUOTE>
+
+The database server is on host ``host'' and ``user'' with password ``pw''
+is assumed to have sufficient privileges to create the table. For
+other SQL interfaces than MySQL, the exact means of creating the tables
+from the table definition printed by <a href="ezmlm-mktab.1.html">ezmlm-mktab(1)</a> will differ.
+<P>
+<DT><B>Create one sublist user per list</B><DD><P>Minimal access needed is SELECT on all tables except ``*_slog'', INSERT
+on ``*_slog'', ``*_cookie'', and ``*_mlog'', and DELETE on the main
+address table and digest subscriber table ``*_digest''. Easiest is to
+use the list local name as the userid (YMMV). For MySQL, restrict to both
+user and host and use different passwords for different sublists.
+<P><a href="ezmlm-grant.1.html">ezmlm-grant(1)</a> outputs statements to create the userid:
+<BLOCKQUOTE><CODE>
+<PRE>
+        % ezmlm-grant -d db -t troot s_host s_uid s_pw | \
+                mysql -uuser -ppw -hhost
+</PRE>
+</CODE></BLOCKQUOTE>
+
+Here, sublist user ``s_uid@s_host'' with password ``s_pw'' is granted
+minimal access privileges to the database ``db'' with table root ``troot''.
+The MySQL access info for this action is specified as before. Again, with
+an alternative SQL server, the manner in which the <a href="ezmlm-grant.1.html">ezmlm-grant(1)</a> output
+is used will differ.
+<P>
+<DT><B>Insert rows into troot_name, one per list</B><DD><P>You need to decide how to split the load.
+The main list only sends to the sublists. If you split
+by domain (``geographically'') you need one list with domain=''. It will
+handle domains not handled by other list. Any domain (including '') can
+be subdivided by ``hash'' by using different parts of the 0-52 range.
+Do not overlap hash ranges, or some subscribers will get multiple messages.
+If you leave some out (or don't have a list with domain='') some subscribers
+will not receive posts. The main list should have hash=99. Sublists are
+entered with this hash.
+<P>An example:
+<BLOCKQUOTE><CODE>
+<PRE>
+   name         domain  hash_lo hash_hi Comment
+ main@host.com  ''      99      99      sends to sublists
+ sub1@here.edu  'edu'   0       52      all @..edu subscribers
+ sub2@there.net 'com'   0       26      about half of the @..com subscribers
+ sub3@some.com  'com'   27      52      the rest of the @..com subscribers
+ sub4@what.org  ''      0       13      About 1/4 of all other subscribers
+ sub5@what.org  ''      14      26      Another 1/4. Same list as above
+ sub6@host.us   ''      27      52      remainder.
+</PRE>
+</CODE></BLOCKQUOTE>
+
+As you can see, the '' part is split in about 2 x 1/4 + 1/2. A list can occur
+several times, and the addresses served are the union of the entries.
+<P>
+<DT><B>Create the main list</B><DD><P>We create this one with <a href="ezmlm-receipt.1.html">ezmlm-receipt(1)</a> to take advantage of feedback
+logging (``-w'') and for ``-6'' using the access credentials of our main list
+user:
+<BLOCKQUOTE><CODE>
+<PRE>
+        % ezmlm-make -6 host::uid:pw:db:troot -w dir dot mainlocal mainhost
+</PRE>
+</CODE></BLOCKQUOTE>
+<P>
+<DT><B>Create the sublists on the respective hosts</B><DD><P>Here, we use a special ``ezmlmrc'' file to get all the bounce messages, etc,
+to point correctly to the main list:
+<BLOCKQUOTE><CODE>
+<PRE>
+        % ezmlm-make -C/usr/local/bin/ezmlmsubrc \
+                -6 host::s_uid:s_pw:db:troot -3mainlocal -4mainhost \
+                subdir dot sublocal subhost
+</PRE>
+</CODE></BLOCKQUOTE>
+
+Repeat for each sublist.
+<P>
+<DT><B>Subscribe the sublists and feedback address to the main list</B><DD><P>You need to do this at the main list, since the sublists are not allowed
+to insert into the address table (you can verify this!)
+<BLOCKQUOTE><CODE>
+<PRE>
+        % ezmlm-sub -s subdir sub1@here.edu
+        % ezmlm-sub -s subdir sub2@here.net
+        % ezmlm-sub -s subdir sub3@some.com
+        % ezmlm-sub -s subdir sub4@here.edu
+        % ezmlm-sub -s subdir sub5@what.org
+        % ezmlm-sub -s subdir sub6@what.org
+        % ezmlm-sub -r subdir main-return-receipt@mainhost
+</PRE>
+</CODE></BLOCKQUOTE>
+<P>
+<DT><B>Test access</B><DD><P>From each sublist, try:
+<BLOCKQUOTE><CODE>
+<PRE>
+        % ezmlm-list -a subdir
+</PRE>
+</CODE></BLOCKQUOTE>
+
+You should see all the above addresses. If something is wrong with the
+access info, you will be told so. Correct the setup. Subscribe a few
+addresses.
+<BLOCKQUOTE><CODE>
+<PRE>
+        % ezmlm-list -a subdir
+</PRE>
+</CODE></BLOCKQUOTE>
+
+should again show you all addresses.
+<BLOCKQUOTE><CODE>
+<PRE>
+        % ezmlm-list subdir
+</PRE>
+</CODE></BLOCKQUOTE>
+
+should show you only the addresses served by the particular sublist including
+the feedback address. <EM>Note:</EM> If you later modify the ``*_name''
+table and
+use the message number interval, <a href="ezmlm-list.1.html">ezmlm-list(1)</a> may not give you the correct
+answer, since it normally ignores the message number. To test for a specific
+message number, supply it with the <a href="ezmlm-list.1.html">ezmlm-list(1)</a> ``-n msgnum'' switch.
+<P>Remove all test addresses at any list:
+<BLOCKQUOTE><CODE>
+<PRE>
+        % ezmlm-list -a subdir | ezmlm-unsub subdir
+</PRE>
+</CODE></BLOCKQUOTE>
+
+This works since all sublists have DELETE access to the address tables.
+Don't worry! The sublists and feedback addresses won't disappear. Since
+they have a hash outside of the normal range, you need to use the
+<a href="ezmlm-unsub.1.html">ezmlm-unsub(1)</a> ``-s'' and ``-r'' switches, respectively, to remove them.
+<P>
+<DT><B>Monitor list cluster status</B><DD><P>That's it!
+To conveniently monitor the list use <B>status.pl</B>, a small
+perl script found in the <B>utils/</B> subdirectory of the ezmlm-idx
+distribution. Set up a MySQL uid with
+SELECT privileges to [assuming rootname=list] list_name, list_mlog,
+list_cookie (and the corresponding digest lists if used). Any sublist
+or main list uid would work, but remember that MySQL restricts access based
+not only on uid, but also on host. Thus, if the http server runs on a host
+that is not a list host you may have to set up a special user for
+<B>status.pl</B>.
+<P>Edit <B>status.pl</B> to reflect your installation and this uid
+and place the program in
+the cgi-bin directory of your http server. The program is [should be]
+self-explanatory. Don't forget to copy in the util/images/* files and
+set $IMAGES and $URL correctly. Also, it needs ``x'' and ``r'' bits set for
+the httpd user.
+</DL>
+<P>
+<H3>Adding a new sublist.</H3>
+
+<P>Let's add a new list. FIRST, subscribe <CODE>sub6@niko.jp</CODE> to the main list
+with hash 99 (using <a href="ezmlm-sub.1.html">ezmlm-sub(1)</a> ``1-s''). Then add the following line
+to ``*_name'':
+<BLOCKQUOTE><CODE>
+<PRE>
+        sub6@niko.jp    'jp'    0       52      Handles all @..jp addresses.
+</PRE>
+</CODE></BLOCKQUOTE>
+
+By just adding this, we took that set out of the addresses handled by sub4-6,
+without having to modify other entries. You can also see that we've prepared
+to split '' further and can do this by just changing the list name of one of
+the <CODE>*@what.org</CODE> entries.
+<P>If we just add this while the list is running, these subscribers might
+get a message duplicated or miss a message. For this reason,
+the ``*_name'' table has a few more columns:
+<P>
+<DL>
+<DT><B>notuse</B><DD><P>This can be set to non-zero to inactivate
+the entry. This is useful to temporarily remove list, or to add new ones
+while verifying, etc.
+<P>
+<DT><B>msgnum_lo, msgnum_hi</B><DD><P>These default to the lowest and highest
+message number respectively. These columns can be used to change the split
+on running lists. Assume we want to add the <CODE>sub6@niko.jp</CODE> list.
+When we add it, some sublists
+may have already received the message, others not. If we remove it, the list
+that should have sent to those subscribers may already have processed the
+message, but this list has not yet. If instead we add <CODE>sub6@niko.jp</CODE>
+with
+msgnum_lo a few messages higher than the highest one sent, all lists will use
+the old split for lower messages (<CODE>sub6@niko.jp</CODE>
+will defer them leading to
+bounce). Then when the message number has reached the limit, all lists will
+use the new split. 
+<P>Similarly, when inactivating <CODE>sub6@niko.jp</CODE>
+we would set the high end so that all
+lower messages (correctly) assume a working list and all higher ones determine
+their address space assuming that <CODE>sub6@niko.jp</CODE> is inactive.
+<P>To replace sub5 with would edit its msgnum_hi and add the replacement
+list with msgnum_lo set one higher.
+</DL>
+<P>To maximize efficiency, DELETE rows that are no longer active. Logging is
+done to the lowest listno entry for a given sublist name. If you need this
+information, collect and save it before removing any rows.
+<P>NOTE: You can have several entries for a list, e.g. to set it up to service
+both 'se', 'no', and 'fi'.
+<P>
+<H3>Restrictions on cluster addresses.</H3>
+
+<P>There are important restrictions to addresses and sublist entries:
+<DL>
+<DT><B>The main list can handle ONLY sublists, NOT other subscribers.</B><DD><P>Bounces from sublists are stored (max 50) and bouncing sublists are
+never automatically unsubscribed! To handle subscribers, just
+set up a separate sublist on the same host.
+<DT><B>The main list domain entry MUST be empty ''.</B><DD><P>This is the default.
+Likewise, sublist subscriber entries MUST have an empty domain
+entry. This is enforced by ezmlm-sub. This is a minor trade-off
+for easy sublist administration.
+<DT><B>You SHOULD have at least one sublist with an empty domain.</B><DD><P>This
+list will service all domains not explicitly serviced by another
+sublist.
+<DT><B>You MUST make sure that for each domain (including the empty domain)
+the entire hash range 0-52 is covered.</B><DD><P>If you don't, some subscribers
+won't get mail! Thus, hash range cover is manual, whereas domain
+range cover is automatic (see c).
+<DT><B>Overlap in hash range will result in some subscribers getting
+duplicate messages.</B><DD><P>To e.g. split the 0-52 range from 2 to 3 lists,
+create 3 new entries in the name table, using msgnum_lo to make
+them take effect at the same time. Adjust msgnum_hi for the old
+entries so that they stop being active when the new ones start,
+i.e. msgnum_hi for the old lists should be 1 lower than msgnum_lo
+for the new ones, and all should be high enough that they will
+still be higher than the current message when you've finished
+making the changes.
+</DL>
+<P>
+<HR>
+<A HREF="FAQ-15.html">Next</A>
+<A HREF="FAQ-13.html">Previous</A>
+<A HREF="FAQ.html#toc14">Contents</A>
+</BODY>
+</HTML>

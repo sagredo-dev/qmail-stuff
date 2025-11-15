@@ -1,0 +1,155 @@
+  <TITLE>UNIX man pages : ./envelopes.5 ()</TITLE>
+  <hr>
+<PRE>
+
+envelopes(5)                                         envelopes(5)
+
+<H2>NAME</H2>
+       envelopes - sender/recipient lists attached to messages
+
+<H2>INTRODUCTION</H2>
+       Electronic mail messages are delivered in <i>envelopes</i>.
+
+       An  envelope  lists  a  <i>sender</i> and one or more <i>recipients</i>.
+       Usually these envelope  addresses  are  the  same  as  the
+       addresses listed in the message header:
+
+          (envelope) from djb to root
+          From: djb
+          To: root
+
+       In  more  complicated  situations,  though,  the  envelope
+       addresses may differ from the header addresses.
+
+<H2>ENVELOPE EXAMPLES</H2>
+       When a message is delivered to several people at different
+       locations, it is first photocopied and placed into several
+       envelopes:
+
+          (envelope) from djb to root
+          From: djb                          Copy #1 of message
+          To: root, god@brl.mil
+
+          (envelope) from djb to god@brl.mil
+          From: djb                          Copy #2 of message
+          To: root, god@brl.mil
+
+       When a message is delivered to several people at the  same
+       location, the sender doesn't have to photocopy it.  He can
+       instead stuff it into one envelope with several addresses;
+       the recipients will make the photocopy:
+
+          (envelope) from djb to god@brl.mil, angel@brl.mil
+          From: djb
+          To: god@brl.mil, angel@brl.mil, joe, frde
+
+       Bounced  mail is sent back to the envelope sender address.
+       The bounced mail  doesn't  list  an  envelope  sender,  so
+       bounce loops are impossible:
+
+          (envelope) from &lt;&gt; to djb
+          From: MAILER-DAEMON
+          To: djb
+          Subject: unknown user frde
+
+       The  recipient of a message may make another copy and for-
+       ward it in a new envelope:
+
+          (envelope) from djb to joe
+          From: djb                          Original message
+          To: joe
+
+                                                                1
+
+envelopes(5)                                         envelopes(5)
+
+          (envelope) from joe to fred
+          From: djb                          Forwarded message
+          To: joe
+
+       A mailing list works almost the same way:
+
+          (envelope) from djb to sos-list
+          From: djb                          Original message
+          To: sos-list
+
+          (envelope) from sos-owner to god@brl.mil
+          From: djb                          Forwarded message
+          To: sos-list                       to recipient #1
+
+          (envelope) from sos-owner to frde
+          From: djb                          Forwarded message
+          To: sos-list                       to recipient #2
+
+       Notice that the mailing list is  set  up  to  replace  the
+       envelope sender with something new, <b>sos-owner</b>.  So bounces
+       will come back to <b>sos-owner</b>:
+
+          (envelope) from &lt;&gt; to sos-owner
+          From: MAILER-DAEMON
+          To: sos-owner
+          Subject: unknown user frde
+
+       It's a good idea to set up an  extra  address,  <b>sos-owner</b>,
+       like  this:  the original envelope sender (<b>djb</b>) has no way
+       to fix bad <b>sos-list</b> addresses, and of course bounces  must
+       not be sent to <b>sos-list</b> itself.
+
+<H2>HOW ENVELOPE ADDRESSES ARE STORED</H2>
+       Envelope  sender  and  envelope  recipient  addresses  are
+       transmitted and recorded in several ways.
+
+       When a user injects mail through <b>qmail-inject</b>, he can sup-
+       ply  a  <b>Return-Path</b>  line  or a <b>-f</b> option for the envelope
+       sender; by default the envelope sender is his login  name.
+       The  envelope  recipient  addresses  can be taken from the
+       command line or from various header fields,  depending  on
+       the  options  to  <b>qmail-inject</b>.  Similar comments apply to
+       <b>sendmail</b>.
+
+       When a message is transferred from one machine to  another
+       through  SMTP, the envelope sender is given in a <b>MAIL</b> <b>FROM</b>
+       command, the envelope recipients are given in <b>RCPT</b> <b>TO</b> com-
+       mands,  and  the  message is supplied separately by a <b>DATA</b>
+       command.
+
+       When a message is delivered by <b>qmail</b>  to  a  single  local
+       recipient, <b>qmail-local</b> records the recipient in <b>Delivered-</b>
+       <b>To</b> and the envelope sender in <b>Return-Path</b>.  It uses <b>Deliv-</b>
+       <b>ered-To</b> to detect mail forwarding loops.
+
+                                                                2
+
+envelopes(5)                                         envelopes(5)
+
+       <b>sendmail</b>  normally  records the envelope sender in <b>Return-</b>
+       <b>Path</b>.  It does not record envelope recipient addresses, on
+       the theory that they are redundant: you received the mail,
+       so you must have been one of the envelope recipients.
+
+       Note that,  if  the  header  doesn't  have  any  recipient
+       addresses, <b>sendmail</b> will move envelope recipient addresses
+       back into  the  header.   This  situation  occurs  if  all
+       addresses  were  originally  listed  as  <b>Bcc</b>, since <b>Bcc</b> is
+       automatically removed.  When <b>sendmail</b> sees this,  it  cre-
+       ates  a  new  <b>Apparently-To</b> header field with the envelope
+       recipient addresses.  This has  the  strange  effect  that
+       each  blind-carbon-copy  recipient  will see a list of all
+       recipients on the same machine.
+
+       When a message is stored  in  <b>mbox</b>  format,  the  envelope
+       sender  is  recorded  at the top of the message as a UUCP-
+       style <b>From</b> (no colon) line.  Note that this line  is  less
+       reliable than the <b>Return-Path</b> line added by <b>qmail-local</b> or
+       <b>sendmail</b>.
+
+<H2>SEE ALSO</H2>
+       <A HREF="qmail-header.5.html">qmail-header(5)</A>, <A HREF="qmail-local.8.html">qmail-local(8)</A>, <A HREF="qmail-inject.8.html">qmail-inject(8)</A>
+
+                                                                3
+
+</PRE>
+  <hr>
+  <ADDRESS>
+  © 1994 <A HREF="http://www.ntua.gr/~christia/man-cgi.html">Man-cgi 1.15</A>, Panagiotis Christias &lt;christia@theseas.ntua.gr&gt;
+  </ADDRESS>

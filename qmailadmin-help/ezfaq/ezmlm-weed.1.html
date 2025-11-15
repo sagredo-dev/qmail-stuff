@@ -1,0 +1,68 @@
+  <TITLE>UNIX man pages : ./ezmlm-weed.1 ()</TITLE>
+  <hr>
+<PRE>
+
+ezmlm-weed(1)                                       ezmlm-weed(1)
+
+<H2>NAME</H2>
+       ezmlm-weed - weed out useless messages
+
+<H2>SYNOPSIS</H2>
+       <b>ezmlm-weed</b>
+
+<H2>DESCRIPTION</H2>
+       <b>ezmlm-weed</b>  reads  a mail message from its standard input.
+       If it recognizes the message as an MTA warning message  or
+       success  message, it exits 99; this will cause <b>qmail-alias</b>
+       to skip all further delivery instructions if <b>ezmlm-weed</b> is
+       run  from  a  <b>.qmail</b> file.  If the message seems innocent,
+       <b>ezmlm-weed</b> exits 0.  <b>ezmlm-weed</b> exits 111 if it  runs  out
+       of memory.
+
+<H2>RECOGNIZED FORMATS</H2>
+       Generic success message, recommended for all MTAs:
+
+          Subject: success notice
+
+       Generic warning message, recommended for all MTAs:
+
+          Subject: deferral notice
+
+       Warning message from sendmail, MIME form:
+
+          From: Mail Delivery Subsystem
+          Subject: Warning
+          Auto-Submitted: auto-generated (warning-timeout)
+          This is a MIME-encapsulated message
+          THIS IS A WARNING MESSAGE ONLY
+
+       Non-MIME form:
+
+          From: Mail Delivery Subsystem
+          Subject: Warning
+          Auto-Submitted: auto-generated (warning-timeout)
+          THIS IS A WARNING MESSAGE ONLY
+
+       Warning message from older version of sendmail:
+
+          From: Mail Delivery Subsystem
+          Subject: Returned mail: warning
+          This is a MIME-encapsulated message
+          THIS IS A WARNING MESSAGE ONLY
+
+       Non-MIME form:
+
+          From: Mail Delivery Subsystem
+          Subject: Returned mail: warning
+          THIS IS A WARNING MESSAGE ONLY
+
+<H2>SEE ALSO</H2>
+       <A HREF="ezmlm-return.1.html">ezmlm-return(1)</A>, <A HREF="qmail-command.8.html">qmail-command(8)</A>
+
+                                                                1
+
+</PRE>
+  <hr>
+  <ADDRESS>
+  © 1994 <A HREF="http://www.ntua.gr/~christia/man-cgi.html">Man-cgi 1.15</A>, Panagiotis Christias &lt;christia@theseas.ntua.gr&gt;
+  </ADDRESS>

@@ -1,0 +1,60 @@
+  <TITLE>UNIX man pages : ./ezmlm-issubn.1 ()</TITLE>
+  <hr>
+<PRE>
+
+ezmlm-issubn(1)                                   ezmlm-issubn(1)
+
+<H2>NAME</H2>
+       ezmlm-issubn  - test to see if an address is subscribed to
+       a mailing list
+
+<H2>SYNOPSIS</H2>
+       <b>ezmlm-issubn</b> [ <b>-nN</b> ] <i>dir</i> <i>[</i> <i>dir1</i> <i>...</i> <i>]</i>
+
+<H2>DESCRIPTION</H2>
+       <b>ezmlm-issubn</b> checks to see if the  address  obtained  from
+       the environment variable <i>SENDER</i> is subscribed to the mail-
+       ing list stored in <i>dir</i> or the mailing list in <i>dir1</i> or  ...
+
+       If <i>SENDER</i> is not defined <b>ezmlm-issubn</b> exits with an error.
+
+       If <i>SENDER</i> is on [any of] the mailing list[s], <b>ezmlm-issubn</b>
+       exits with a zero exit code.
+
+       If  <i>box</i><b>@</b><i>domain</i>  is  not  on the mailing list, <b>ezmlm-issubn</b>
+       exits 99. This exit code is non-success from a shell point
+       of view, but to qmail it means "success and skip remaining
+       lines in the .qmail file). Thus, a simple way to execute a
+       delivery  if  the  criteria are met is to place the <b>ezmlm-</b>
+       <b>issubn</b> line first, followed by the action line. If  SENDER
+       is  a subscriber, the action line is executed, if not, the
+       line is ignored without the generation of an error  condi-
+       tion. To generate a fatal error, just:
+
+       |/path/ezmlm-issubn  <i>dir1</i>  <i>...</i>   ||  (echo "err msg"; exit
+       100)
+
+       |/path/action_for_subscribers |/path/more_for_subscribers
+
+       <b>ezmlm-issubn</b> exits 100 on permanent and 111  on  temporary
+       errors.
+
+<H2>OPTIONS</H2>
+       <b>-n</b>     Negate exit code. Exit 99 if SENDER is a subscriber
+              and exit 0 if not.  This is useful when  trying  to
+              exclude SENDERs.
+
+       <b>-N</b>     (Default.)   Normal exit codes: 0 is the address is
+              in any of the lists, 99 if not.
+
+<H2>SEE ALSO</H2>
+       <A HREF="ezmlm-list.1.html">ezmlm-list(1)</A>,  <A HREF="ezmlm-manage.1.html">ezmlm-manage(1)</A>,   <A HREF="ezmlm-make.1.html">ezmlm-make(1)</A>,   <A HREF="ezmlmsend.1.html">ezmlmsend(1)</A>
+       , <A HREF="ezmlm-sub.1.html">ezmlm-sub(1)</A>, <A HREF="ezmlm-unsub.1.html">ezmlm-unsub(1)</A>, <A HREF="ezmlm.5.html">ezmlm(5)</A>
+
+                                                                1
+
+</PRE>
+  <hr>
+  <ADDRESS>
+  © 1994 <A HREF="http://www.ntua.gr/~christia/man-cgi.html">Man-cgi 1.15</A>, Panagiotis Christias &lt;christia@theseas.ntua.gr&gt;
+  </ADDRESS>

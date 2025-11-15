@@ -1,0 +1,267 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<HTML>
+<HEAD>
+ <META NAME="GENERATOR" CONTENT="SGML-Tools 1.0.7">
+ <TITLE>EZFAQ 0.32 - ezmlm-idx and ezmlm FAQ: Restricting message posting to the list.</TITLE>
+ <LINK HREF="FAQ-9.html" REL=next>
+ <LINK HREF="FAQ-7.html" REL=previous>
+ <LINK HREF="FAQ.html#toc8" REL=contents>
+</HEAD>
+<BODY vlink="#004400" link="#008800" bgcolor="#ffffff" alink="#ff0000"><FONT FACE="helvetica,times,arial">
+<A HREF="FAQ-9.html">Next</A>
+<A HREF="FAQ-7.html">Previous</A>
+<A HREF="FAQ.html#toc8">Contents</A>
+<HR>
+<H2><A NAME="restr_msgs"></A> <A NAME="s8">8. Restricting message posting to the list.</A></H2>
+
+<P>
+<H2><A NAME="to_cc"></A> <A NAME="ss8.1">8.1 Requiring the list address in To:/Cc: headers.</A>
+</H2>
+
+<P>SPAM or junk mail is usually sent by mailing a single message to a large
+number of (unwilling) recipients. As such, it usually does not contain
+the E-mail address of all recipients (remember, junk mailers pay for these
+address lists). By rejecting messages that do not have the list address in
+the To: or Cc: header(s) a large fraction of spam to the list can be
+filtered out.
+<P>This filter function is activated by default, but will work only if you
+specify the list directory on the <a href="ezmlm-reject.1.html">ezmlm-reject(1)</a> command line. To disable
+this restriction, remove the ``DIR'' argument from the <a href="ezmlm-reject.1.html">ezmlm-reject(1)</a>
+command line, or add the ``-T'' switch.
+<P>By default, this error is logged, and an error message is sent to the sender.
+Since virtually all the failures will be SPAM and virtually all spam has
+a faked SENDER, most of these error messages will go to the postmaster.
+Thus, you may want to use the ezmlm-reject ``-q'' switch (quiet)
+to suppress the sender notification.
+<P>
+<H2><A NAME="ss8.2">8.2 Rejecting messages sent from other mailing lists.</A>
+</H2>
+
+<P>ezmlm automatically detects are rejects messages that are sent from other
+ezmlm mailing lists. Some other mailing list managers do not use a rigorous
+mechanisms to verify subscribers. Thus, it is possible to subscribe an
+ezmlm list address to such a mailing list. You can easily block such a list
+by adding the address to the ``deny'' if you use the <a href="ezmlm-make.1.html">ezmlm-make(1)</a> ``-k''
+option. However, you can also configure <a href="ezmlm-reject.1.html">ezmlm-reject(1)</a> to reject messages
+based on specific headers placed into <B>DIR/headerreject</B>. A set of
+headers which will catch mailing list managers known to us are listed
+in the <a href="ezmlm-reject.1.html">ezmlm-reject(1)</a> man page. To activate this option, you must
+specify the ``-h'' switch and <B>DIR</B> on the <a href="ezmlm-reject.1.html">ezmlm-reject(1)</a> line
+in <B>DIR/editor</B>. Naturally, you can make this the default by
+editing <a href="ezmlmrc.5.html">ezmlmrc(5)</a> (See
+<A HREF="FAQ-7.html#make_cust">Customizing ezmlm-make operation</A>).
+<P>
+<H2><A NAME="ss8.3">8.3 Restricting posts based on the Subject line.</A>
+</H2>
+
+<P><a href="ezmlm-reject.1.html">ezmlm-reject(1)</a> is by default configured to reject posts with empty
+subject (``-s'' switch) or with a subject that consists of only an
+administrative command word (``-c'' switch), such as ``subscribe''. To remove
+these restrictions, use the <a href="ezmlm-reject.1.html">ezmlm-reject(1)</a> ``-S'' and ``-C'' switch,
+respectively. You can also into <B>DIR/editor</B> before the <a href="ezmlm-send.1.html">ezmlm-send(1)</a>
+line add:
+<BLOCKQUOTE><CODE>
+<PRE>
+        | grep -i 'subject:' | grep -if DIR/bad_words >/dev/null &amp;&amp; \
+                {echo "bad words found"; exit 100; }
+</PRE>
+</CODE></BLOCKQUOTE>
+
+to reject messages that have a line matching ``Subject:'' followed by any
+bad word listed in <B>DIR/bad_words</B>.
+<P>
+<H2><A NAME="ss8.4">8.4 Restricting the size of posts.</A>
+</H2>
+
+<P>If the ``DIR'' argument is specified on the <a href="ezmlm-reject.1.html">ezmlm-reject(1)</a> line in
+<B>DIR/editor</B> and
+<B>DIR/msgsize</B> exists and contains a number (in bytes) greater
+than ``0'', then any posts with a body larger than the number
+specified is rejected. The maximum message size can optionally
+be followed by ``:''
+and a minimum message body size in bytes.
+For moderated lists, messages that are
+too large are rejected and not sent to the moderators. This feature can be
+used to prevent the posting an entire digest to the list by setting 
+<B>DIR/msgsize</B> slightly below the message size set in your
+<a href="ezmlm-tstdig.1.html">ezmlm-tstdig(1)</a> innovation (if any). A minimum size can catch a few
+administrative request sent to the main list, but is otherwise not that
+useful. To always configure your lists with a message size restriction,
+add to <B><a href="ezmlmrc.5.html">ezmlmrc(5)</a></B>:
+<BLOCKQUOTE><CODE>
+<PRE>
+        &lt;/msgsize/&gt;
+        max:min
+</PRE>
+</CODE></BLOCKQUOTE>
+
+The <a href="ezmlm-make.1.html">ezmlm-make(1)</a> ``-x'' switch adds this with 40000:2.
+<P>
+<H2><A NAME="ss8.5">8.5 Restricting posts based on MIME content-type.</A>
+</H2>
+
+<P><a href="ezmlm-reject.1.html">ezmlm-reject(1)</a> will look for <B>DIR/msgsize</B>, <B>DIR/mimereject</B>,
+and <B>DIR/mimeremove</B> if the ``DIR'' argument is specified (``DIR''
+can be left out to conserve resources on lists that do not use
+these features). <EM>Note: The ``DIR'' argument is also required for the
+the To:/Cc: list address restriction (see
+<A HREF="#to_cc">Requiring the list address in To:/Cc: headers</A>).</EM>
+If the message contains MIME parts that are of a content-type
+listed in <B>DIR/mimereject</B> they are rejected. If the message is a
+simple MIME message of a content-type listed in either <B>DIR/mimereject</B>
+or <B>DIR/mimeremove</B> it is also rejected.
+<P>There is currently no <a href="ezmlm-make.1.html">ezmlm-make(1)</a> switch for <B>DIR/mimereject</B>,
+but it can easily
+be configured by editing <B><a href="ezmlmrc.5.html">ezmlmrc(5)</a></B>. The ezmlm-make ``-x'' switch
+configures <B>DIR/mimeremove</B> (see
+<A HREF="FAQ-9.html#mimeremove">mimeremove</A>) for a list of content-types).
+Messages consisting solely
+of these content-types (rare) will be rejected, and the corresponding MIME
+parts of composite messages will be removed.
+<P>
+<H2><A NAME="restr_post_sub"></A> <A NAME="ss8.6">8.6 Restricting posts to list subscribers.</A>
+</H2>
+
+<P>Use message moderation. As an alternative, implement a check
+against SENDER by using <a href="ezmlm-issubn.1.html">ezmlm-issubn(1)</a>. The latter is
+easily defeated by faking SENDER. Also, it
+prevents posts from legitimate subscribers that are subscribed
+under a different address than the one they send from.
+Nevertheless, it may be useful in some situations. Add:
+<BLOCKQUOTE><CODE>
+<PRE>
+     
+|/usr/local/bin/ezmlm/ezmlm-issubn 'DIR' 'DIR/digest' 'DIR/allow' ||
+   { echo "Sorry, you are not allowed to post to this list.";
+     exit 100; }
+</PRE>
+</CODE></BLOCKQUOTE>
+
+<EM>ALL ON ONE LINE</EM> to <B>DIR/editor</B> before the <a href="ezmlm-send.1.html">ezmlm-send(1)</a>
+line. ``DIR'' is the main list directory. If your ezmlm binaries live in a
+different directory, change the <a href="ezmlm-issubn.1.html">ezmlm-issubn(1)</a> path accordingly. If you would
+like denied posts to be dropped silently rather than bounced, change the exit
+code to 99.
+<P>See 
+<A HREF="FAQ-7.html#make_cust">Customizing ezmlm-make operation</A>
+if you want your lists
+to have some of these features by default or set by
+specific <a href="ezmlm-make.1.html">ezmlm-make(1)</a> switches. The <a href="ezmlm-make.1.html">ezmlm-make(1)</a> ``-u'' switch by default
+sets up restrictions this way.
+<P>If you do not want to allow digest subscribers to post,
+remove <B>DIR/digest/</B>
+from the ezmlm-issubn command line. To allow posts from an address that is
+not a subscriber, simply add it to the addresses in <B>DIR/allow/</B>:
+<BLOCKQUOTE><CODE>
+<PRE>
+        % ezmlm-sub DIR/allow address@host
+</PRE>
+</CODE></BLOCKQUOTE>
+
+The ``allow'' database can be manipulated remotely by sending mail
+to <CODE>list-allow-subscribe@listhost</CODE>, <CODE>list-allow-unsubscribe@listhost</CODE>,
+etc. If configured for the list, the ``-list'' command for remote administrators
+will work for the ``allow'' database as well.
+<P>Please note that this setup is not secure, as it is easy to modify the envelope
+SENDER. For more secure options, see 
+<A HREF="#restr_addr_hi">Restricting posts to an arbitrary set of E-mail addresses (higher security option)</A>.
+<P>
+<P>
+<H2><A NAME="restr_addr_hi"></A> <A NAME="ss8.7">8.7 Restricting posts to an arbitrary set of E-mail addresses (higher security option).</A>
+</H2>
+
+<P>The easiest way to achieve this is to simply set up a message
+moderated list, and add all the e-mail addresses to the
+moderator db. Use a custom location, if you want a different
+set of moderators for subscription moderation/remote admin. If
+a &quot;moderator&quot; posts, only s/he will get a confirmation
+request. If anybody else posts, the post will be sent to all
+moderators.
+<P>
+<P>To directly bounce posts from SENDERs not in the database, use
+the ezmlm-store ``-P'' (not public) switch. This is more secure
+than a simple <a href="ezmlm-issubn.1.html">ezmlm-issubn(1)</a> construct, since faking SENDER to a
+moderator address will result in a confirmation request to
+that moderator (which s/he will reject/ignore), rather than a
+direct post. The draw-back is that each post has to be
+confirmed, but with the speed of ezmlm the request will arrive
+immediately after the post is made, so the overhead should is
+The best choice depends on your particular needs in
+the trade-off between security and convenience.
+<P>
+<P>Setting a list up in this way with only the owner's address
+gives you a pretty safe owner-only list.
+<P>
+<H2><A NAME="ss8.8">8.8 Completely restricting posts.</A>
+</H2>
+
+<P>To completely prevent posting (for instance a message-of-the-day list),
+set up a normal list, and just remove <B>~/.qmail-list</B>
+and <B>DIR/editor</B> altogether. Make posts from the shell, or from
+shell scripts or crond, by simply piping a (complete) message
+to <a href="ezmlm-send.1.html">ezmlm-send(1)</a>:
+<BLOCKQUOTE><CODE>
+<PRE>
+     
+% /usr/local/bin/ezmlm/ezmlm-send DIR &lt; message
+</PRE>
+</CODE></BLOCKQUOTE>
+
+<EM>NOTE</EM>: This can be done by any user with write access to
+files within the list directory, so make sure your file modes are set correctly.
+The <a href="ezmlm-send.1.html">ezmlm-send(1)</a>
+path may need to be changed to match your ezmlm binary directory. It's
+also a good idea to not allow others to read your list directory and
+<B>DIR/subscribers/</B> and other address lists.
+<P>
+<H2><A NAME="ss8.9">8.9 A general solution to restricting posts based on SENDER.</A>
+</H2>
+
+<P>As discussed above, the security afforded by SENDER checks is minimal, but
+nevertheless sufficient to keep out most spam and garbage.
+However, some subscribers post from e-mail addresses
+other than their subscription address, and
+users tend to become unfriendly when their posts are denied even though
+they are subscribers. This is a general solution to this problem which
+has minimal overhead for the list owner and is essentially completely
+transparent to the subscriber.
+<P>Set up the list with <a href="ezmlm-gate.1.html">ezmlm-gate(1)</a> in <B>DIR/editor</B>
+in place of the <a href="ezmlm-send.1.html">ezmlm-send(1)</a> line.
+To the <a href="ezmlm-gate.1.html">ezmlm-gate(1)</a> command line add the list
+directory twice, then a digest directory <B>DIR/digest/</B> (if it exists),
+then <B>DIR/allow/</B>.
+Create <B>DIR/modpost</B>. Add the list owner as a message moderator.
+<P>With this setup, any message from a SENDER that is a subscriber of the main
+list, the digest list or added to <B>DIR/allow/</B>,
+will be posted directly, others will be sent to the
+list owner for approval. If the list wants to automatically approve posts
+from that address in future (e.g. it is an alias for a subscriber) s/he just
+adds it to the database in <B>DIR/allow/</B>.
+If the owner wants to approve this
+post, but not necessarily future posts from that address, s/he just accepts
+the message. To reject the message with a comment is equally easy. If the
+owner wished to have the option to silently ignore posts (and not have the
+SENDER notified that the post timed out), just add the <a href="ezmlm-clean.1.html">ezmlm-clean(1)</a> ``-R''
+switch in <B>DIR/editor</B> and <B>DIR/moderator</B>.
+<P>In this way, the normal subscriber is always happy and the ``behind the scenes''
+work of the owner is minimalized.
+<P>ezmlm-make creates lists with this setup if you specify the ``-u'' switch
+in addition to the ``-m'' switch:
+<P>
+<BLOCKQUOTE><CODE>
+<PRE>
+        % ezmlm-make -mu ~/list ~/.qmail-list joe-list host
+</PRE>
+</CODE></BLOCKQUOTE>
+<P>If you omit the ``-m'' switch, the setup will reject posts from
+non-subscribers that are not in the ``allow'' database.
+<a href="ezmlm-both.1.html">ezmlm-both(1)</a> uses a set
+of similar <a href="ezmlm-make.1.html">ezmlm-make(1)</a> invocations to create a list with digest,
+optionally making you a remote admin, list owner, and subscriber to both lists.
+<P>
+<HR>
+<A HREF="FAQ-9.html">Next</A>
+<A HREF="FAQ-7.html">Previous</A>
+<A HREF="FAQ.html#toc8">Contents</A>
+</BODY>
+</HTML>

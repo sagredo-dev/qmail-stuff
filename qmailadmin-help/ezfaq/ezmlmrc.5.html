@@ -1,0 +1,354 @@
+  <TITLE>UNIX man pages : ./ezmlmrc.5 ()</TITLE>
+  <hr>
+<PRE>
+
+ezmlmrc(5)                                             ezmlmrc(5)
+
+<H2>NAME</H2>
+       ezmlmrc - ezmlm-make configuration file
+
+<H2>SYNOPSIS</H2>
+       ezmlmrc
+
+<H2>DESCRIPTION</H2>
+       <b>.ezmlmrc</b>  is a file that configures <b><A HREF="ezmlm-make.1.html">ezmlm-make(1)</A></b> for set-
+       ting up new lists.  <b>ezmlmrc</b> if  a  plain  text  with  four
+       types  of  tags.  All  start  in the first position of the
+       line.  No other text is allowed  on  the  same  line.  For
+       security  reasons,  no  periods  are allowed anywhere in a
+       tag.  Any line with a ``#'' in position 1 is  ignored,  as
+       is any text preceding the first tag.
+
+       The  file is processed top down. Text preceeding the first
+       tag is ignored.  Subsequently, one and only  one  file  is
+       open  for  writing.  Any  text  encountered in <b>.ezmlmrc</b> is
+       copied to that file as is with a  few  substitutions  (see
+       below).  Text following conditional tags is copied only if
+       the condition is met. A file is automatically closed  when
+       a new file is opened. Opening a file overwrites any preex-
+       isting file with that name.  Tags are:
+
+       <b>&lt;/filename#aI/&gt;</b>
+              The following text will be copied  to  <i>dir</i><b>/filename</b>
+              if  the  options  specified  after  the  ``#''  are
+              active, in this case <i>archived</i> and not <i>indexed</i>.  Any
+              number  of  flags can be specified. This is used to
+              adapt the files and messages to the  type  of  list
+              created.  If  no  flags  are used, the ``#'' can be
+              omitted. If the file name is the same as the previ-
+              ous  tag,  or  if  it  is omitted, the text will be
+              added to the previous file.  When  a  new  file  is
+              opened the previous file is closed. Attempts to add
+              more text to a already closed file  overwrites  its
+              contents.  For all letter switches (exccept <b>-cCvV</b>),
+              upper and lower case tags are opposite and mutually
+              exclusive.  Thus, if <b>-g</b> is specified, <b>-G</b> is not set
+              and if <b>-G</b> is set, <b>-g</b> is not.
+
+       <b>&lt;/filename#^5^i/&gt;</b>
+              This is  an  alternative  way  of  specifying  ``if
+              switch  -5  is  specified  and the -i switch is not
+              specified''. ``^'' is used as ``not''.
+
+       <b>&lt;/-filename#eA/&gt;</b>
+              <i>dir</i><b>/filename</b> will be erased, if the  options  after
+              the ``#'' are active, in this case <i>not</i> <i>archived</i> and
+              <i>edit</i>.  An alternative to specify that a flag,  e.g.
+              ``4'' should not be active is to use ``^4''.
+
+                         November 30,1998                       1
+
+ezmlmrc(5)                                             ezmlmrc(5)
+
+       <b>&lt;/+directory#aI/&gt;</b>
+              The directory ``directory'' is created if the flags
+              specified are active, in this case <i>archived</i> and not
+              <i>indexed</i>.   If no flags are specified, the ``#'' can
+              be omitted.
+
+       <b>&lt;/:link/directory#aI/&gt;</b>
+              <b>dot</b><i>-link</i> is symlinked to <i>dir/directory</i> if the flags
+              specified are active, in this case <i>archived</i> and not
+              <i>indexed</i>.  If no flags are specified, the ``#''  can
+              be omitted.
+
+       In  addition,  <i>local</i> is substituted for <b>&lt;#L#&gt;</b>, the part of
+       <i>dot</i> between the first 2 hyphens (if any)  for  <b>&lt;#1#&gt;</b>,  the
+       part  of  <i>dot</i> between the second and third hyphen (if any)
+       for <b>&lt;#2#&gt;</b>, <i>host</i> for <b>&lt;#H#&gt;</b>, <i>dir</i> for <b>&lt;#D#&gt;</b>, <i>dot</i>  for  <b>&lt;#T#&gt;</b>,
+       <i>digestcode</i>  for  <b>&lt;#C#&gt;</b>, and the path to the <b>ezmlm</b> binaries
+       for <b>&lt;#B#&gt;</b> anywhere in the text. Other tags of this  format
+       are copied to the files as is.
+
+       <b>&lt;#l#&gt;</b>, <b>&lt;#h#&gt;</b>, <b>&lt;#A#&gt;</b>, <b>&lt;#R#&gt;</b>, will be substituted on-the-fly
+       where appropriate for the <i>local</i> or <i>local</i><b>-digest</b> local part
+       of  the  list address, the <i>host</i>, the subscriber address or
+       the moderation accept address, and the subscription  reply
+       address  or  moderation reject address, respectively.  The
+       use of <b>&lt;#l#&gt;</b> is to allow the same text file to be used for
+       requests  pertaining  to both the main list and the digest
+       list.
+
+       Before the template file  is  processed,  <b>ezmlm-make</b>  will
+       create  the  list  directory.  <b>ezmlm-make</b> will also create
+       <i>dir</i><b>/key</b>.
+
+<H2>DESCRIPTION OF EZMLMRC</H2>
+       The ezmlmrc file  is  preconfigured  to  act  upon  <b>ezmlm-</b>
+       <b><A HREF="make.1.html">make(1)</A></b>  switches  to  produce the results as described in
+       the <b><A HREF="ezmlm-make.1.html">ezmlm-make(1)</A></b> man page.  A number of files are created
+       via  <b>ezmlmrc</b>  independently  of  any  switched.  These are
+       <i>dir</i><b>/text/info</b>  with  a  short  description  of  the  list,
+       <i>dir</i><b>/text/faq</b>  with  frequenly  asked  questions  about the
+       list, <i>dir</i><b>/headeradd</b> adding ``Precedence: bulk''  and  ``X-
+       No-Archive:  yes''  to outgoing messages, <i>dir</i><b>/headerremove</b>
+       removing  ``Return-Path'',  ``Return-Receipt-To'',  ``Con-
+       tent-length'',
+        and  ``Precedence'' from list messages, and <i>dir</i><b>/text/sub-</b>
+       <b>ok</b> with text sent  after  successful  subscription.  These
+       files are not overwritten when lists are edited.
+
+       Also  created  are  the  following files within <i>dir</i><b>/text/</b>:
+       <b>bottom</b>, <b>bounce-bottom</b>, <b>bounce-num</b>, <b>dig-bounce-num</b>, <b>bounce-</b>
+       <b>probe</b>  <b>bounce-warn</b>,  <b>get-bad</b>, <b>help</b>, <b>mod-help</b>, <b>mod-request</b>,
+       <b>mod-reject</b>, <b>mod-timeout</b>,  <b>mod-sub-confirm</b>,  <b>mod-unsub-con-</b>
+       <b>firm</b>,  <b>sub-bad</b>, <b>sub-confirm</b>, <b>sub-nop</b> <b>unsub-bad</b>, <b>unsub-con-</b>
+       <b>firm</b>, <b>unsub-nop</b>, <b>unsub-ok</b>, <b>top</b>.
+
+                         November 30,1998                       2
+
+ezmlmrc(5)                                             ezmlmrc(5)
+
+       <i>dir</i><b>/bouncer</b> is set up to invoke <b><A HREF="ezmlm-weed.1.html">ezmlm-weed(1)</A></b>  and  <b>ezmlm-</b>
+       <b><A HREF="return.1.html">return(1)</A></b> to handle bounces.  In addition to switch-depen-
+       dent lines, an invocation of <b><A HREF="ezmlm-warn.1.html">ezmlm-warn(1)</A></b>  is  placed  at
+       the  end of <i>dir</i><b>/editor</b>, <i>dir</i><b>/manager</b>, and <i>dir</i><b>/owner</b> to pro-
+       cess  the  contents  of  the  bounce  directory.    <b>ezmlm-</b>
+       <b><A HREF="reject.1.html">reject(1)</A></b> is placed first in <i>dir</i><b>/editor</b>
+        (unless  the  <b>-0</b> <b>mainlist@mainhost</b>  switch  is  used)  to
+       reject undesirable messages.
+        Below is a description of the  switches  and  the  conse-
+       quences  the  have  for  list  creation  with the standard
+       <b>ezlmrc</b> file.  <b><A HREF="emzlm-make.1.html">emzlm-make(1)</A></b> by default sets  the  <b>-a</b>,  <b>-i</b>,
+       and <b>-p</b> switches.
+
+       <b>-a</b>     <i>dir</i><b>/archived</b>   is   created.    <i>dir</i><b>/text/bottom</b>  is
+              adjusted   to   mention   archive    access.     <b>-A</b>
+              <i>dir</i><b>/archived</b> is removed.
+
+       <b>-d</b>     <i>dir</i><b>/digest/</b>  is  created.   <i>dir</i><b>/digest/lock</b> is cre-
+              ated.     <i>dir</i><b>/digest/lockbounce</b>     is     created.
+              <i>dir</i><b>/digest/bounce/</b>   is  created.   <i>dir</i><b>/digest/sub-</b>
+              <b>scribers/</b> is created.  <i>dot</i><b>-digest-owner</b>  is  linked
+              to  <i>dir</i><b>/owner</b>.  <i>dot</i><b>-digest-return-default</b> is linked
+              to <i>dir</i><b>/bouncer</b>.  An invocation of <b><A HREF="ezmlm-warn.1.html">ezmlm-warn(1)</A></b>  <b>-d</b>
+              is  added  to  <i>dir</i><b>/editor</b> and <i>dir</i><b>/manager</b>.  Invoca-
+              tions of <b><A HREF="ezmlm-tstdig.1.html">ezmlm-tstdig(1)</A></b> and <b><A HREF="ezmlm-get.1.html">ezmlm-get(1)</A></b> are added
+              with  default  arguments  to <i>dir</i><b>/editor</b>.  A note on
+              digest (un)subscription is added to <i>dir</i><b>/text/bottom</b>
+              and  to <i>dir</i><b>/text/mod-help</b>.  <i>dir</i><b>/text/digest</b> is cre-
+              ated  for  the  ``Administrivia''  section  of  the
+              digest.
+
+       <b>-D</b>     The  items  mentioned under switch <b>-d</b> are not done.
+              The result is that the references to the digest  in
+              the text files is removed.
+
+       <b>-f</b>     The   text  ``[<i>local</i>]''  is  placed  in  <i>dir</i><b>/prefix</b>
+              resulting in the text being used as the list's sub-
+              ject index.
+
+       <b>-F</b>     <i>dir</i><b>/prefix</b> is removed.
+
+       <b>-g</b>     The  -s switch is added to the <b><A HREF="ezmlm-get.1.html">ezmlm-get(1)</A></b> line in
+              <i>dir</i><b>/manager</b> so that only subscribers can access the
+              archive.
+
+       <b>-G</b>     The  -s switch for <b><A HREF="ezmlm-get.1.html">ezmlm-get(1)</A></b> is not used. Anyone
+              can access the archive if archive (access) in  gen-
+              eral  is  enabled  (see  <b>-p</b>  for ``public'', <b>-a</b> for
+              ``archived'', and <b>-i</b> for ``indexed''.
+
+       <b>-i</b>     <i>dir</i><b>/indexed</b>   is   created.    <i>dir</i><b>/text/bottom</b>   is
+              adjusted  to  reflect available archive access com-
+              mands.
+
+                         November 30,1998                       3
+
+ezmlmrc(5)                                             ezmlmrc(5)
+
+       <b>-I</b>     <i>dir</i><b>/indexed</b> is removed.
+
+       <b>-k</b>     Blacklist. A <b><A HREF="ezmlm-issubn.1.html">ezmlm-issubn(1)</A></b> line  that  tests  the
+              envelope  sender  against  the  address database in
+              <i>dir</i><b>/blacklist</b> is inserted into  <i>dir</i><b>/editor</b>.   As  a
+              consequence,  posts from such senders are rejected.
+              This switch is ignored for sublists  (i.e.  if  the
+              <b>-0</b> <b>mainlist@mainhost</b> switch is used).
+
+       <b>-K</b>     The   <b><A HREF="ezmlm-issubn.1.html">ezmlm-issubn(1)</A></b>  line  testing  the  envelope
+              sender against the ``blacklist'' is not used.
+
+       <b>-l</b>     The -l switch is added to the <b><A HREF="ezmlm-manage.1.html">ezmlm-manage(1)</A></b>  com-
+              mand line in <i>dir</i><b>/manager</b> to allow retrieval of sub-
+              scriber list and list log by remote administrators.
+              <b>NOTE</b>:  This  is  pointless, unless the list is also
+              set  up  for  remote  administration  with  the  <b>-r</b>
+              switch.  <i>dir</i><b>/text/mod-help</b> is adjusted.
+
+       <b>-L</b>     Do  not  allow  access to the subscriber list under
+              any circumstances. The <b><A HREF="ezmlm-manage.1.html">ezmlm-manage(1)</A></b> -l switch is
+              not specified.
+
+       <b>-m</b>     Message   moderation.    <i>dir</i><b>/modpost</b>   is  created.
+              <i>dir</i><b>/editor</b> is set up with <b><A HREF="ezmlm-store.1.html">ezmlm-store(1)</A></b> instead of
+              <b><A HREF="ezmlm-send.1.html">ezmlm-send(1)</A></b>.a <i>dir</i><b>/moderator</b> is set up with <b>ezmlm-</b>
+              <b><A HREF="moderate.1.html">moderate(1)</A></b>,  and   <b><A HREF="ezmlm-clean.1.html">ezmlm-clean(1)</A></b>.    <i>dot</i><b>/-accept-</b>
+              <b>default</b>   and  <i>dot</i><b>/-reject-default</b>  are  linked  to
+              <i>dir</i><b>/moderator</b>.   <i>dir</i><b>/text/mod-help</b>   is   adjusted.
+              Special  action is taken when the <b>-m</b> switch is com-
+              bined with <b>-u</b>.  In this case, the setup is  as  for
+              the  <b>-m</b> switch alone, but <i>dir</i><b>/editor</b> is set up with
+              <b><A HREF="ezmlm-gate.1.html">ezmlm-gate(1)</A></b> which  will  fork  <b><A HREF="ezmlm-send.1.html">ezmlm-send(1)</A></b>  for
+              posts  with an envelope sender that is a subscriber
+              or a moderator, and for  <b><A HREF="ezmlm-store.1.html">ezmlm-store(1)</A></b>  for  posts
+              with  other  envelope  senders.  The consequence is
+              that posts from subscribers (with the usual caveats
+              for  SENDER  checks)  are  posted directly, whereas
+              other posts are sent for moderation.
+
+       <b>-M</b>     No message moderation.  <i>dir</i><b>/editor</b> is set  up  with
+              <b><A HREF="ezmlm-send.1.html">ezmlm-send(1)</A></b>  as usual.  <i>dir</i><b>/moderator</b> is removed.
+
+       <b>-n</b>     Allow text file editing.  in <i>dir</i><b>/manager</b> is set  up
+              with the -e switch to allow remote admins to via E-
+              mail edit the files in <i>dir</i><b>/text/</b>.   <b>NOTE</b>:  This  is
+              pointless,  unless  the  list  is  also  set up for
+              remote   administration   with   the   <b>-r</b>   switch.
+              <i>dir</i><b>/text/mod-help</b> is adjusted.
+
+       <b>-N</b>     Remote editing of files in <i>dir</i><b>/text</b> is not allowed.
+              The -e switch for <b>ezmlm-manage</b> will not be used.
+
+       <b>-p</b>     Public.  <i>dir</i><b>/public</b> is created.
+
+                         November 30,1998                       4
+
+ezmlmrc(5)                                             ezmlmrc(5)
+
+       <b>-P</b>     Not public.  <i>dir</i><b>/public</b> is removed.
+
+       <b>-q</b>     A line with <b><A HREF="ezmlm-request.1.html">ezmlm-request(1)</A></b> is added to <i>dirmanager</i>
+              to service commands in the ``Subject'' line of mes-
+              sages sent to the ``list-request'' address.
+
+       <b>-Q</b>     <b><A HREF="ezmlm-request.1.html">ezmlm-request(1)</A></b> is not used.
+
+       <b>-r</b>     Remote    admin.     <i>dir</i><b>/remote</b>     is     created.
+              <i>dir</i><b>/text/mod-help</b> is adjusted.
+
+       <b>-R</b>     <i>dir</i><b>/remote</b> is removed.
+
+       <b>-s</b>     Subscription  moderation.   <i>dir</i><b>/modsub</b>  is created.
+              <i>dir</i><b>/text/mod-help</b> is  adjusted.   <i>dir</i><b>/text/sub-con-</b>
+              <b>firm</b> is adjusted.
+
+       <b>-S</b>     <i>dir</i><b>/modsub</b> is removed.
+
+       <b>-t</b>     <i>dir</i><b>/text/trailer</b>  is  created  with instructions on
+              how to unsubscribe.
+
+       <b>-T</b>     <i>dir</i><b>/text/trailer</b> is removed.
+
+       <b>-u</b>     User-only posts.  <i>dir</i><b>/editor</b>  is  set  up  with  an
+              <b><A HREF="ezmlm-issubn.1.html">ezmlm-issubn(1)</A></b>  line  to check the envelope sender
+              against the subscriber address databases.   If  the
+              sender  is  not  found,  the post is rejected. This
+              results in subscriber-only posts,  with  the  usual
+              caveats for SENDER checks.  Special action is taken
+              when the <b>-u</b> switch is combined with  <b>-m</b>.   In  this
+              case,  the setup is as for the <b>-m</b> switch alone, but
+              <i>dir</i><b>/editor</b> is set up with <b><A HREF="ezmlm-gate.1.html">ezmlm-gate(1)</A></b> which  will
+              fork  <b><A HREF="ezmlm-send.1.html">ezmlm-send(1)</A></b>  for  posts  with  an  envelope
+              sender that is a subscriber or a moderator, and for
+              <b><A HREF="ezmlm-store.1.html">ezmlm-store(1)</A></b>   for   posts  with  other  envelope
+              senders.  <b><A HREF="ezmlm-clean.1.html">ezmlm-clean(1)</A></b> is  set  up  with  the  -R
+              switch.   The  consequence  is that posts from sub-
+              scribers (with the usual caveats for SENDER checks)
+              are  posted  directly, whereas other posts are sent
+              for moderation.  <b><A HREF="ezmlm-clean.1.html">ezmlm-clean(1)</A></b> is set up with  the
+              -R   switch.   Thus,  ignored  posts  are  silently
+              removed rather than returned to sender.
+
+       <b>-U</b>     The <b><A HREF="ezmlm-issubn.1.html">ezmlm-issubn(1)</A></b> line restricting posts by enve-
+              lope sender is not used.
+
+       <b>-xyzXYZ</b>
+              User  configurable. By default, if the <b>-x</b> switch is
+              specified, <i>dir</i><b>/mimeremove</b>  is  created.  This  file
+              contains  many  MIME types not routinely supported.
+              MIME types in <i>dir</i><b>/mimeremove</b> <b>are</b> <b>stripped</b> <b>from</b> <b>mul-</b>
+              <b>tipart</b> <b>posts</b> <b>before</b> <b>archiving</b> and distribution.  To
+              view the list of MIME types, see <b>ezmlmrc</b> or  create
+
+                         November 30,1998                       5
+
+ezmlmrc(5)                                             ezmlmrc(5)
+
+              a   list  and  list  <i>dir</i><b>/mimeremove</b>.   In  addition
+              <i>dir</i><b>/msgsize</b> is created containing ``40000:2'' caus-
+              ing <b><A HREF="ezmlm-reject.1.html">ezmlm-reject(1)</A></b> to reject all posts that have a
+              body of less than 2  bytes  (empty)  or  more  than
+              40000 bytes (too large).
+
+       <b>-0</b> <i>mainlist@mainhost</i>
+              <i>dir</i><b>/sublist</b>  is created with ``mainlist@mainhost''.
+              <b>dir/ezmlm-reject</b> is not used in <i>dir</i><b>/editor</b> to avoid
+              rejecting messages that the main list has accepted.
+
+       <b>-3</b> <i>arg</i> User configurable. No action taken.
+
+       <b>-4</b> <i>tstdigopts</i>
+              <i>tstdigopts</i> will be used as  the  arguments  for  in
+              <i>dir</i><b>/editor</b>.   This  must be both switches and their
+              arguments  for  <b><A HREF="ezmlm-tstdig.1.html">ezmlm-tstdig(1)</A></b>.   <b>NOTE</b>:  This   is
+              pointless,  unless  the  list  is  also  set up for
+              digests with the <b>-d</b> switch.
+
+       <b>-5</b> <i>owner@ownerhost</i>
+              <i>owner@ownerhost</i> <i>is</i> <i>placed</i> <i>in</i> <i>dir</i><b>/owner</b> so that mail
+              to  ``list-owner''  is  forwarded  to that address,
+              rather than being stored in  <i>dir</i><b>/Mailbox</b>.   If  the
+              address  does  not  start  with  an  underscore  or
+              alphanumeric character,  the  argument  must  start
+              with an ampersand.
+
+       <b>-6</b> <i>arg</i> User configurable. No action taken.
+
+       <b>-7</b> <i>/msgmodPath</i>
+              <i>msgmodPath</i>  is placed in <i>dir</i><b>/modpost</b> is the list is
+              set up for message moderation with the <b>-m</b> switch.
+
+       <b>-8</b> <i>/submodPath</i>
+              <i>submodPath</i> is placed in <i>dir</i><b>/modsub</b> is the  list  is
+              set  up  for  subscription  moderation  with the <b>-s</b>
+              switch.
+
+       <b>-9</b> <i>/remoteAdminPath</i>
+              <i>remoteAdminPath</i> is placed in <i>dir</i><b>/remote</b> is the list
+              is  set  up  for  remote administration with the <b>-r</b>
+              switch.
+
+<H2>SEE ALSO</H2>
+       <A HREF="ezmlm.5.html">ezmlm(5)</A>,  <A HREF="ezmlm-clean.1.html">ezmlm-clean(1)</A>,  <A HREF="ezmlm-gate.1.html">ezmlm-gate(1)</A>,   <A HREF="ezmlm-get.1.html">ezmlm-get(1)</A>,
+       <A HREF="ezmlm-issubn.1.html">ezmlm-issubn(1)</A>,  <A HREF="ezmlm-make.1.html">ezmlm-make(1)</A>,  <A HREF="ezmlm-manage.1.html">ezmlm-manage(1)</A>,  <A HREF="ezmlmmoderate.1.html">ezmlmmoderate(1)</A>
+       ,  <A HREF="ezmlm-request.1.html">ezmlm-request(1)</A>,  <A HREF="ezmlm-return.1.html">ezmlm-return(1)</A>,   <A HREF="ezmlmsend.1.html">ezmlmsend(1)</A>
+       , <A HREF="ezmlm-store.1.html">ezmlm-store(1)</A>, <A HREF="ezmlm-tstdig.1.html">ezmlm-tstdig(1)</A>, <A HREF="ezmlm-warn.1.html">ezmlm-warn(1)</A>,
+
+                         November 30,1998                       6
+
+</PRE>
+  <hr>
+  <ADDRESS>
+  © 1994 <A HREF="http://www.ntua.gr/~christia/man-cgi.html">Man-cgi 1.15</A>, Panagiotis Christias &lt;christia@theseas.ntua.gr&gt;
+  </ADDRESS>

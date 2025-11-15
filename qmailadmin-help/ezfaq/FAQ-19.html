@@ -1,0 +1,107 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<HTML>
+<HEAD>
+ <META NAME="GENERATOR" CONTENT="SGML-Tools 1.0.7">
+ <TITLE>EZFAQ 0.32 - ezmlm-idx and ezmlm FAQ: Multiple language support.</TITLE>
+ <LINK HREF="FAQ-20.html" REL=next>
+ <LINK HREF="FAQ-18.html" REL=previous>
+ <LINK HREF="FAQ.html#toc19" REL=contents>
+</HEAD>
+<BODY vlink="#004400" link="#008800" bgcolor="#ffffff" alink="#ff0000"><FONT FACE="helvetica,times,arial">
+<A HREF="FAQ-20.html">Next</A>
+<A HREF="FAQ-18.html">Previous</A>
+<A HREF="FAQ.html#toc19">Contents</A>
+<HR>
+<H2><A NAME="language"></A> <A NAME="s19">19. Multiple language support.</A></H2>
+
+<P>
+<H2><A NAME="ss19.1">19.1 Command names.</A>
+</H2>
+
+<P>ezmlm commands can have aliases for use in translations for 
+non-English use.
+Due to the use of commands in mail e-mail addresses, the character set is
+limited by rfc822 to us-ascii. To enable the command aliases, remove the
+comment marks around the INTL_CMDS define in idx.h. Also, remove the
+comments from the define corresponding to one language (currently,
+only LANG_FR - French) available.
+<P>The INTL_CMDS define results in the compilation of all ezmlm programs
+with support for alias commands for those commands listed in the INTL
+section (all that are used directly by users). All aliases MUST be
+defined, but should be the normal English commands. The language-specific
+sections un-define and redefine the commands for which alternative names
+should be used. This allows use of e.g. ``inscription'' as an alias
+in addition to the standard ``subscribe''.
+<P>
+<H2><A NAME="ss19.2">19.2 Text files.</A>
+</H2>
+
+<P>Most ezmlm responses are made from text files in <B>DIR/text/</B>. These are
+created from the template file ``ezmlmrc''. Thanks to Frank Denis,
+and Masashi Fujita, Wanderlei Antonio Cavassin, Sergiusz Pawlowicz,
+Frank Tegtmeyer, Torben Fjerdingstad, Jan Kasprzak, and Sebastian Andersson,
+French, Japanese, Portuguese (var. Brazil), Polish, German, Danish, Czech,
+and Swedish
+versions are available. Just:
+<BLOCKQUOTE><CODE>
+<PRE>
+        % make jp
+</PRE>
+</CODE></BLOCKQUOTE>
+
+before
+<BLOCKQUOTE><CODE>
+<PRE>
+        # make setup
+</PRE>
+</CODE></BLOCKQUOTE>
+
+or just copy <B>ezmlmrc.jp</B> to <B>/etc/ezmlmrc</B>,
+where it will override the
+copy installed in the ezmlm binary directory. For rpm packages, the en_US
+version is installed, but the other versions are available in the
+<B>/usr/doc/</B> hierarchy.
+<P>If you have made an <B><a href="ezmlmrc.5.html">ezmlmrc(5)</a></B>
+version for another language, please make it public domain and E-mail it
+as an attachment to <CODE>lindberg@id.wustl.edu</CODE>. It will then be put into
+the <B>ezmlmrc</B> directory of the distribution site. Please take
+advantage of the ``Content-transfer-encoding'' capability of ezmlm-idx&gt;=0.30,
+if needed, as this avoids problems when messages are sent via non-8-bit
+MUAs.
+<P>Other ezmlm responses, such as words in subject lines, are defines in
+<B>idx.h</B> and can be changed there. Error messages should ideally not be
+altered. However, it may make sense to change a few of them which are
+used as messages to e.g. remote administrators. The defines for all
+error messages are in <B>errtxt.h</B>.
+<P>
+<H2><A NAME="ss19.3">19.3 Multi-byte character code support.</A>
+</H2>
+
+<P>ezmlm, as far as we know, places no restrictions on character
+sets. The configurable default character set allows you to use
+other character sets for out going ezmlm messages. ezmlm-make
+does not <EM>per se</EM> support other character sets. However, any
+single-byte character set is supported, as long as the us-ascii
+character sequence ``&lt;/'' does not occur anywhere as the
+first characters of the line, and the character sequence
+``&lt;#x#&gt;'' (where ``x'' is any number, or
+A, B, C, D, F, H, L, R, T) does
+not occur anywhere is text (if it does, it risks being
+substituted). Also, any occurrence or ``&lt;#A#&gt;''
+and ``&lt;#R#&gt;'' that
+is the first on any text line will be substituted by ezmlm-manage
+and ezmlm-store. Any occurrence of ``!A'' and ``!R'' as the
+first characters on a line will be substituted by ezmlm-manage
+and ezmlm-store.
+<P>For multi-byte character codes, the same restrictions apply.
+Thus, ``&lt;/'' at the start of a line will confuse ezmlm-make, and
+any ``&lt;#x#&gt;'' sequence within the text risks substitution. In
+practice, both of these should be very rare and easily
+avoidable when setting up an <a href="ezmlmrc.5.html">ezmlmrc(5)</a>.
+<P>
+<HR>
+<A HREF="FAQ-20.html">Next</A>
+<A HREF="FAQ-18.html">Previous</A>
+<A HREF="FAQ.html#toc19">Contents</A>
+</BODY>
+</HTML>

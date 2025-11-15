@@ -1,0 +1,1308 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<HTML>
+<HEAD>
+ <META NAME="GENERATOR" CONTENT="SGML-Tools 1.0.7">
+ <TITLE>EZFAQ 0.32 - ezmlm-idx and ezmlm FAQ: Overview of ezmlm function</TITLE>
+ <LINK HREF="FAQ-5.html" REL=next>
+ <LINK HREF="FAQ-3.html" REL=previous>
+ <LINK HREF="FAQ.html#toc4" REL=contents>
+</HEAD>
+<BODY vlink="#004400" link="#008800" bgcolor="#ffffff" alink="#ff0000"><FONT FACE="helvetica,times,arial">
+<A HREF="FAQ-5.html">Next</A>
+<A HREF="FAQ-3.html">Previous</A>
+<A HREF="FAQ.html#toc4">Contents</A>
+<HR>
+<H2><A NAME="s4">4. Overview of ezmlm function</A></H2>
+
+<P>
+<H2><A NAME="ss4.1">4.1 The basic setup.</A>
+</H2>
+
+<P>In designing ezmlm, <EM>Dan J. Bernstein</EM>
+has used the unix philosophy of small
+component programs with limited and well defined functions. 
+Requests for specific functions can then be met by the addition of
+new programs.
+<P>Thanks to the
+program execution mechanism Dan built into qmail, it is easy to execute
+several small programs per delivery in a defined sequence. It is also
+very easy to add shell scripts for further customization.
+<P>
+<H2><A NAME="ss4.2">4.2 Inventions in ezmlm.</A>
+</H2>
+
+<P>Dan J. Bernstein has written ezmlm in C. It is written for speed and reliability
+even in the face of power loss
+and NFS.  These features are augmented to a large extent by the ruggedness of
+the qmail (also by Dan) delivery mechanism (see <a href="qmail-command.8.html">qmail-command(8)</a>).
+<P>ezmlm uses some routines and techniques that still are not frequently seen 
+in many mailing list managers. For example, subscriber E-mail addresses are stored in a
+hash so that searches require reading only, at most, 2% of the E-mail addresses.
+ezmlm has a optional message archive, where messages are stored 100 per
+directory, again to allow more efficient storage and retrieval. Important
+files are written under a new name and, only when safely written,
+moved in place, to assure that crashes do not leave the list in an
+undefined state.
+<P>In addition, ezmlm has a number of new inventions. One of these is bounce
+detection, which generates an automatic warning containing information
+identifying the messages which have bounced, followed by a probe message
+to the E-mail addresses for which mail has bounced.
+If the probe bounces, the address is unsubscribed. Thus,
+the system won't remove E-mail addresses due to temporary bounces: it takes 12 days
+after the first bounce before a warning is sent, and another 12 days of
+bounces after the warning bounce before the probe message is set.
+<P>Another Dan J. Bernstein invention is 
+the use of cryptographic cookies based on a timestamp, address, and
+action. These are used to assure that the user sending a request to
+subscribe or unsubscribe really controls the target address.
+It is also used to prevent forgery of warning or probe messages to make it
+exceedingly difficult to subvert the bounce detection mechanism to
+unsubscribe another user.
+<P>
+<H2><A NAME="ss4.3">4.3 The qmail delivery mechanism.</A>
+</H2>
+
+<P>See <a href="qmail.7.html">qmail(7)</a>, <a href="qmail-local.8.html">qmail-local(8)</a>, <a href="qmail-command.8.html">qmail-command(8)</a>, <a href="envelopes.5.html">envelopes(5)</a>, and <a href="dot-qmail.5.html">dot-qmail(5)</a>.
+Briefly, qmail having resolved
+the delivery address delivers it via the <B>.qmail</B> file that
+most completely
+matches the address. This file may be a link to another file, as is the case
+in ezmlm lists. qmail then delivers the message according to successive
+lines in this file forwarding it to an address, storing it, or piping it to
+a program. In the latter case, the program is expected to exit 0 leading
+delivery to proceed to the next line in the <B>.qmail</B> file, or 99
+leading to success without delivery to succeeding lines. An exit code
+of 100 is a permanent error leading to an error message to the SENDER. An
+exit code of 111 is used for temporary errors, leading to re-delivery until
+successful or until the queue lifetime of the message has been exceeded.
+<P>Delivery granularity is the <B>.qmail</B> file and re-deliveries start at the
+top. Thus, if the message fails temporarily at a later line, the delivery
+according to an earlier line will be repeated. Similarly, qmail may have
+made deliveries successfully according to most of the <B>.qmail</B> file
+and then fail permanently. The SENDER is informed that the delivery failed,
+but not about at which point.
+<P>ezmlm takes advantage of these basic mechanisms to build a fast, efficient,
+and very configurable mailing list manager from a set of small independent
+programs.
+<P>
+<H2><A NAME="ss4.4">4.4 What the different programs do.</A>
+</H2>
+
+<P>See <a href="ezmlm.5.html">ezmlm(5)</a> and the man pages for the different programs (listed in
+<a href="ezmlm.5.html">ezmlm(5)</a>).
+<P>
+<H2><A NAME="ss4.5">4.5 What the different files in the list directory do.</A>
+</H2>
+
+<P>See <a href="ezmlm.5.html">ezmlm(5)</a>.
+<P>
+<H2><A NAME="ss4.6">4.6 The paper path for posts.</A>
+</H2>
+
+<P>Messages to the list are delivered to a <B>.qmail</B> file,
+usually <B>~/.qmail-listname</B> which is linked to <B>DIR/editor</B>.
+Here, the message is first delivered to <a href="ezmlm-reject.1.html">ezmlm-reject(1)</a> which can reject
+messages based on subject line contents, MIME content-type, and message
+body length. It also by default rejects all messages that do not have the
+list address in the ``To:'' or ``Cc:'' header. This eliminates most
+bulk spam. If the list is set up for restrictions based on envelope SENDER,
+the next delivery is to one or more instances of <a href="ezmlm-issubn.1.html">ezmlm-issubn(1)</a>.
+If the messages passed this check,
+it is usually delivered to <a href="ezmlm-send.1.html">ezmlm-send(1)</a> for distribution.
+If the list is message moderated, it is instead delivered to
+<a href="ezmlm-store.1.html">ezmlm-store(1)</a> which queues the message and sends out a moderation request.
+<a href="ezmlm-gate.1.html">ezmlm-gate(1)</a> is used by some other setups. It will for message moderated lists
+invoke <a href="ezmlm-send.1.html">ezmlm-send(1)</a> directly if the message is from a specific set of SENDERs,
+and in other cases <a href="ezmlm-store.1.html">ezmlm-store(1)</a> to send the message out for moderation.
+<P>If the list is configured for digests, <B>DIR/editor</B> also contains
+an <a href="ezmlm-tstdig.1.html">ezmlm-tstdig(1)</a> line followed by an <a href="ezmlm-get.1.html">ezmlm-get(1)</a> line. If <a href="ezmlm-tstdig.1.html">ezmlm-tstdig(1)</a>
+determines that the criteria are met for digest generation, it exits with
+an exit code of 0, causing the <a href="ezmlm-get.1.html">ezmlm-get(1)</a> line to be executed leading to
+a digest mailing. Otherwise, <a href="ezmlm-tstdig.1.html">ezmlm-tstdig(1)</a> exits 99, resulting in the
+remainder of the <B>DIR/editor</B> file to be ignored too long. The digest is
+not related to the message being delivered, but the delivery is used to trigger
+execution of the relevant programs.
+<P>
+<P>In addition, <B>DIR/editor</B> contains a number of house-keeping functions.
+These are invocations of <a href="ezmlm-warn.1.html">ezmlm-warn(1)</a> to send out bounce warnings and
+and (if the list is moderated) <a href="ezmlm-clean.1.html">ezmlm-clean(1)</a> to clean the moderation
+queue of messages that have been
+ignored. Again,
+these functions are not related to the specific message delivered, but
+the delivery itself is used as a convenient ``trigger'' for processing.
+<P>
+<H2><A NAME="ss4.7">4.7 The ezmlm path for moderation messages.</A>
+</H2>
+
+<P>Replies to moderation requests are channeled to <B>DIR/moderator</B>. This
+file contains an invocation of <a href="ezmlm-moderate.1.html">ezmlm-moderate(1)</a> which invokes <a href="ezmlm-send.1.html">ezmlm-send(1)</a>
+for accepted messages and sends out a rejection notice for rejected messages.
+It also sends error messages if the message is not found or already
+accepted/rejected <EM>contrary</EM> to the moderation message. Thus, if you
+accept a message already accepted, no error message is sent. <a href="ezmlm-clean.1.html">ezmlm-clean(1)</a> is
+also invoked from <B>DIR/moderator</B> for house keeping.
+<P>
+<H2><A NAME="ss4.8">4.8 The ezmlm path for administrative messages.</A>
+</H2>
+
+<P>Administrative requests for both list and digest lists are captured by
+<B>~/.qmail-listname-default</B> linked to <B>DIR/manager</B>.
+Here they are delivered first to <a href="ezmlm-get.1.html">ezmlm-get(1)</a> which processed archive retrieval
+requests, exiting 99 after successful completion which causes the rest of the
+delivery lines to be ignored. If the request is not for <a href="ezmlm-get.1.html">ezmlm-get(1)</a> it
+rapidly exits 0. This leads to invocation of <a href="ezmlm-manage.1.html">ezmlm-manage(1)</a> which handles
+subscriber database functions, help messages, and (if configured)
+editing of <B>DIR/text/</B> files. Again, <a href="ezmlm-warn.1.html">ezmlm-warn(1)</a> lines are included for
+bounce directory processing.
+<P>If configured, an <a href="ezmlm-request.1.html">ezmlm-request(1)</a> line is present. This program constructs
+valid ezmlm requests from command in the subject lines of messages sent
+to <CODE>listname-request@host</CODE> and exits 99. These requests are mailed
+and will then return to be processed by one of the other programs.
+<P>
+<H2><A NAME="ss4.9">4.9 The ezmlm path for bounces.</A>
+</H2>
+
+<P>Bounces to the list are handled by <B>DIR/bouncer</B>. For the digest
+list this is <B>DIR/digest/bouncer</B>. The two were combined in previous
+versions, which is still supported. As this leads to problems with list
+names ending in ``digest'', the functions are separate with lists set up or
+edited with ezmlm-idx&gt;=0.32. The bounce is
+first delivery is to <a href="ezmlm-weed.1.html">ezmlm-weed(1)</a> which removes delivery delay
+notification and other junk. The second to
+<a href="ezmlm-return.1.html">ezmlm-return(1)</a> which analyzes valid bounces storing the information in
+<B>DIR/bounce/</B> for the list and <B>DIR/digest/bounce/</B>
+for the digest.
+This is the information that <a href="ezmlm-warn.1.html">ezmlm-warn(1)</a> (invoked from <B>DIR/editor</B>
+and <B>DIR/manager</B>) uses and processes for automatic bounce handling.
+<a href="ezmlm-return.1.html">ezmlm-return(1)</a> will also unsubscribe a subscriber from whom a probe message
+has bounced.
+<P>
+<H2><A NAME="ss4.10">4.10 Messages to list-owner and list-digest-owner.</A>
+</H2>
+
+<P>These are processed by <B>DIR/owner</B> and delivered to <B>DIR/mailbox</B>
+by default. It is better to put the real owner address in this location.
+This can be done manually, via editing of <B><a href="ezmlmrc.5.html">ezmlmrc(5)</a></B>, or via the
+<a href="ezmlm-make.1.html">ezmlm-make(1)</a> -5 switch. Again, some house-keeping functions are also executed.
+<P>
+<H2><A NAME="ss4.11">4.11 Structure of subscriber databases.</A>
+</H2>
+
+<P>ezmlm subscriber E-mail addresses are stored within
+<B>DIR/subscribers/</B> as a hashed set
+of 53 files. The hash calculated from the address determines which of the 53
+files and address is stored in. Thus, to find out if an address is a subscriber,
+ezmlm has to read at most about 2% of the E-mail addresses.
+The hash function insures
+that E-mail addresses are reasonably evenly distributed among the 53 files.
+<P>Addresses in the files in <B>DIR/subscribers/</B> are stored
+as strings starting
+with ``T'', followed by the address, followed by a zero byte. This
+is the same format as taken by <a href="qmail-queue.8.html">qmail-queue(8)</a> on file descriptor 1.
+Thus, subscriber lists can
+be directly copied to qmail without any further processing.
+<P>With ezmlm-idx&gt;=0.32 you can use an SQL server for the subscriber databases.
+Please see the SQL
+section (
+<A HREF="FAQ-5.html#sql">ezmlm support for SQL datbases</A>).
+<P>
+<H2><A NAME="ss4.12">4.12 Local case in E-mail addresses.</A>
+</H2>
+
+<P>rfc822 states that the host part of an address is case insensitive, but that
+case of the local part should be respected and the interpretation of it is the
+prerogative of the machine where the mailbox exists.
+Thus, ezmlm preserves the case of the local part,
+but converts the host part to lower case. ezmlm proper also bases the hash on
+the case of the local part, so that <CODE>USER@host</CODE> and
+<CODE>user@host</CODE> are not
+(usually) stored in the same file.
+<P>Locally, deliveries are most often case insensitive, i.e. mail to
+<CODE>USER@host</CODE> and
+<CODE>user@host</CODE>
+are delivered to the same mail box. A consequence of this is that
+many users use E-mail addresses with different case interchangeably.
+The problem is that when <CODE>USER@host</CODE> is subscribed,
+ezmlm will not find that address in response
+to an unsubscribe request from
+<CODE>user@host</CODE>. This is even more problematic
+when E-mail addresses have been added by hand to e.g. moderator lists.
+<P>ezmlm-idx&gt;=0.22 changes address storage to make comparisons case insensitive
+and store E-mail addresses based on the hash of the all lower case address. Case is
+maintained for the local part. Thus, if <CODE>USER@host</CODE> is subscribed, mail
+is set to <CODE>USER@host</CODE>,
+but <CODE>user@host</CODE> is recognized as a subscriber
+and an unsubscribe request from
+<CODE>user@host</CODE> will remove <CODE>USER@host</CODE> from
+the subscriber list.
+<P>To maintain backwards compatibility with old subscriber lists, a second
+lookup is made for partially upper case E-mail addresses in some cases. This will
+find <CODE>USER@host</CODE> subscribed with a case sensitive hash as well.
+<P>If may be useful to move all old mixed case E-mail addresses
+to the ``new'' positions.
+Without this, <CODE>USER@host</CODE> subscribed with the old system will be
+able to unsubscribe as <CODE>USER@host</CODE>, but not as <CODE>user@host</CODE>.
+After the
+repositioning, s/he will be successfully able to use any case in an
+unsubscribe request, e.g. <CODE>UsEr@host</CODE>. To do this:
+<P>
+<BLOCKQUOTE><CODE>
+<PRE>
+% ezmlm-list DIR | grep -G '[A-Z]' > tmp.tmp
+% xargs ezmlm-sub DIR &lt; tmp.tmp
+</PRE>
+</CODE></BLOCKQUOTE>
+<P>This works, because subscribing an address, even if it already exists, will
+assure that it is stored with a case insensitive hash. On some systems,
+the grep ``-G'' switch need/should not be used.
+<P>
+<H2><A NAME="ss4.13">4.13 Testing SENDER to allow posts only from list subscribers.</A>
+</H2>
+
+<P>This mode of operation is automatically set up if you specify the
+<a href="ezmlm-make.1.html">ezmlm-make(1)</a> ``-u'' switch. Since there may be some addresses that should be
+allowed to post, but are not subscribers of list or list-digest,
+<a href="ezmlm-make.1.html">ezmlm-make(1)</a> sets
+up an additional address database in <B>DIR/allow/</B>.
+Use <a href="ezmlm-sub.1.html">ezmlm-sub(1)</a>, <a href="ezmlm-unsub.1.html">ezmlm-unsub(1)</a>, and <a href="ezmlm-list.1.html">ezmlm-list(1)</a> to manipulate
+these addresses. If the list is configured for remote administration (see
+<A HREF="#how_remote">How remote administration works</A>),
+you can add/remove addresses from the <B>DIR/allow/</B> database by
+mailing <CODE>list-allow-subscribe@listhost</CODE>
+and <CODE>list-allow-unsubscribe@listhost</CODE>, respectively. Other commands
+that access subscriber databases work in the same manner.
+<P>To similarly restrict archive access, use the <a href="ezmlm-make.1.html">ezmlm-make(1)</a> ``-g'' switch.
+<P>Since SENDER is under the control of a potential attacker, it is not secure
+to use tests of SENDER for anything important. However, when replies are
+always sent to SENDER (such as for archive access),
+a check of SENDER can prevent the sending of information
+to E-mail addresses not in the database.
+<P>To test sender, use the program <a href="ezmlm-issubn.1.html">ezmlm-issubn(1)</a>. It
+will return 0 (true for the shell, success for qmail deliveries) if SENDER
+is in at least one of a set of subscriber databases. If not, it will return
+99 (false for the shell: success, but skip remainder of <B>.qmail</B> file for
+qmail deliveries). The basedirs of the subscriber lists (i.e. the directories
+in which the ``subscriber'' dirs are located) are given as arguments.
+<a href="ezmlm-issubn.1.html">ezmlm-issubn(1)</a> can take any number of arguments.
+<P>Thus, to permit an action if SENDER is a subscriber to the list in any of
+<B>DIR/</B>, <B>DIR/digest/</B>, or <B>DIR/allow/</B>
+and exit silently, put the following into the relevant <B>.qmail</B> file:
+<P>
+<BLOCKQUOTE><CODE>
+<PRE>
+|/usr/local/bin/ezmlm/ezmlm-issubn DIR DIR/digest DIR/allow [...]
+|/path/action_program
+</PRE>
+</CODE></BLOCKQUOTE>
+<P>Restricting your list to posts from your subscribers is as easy as that. If your ezmlm binaries are in a different directory,
+you may have to modify the <a href="ezmlm-issubn.1.html">ezmlm-issubn(1)</a> path.
+<P><a href="ezmlm-issubn.1.html">ezmlm-issubn(1)</a> has a ``-n'' switch which
+``negates/reverses'' the exit code.
+To do an action if SENDER is <EM>NOT</EM> a subscriber
+of any of the lists:
+<P>
+<BLOCKQUOTE><CODE>
+<PRE>
+|/usr/local/bin/ezmlm-ezmlm-issubn -n DIR/deny [dir2 ...]
+|/path/other_program
+</PRE>
+</CODE></BLOCKQUOTE>
+<P>To automatically configure the list with a blacklist address database in
+<B>DIR/deny</B>, use the <a href="ezmlm-make.1.html">ezmlm-make(1)</a> ``-k'' switch. If the list
+is configured for remote administration (see
+<A HREF="#how_remote">How remote administration works</A>) and if you
+are a remote administrator,
+you can manipulate the ``deny'' database remotely by sending mail
+to <CODE>list-deny-subscribe-user=userhost@listhost</CODE>, etc.
+<P>
+<H2><A NAME="ss4.14">4.14 How cookies work.</A>
+</H2>
+
+<P>Each ezmlm list has it's own ``key'' created by ezmlm-make at setup time.
+This key is stored in <B>DIR/key</B>, and you can improve it by adding
+garbage of your own to it. However, changing the key will make all outstanding
+cookies invalid, so this should be done when the list is established.
+<P>When ezmlm receives an action request, such as ``subscribe'',
+it constructs a cookie
+as a function of:
+<UL>
+<LI>the request,</LI>
+<LI>the time,</LI>
+<LI>and the target address.</LI>
+</UL>
+
+The cookie and these items are then assembled into a address that is sent
+out as the ``Reply-To:'' address in the confirmation request sent to the
+subscriber. When the subscriber replies, ezmlm first checks if the
+timestamp is more than 1,000,000 seconds old (approx 11.6 days) and rejects
+the request if it is. Next, ezmlm recalculates the cookie from the items.
+If the cookies match, the request is valid and will be completed. Depending
+on the circumstances, ezmlm generates an error message or
+a new cookie based on the current time and
+sends the target a new confirmation request.
+<P>Dan has based these cookies on cryptographic functions that make it very
+unlikely that a change in any part of the cookie or the items will result in
+a valid combination. Thus, it is virtually impossible to forge a request
+even for someone who has a number of valid requests to analyze. Since the
+algorithm ezmlm uses is available, the security rests on the key (and
+the correctness of the algorithm). Anyone
+who knows the key for your lists can easily construct valid requests.
+<P>As <a href="ezmlm-make.1.html">ezmlm-make(1)</a> doesn't use a truly random process to generate the key, it
+is theoretically possible that someone with sufficient knowledge about your
+system can guess your key. In practice, this is very unlikely, and the
+safety of the system is orders of magnitude higher than that of other
+mechanisms that you may rely on in your list management and mail transport
+(exclusive of strong encryption, such as <EM>PGP</EM>).
+<P>
+<H2><A NAME="ss4.15">4.15 How moderator E-mail addresses are stored.</A>
+</H2>
+
+<P>Moderator E-mail addresses are stored just like ezmlm subscriber addresses, in a set
+of up to 53 files within the <B>subscribers</B> subdirectory
+of the list's <B>basedir/</B>.
+For subscribers, the <B>basedir/</B> is the list directory itself,
+i.e. <B>DIR/</B>.
+For moderators,
+the default is <B>DIR/mod/</B>, which can be overridden by placing
+a <B>basedir</B> name (starting with a ``/'') in <B>DIR/modsub</B>,
+<B>DIR/remote</B>, or
+<B>DIR/modpost</B> for subscription moderation, remote administration, and
+message moderation, respectively. This permits the use of one moderator
+database for multiple lists. <EM>Note: Subscription moderators and remote
+administrators are always the same addresses. If both <B>DIR/modsub</B>
+and <B>DIR/remote</B> contain paths,
+only the <B>DIR/modsub</B> path is used.</EM>
+<P>
+<H2><A NAME="ss4.16">4.16 How subscription moderation works.</A>
+</H2>
+
+<P>Subscription moderation is a simple extension of the ezmlm subscribe
+mechanism. Once the user has confirmed the subscribe request, a new
+request is constructed with a <EM>different action code</EM>. This is
+sent out to the moderator(s). When a moderator replies with a valid
+request and cookie combination, the user is subscribed. The user is then
+also welcomed to the list. Other moderators won't know that the request
+has already been approved. If other moderators reply to the request,
+no notification of the duplicate action is sent to the subscriber
+of the duplicate action. Ezmlm knows that this is a
+repeat request since the target address is already a subscriber.
+<P>The moderators are not informed about the result, unless there was an
+error (subscribing a target that is already a subscriber is not
+considered an error). This cuts down the number of messages a moderator
+receives. Any list moderator knows (or <EM>should</EM> know)
+the qmail/ezmlm/unix paradigm: <EM>if
+you're not told otherwise, your command was carried out successfully</EM>.
+This may be counterintuitive to those used to some other operating systems,
+but in our experience it doesn't take long to get used to the reliability
+and efficiency of U*ix/qmail/ezmlm.
+<P>Subscription moderation is enabled by creating <B>DIR/modsub</B> and
+adding the subscription moderator to <B>DIR/mod/</B>:
+<BLOCKQUOTE><CODE>
+<PRE>
+% ezmlm-sub DIR/mod moderator@host
+</PRE>
+</CODE></BLOCKQUOTE>
+
+To use an alternative basedir for subscription moderators, place that
+directory name with a leading ``/'' in <B>DIR/modsub</B>.
+<P>
+<H2><A NAME="how_remote"></A> <A NAME="ss4.17">4.17 How remote administration works.</A>
+</H2>
+
+<P>The term ``remote administration'' is used to denote the ability of a
+list administrator by E-mail
+to add or remove any E-mail address from the subscriber
+list without the cooperation of the user. Normally, when
+<CODE>user@userhost</CODE> sends a message to
+<CODE>list-subscribe-other=otherhost@listhost</CODE> to
+subscribe <CODE>other@otherhost</CODE>, the confirmation request goes
+to <CODE>other@otherhost</CODE>. However, if remote administration is enabled and
+<CODE>user@userhost</CODE> is a moderator, a confirmation request (with a different
+action code) is sent back to <CODE>user@userhost</CODE> instead. The reply
+from the administrator is suppressed in the welcome message sent to the new
+subscriber (<CODE>other@otherhost</CODE>). This protects the identity of the remote
+administrator.
+<P>Remote administration is enabled by creating <B>DIR/remote</B> and adding the
+remote administrator E-mail address(es) to <B>DIR/mod/</B>:
+<BLOCKQUOTE><CODE>
+<PRE>
+% ezmlm-sub DIR/mod remoteadm@host
+</PRE>
+</CODE></BLOCKQUOTE>
+
+To use an alternative basedir for remote administrators, place that
+directory name with a leading ``/'' in <B>DIR/modsub</B>.
+Remote administrators and subscription moderators databases always consist of
+the same E-mail addresses.
+If both are enabled and one of <B>DIR/modsub</B> and <B>DIR/remote</B>
+contains an alternative
+basedir name, this basedir is used for both functions.
+If both <B>DIR/modsub</B>
+and <B>DIR/remote</B> contain directory names,
+the one in <B>DIR/modsub</B> is used for both
+functions.
+<P>Remote administrators can add and remove addresses to the digest list,
+the ``allow'' list (user aliases for lists using SENDER restrictions on
+posting and archive access), and if used the ``deny'' list containing addresses
+that are denied posting rights to the list. The latter is easy to circumvent
+and intended to block errant mail robots, rather than human users.
+<P>
+<H2><A NAME="ss4.18">4.18 How message moderation works.</A>
+</H2>
+
+<P><a href="ezmlm-store.1.html">ezmlm-store(1)</a>, invoked in <B>DIR/editor</B>,
+receives messages for message moderated
+lists. If <B>DIR/modpost</B> does not exist,
+<a href="ezmlm-store.1.html">ezmlm-store(1)</a> just calls <a href="ezmlm-send.1.html">ezmlm-send(1)</a>
+and the message is posted to the list as if it were not moderated.
+If <B>DIR/modpost</B> exists,
+<a href="ezmlm-store.1.html">ezmlm-store(1)</a> places the message in <B>DIR/mod/pending/</B>.
+It also sends a moderation
+request to all the moderators. Included with this request is a copy of
+the message.
+The ``From:'' and ``Reply-To:'' E-mail addresses contain codes for ``reject''
+and ``accept'', together with a unique message name (derived from the
+message timestamp and process id) and a cookie based on these items.
+When a moderator
+replies, <a href="ezmlm-moderate.1.html">ezmlm-moderate(1)</a> is invoked via <B>DIR/moderator</B>.
+<a href="ezmlm-moderate.1.html">ezmlm-moderate(1)</a> validates the
+request, and if the request is valid and the message is found in
+<B>DIR/mod/pending/</B>, it carries out the requested action.
+<P>If the request is ``reject'' the post is returned to SENDER with an explanation
+and an optional moderator comment. If the request is ``accept'' the message is
+posted to the list via <a href="ezmlm-send.1.html">ezmlm-send(1)</a>. As the request is processed, a stub
+for the message is created in <B>DIR/mod/rejected/</B>
+or <B>DIR/mod/accepted/</B>
+for ``reject'' and ``accept'' requests, respectively.
+<P>If a valid reply is received but the message is no longer in
+<B>DIR/mod/pending/</B>,
+<a href="ezmlm-moderate.1.html">ezmlm-moderate(1)</a> looks for the corresponding stub in <B>DIR/mod/rejected/</B>
+and <B>DIR/mod/accepted/</B>.
+If the stub is found and the fate of the message was the
+one dictated by the new request, no further action is taken. If, however,
+no stub is found or the request and the actual message fate do not match,
+a notification is sent to the moderator. This scheme was chosen to impart
+a maximum of information with a minimum of messages. Also, it is the 
+least demoralizing setup for multiple moderator lists,
+where it is important not to
+notify subsequent moderators that their work was in vain since the action
+of the first responding moderator has already resulted in
+processing of the message.
+<P>If a message is not ``rejected'' or ``accepted'' it remains in
+<B>DIR/mod/pending/</B>
+until it times out. Cleanup of both messages and stubs is accomplished by
+<a href="ezmlm-clean.1.html">ezmlm-clean(1)</a> which is invoked through both
+<B>DIR/editor</B> and <B>DIR/moderator</B> for
+message moderated lists. <a href="ezmlm-clean.1.html">ezmlm-clean(1)</a>
+looks at the timestamp used to generate
+the message/stub name. If it is older than 120 hours (configurable in a range
+of 24-240 hours, by placing the value in <B>DIR/modtime</B>) it is removed. 
+Unless suppressed with the <a href="ezmlm-clean.1.html">ezmlm-clean(1)</a> ``-R'' switch,
+the SENDER of the message is
+notified. 
+<P>By default,
+the E-mail addresses of message moderators are stored as a subscriber 
+list with a basedir of <B>DIR/mod/</B>.
+This can be changed to any other <B>basedir</B> by 
+placing the name of that directory with a leading ``/'' in <B>DIR/modpost</B>. 
+Although the default basedirs for message moderation and subscription 
+moderation/remote administration are the same, both the functions and actors
+are entirely independent.
+<P>
+<H2><A NAME="ss4.19">4.19 How messages are stored in the archive.</A>
+</H2>
+
+<P>The structure of the ezmlm list archive is described in the <a href="ezmlm.5.html">ezmlm(5)</a> manual
+page.
+Basically, the message is stored in <B>DIR/archive/n/m</B>,
+where ``n'' is the message number divided by 100 and ``m'' the
+remainder (2 digits). The first message is stored in <B>DIR/archive/0/01</B>.
+<P>
+<H2><A NAME="ss4.20">4.20 How the message index works.</A>
+</H2>
+
+<P>The <a href="ezmlm-idx.1.html">ezmlm-idx(1)</a> adds the option (default) of a message index to ezmlm.
+The ``From:'' line, the subject,
+the author's E-mail address and name
+and the time of receipt are logged for each message as it is received. The
+subject is ``normalized'' by concatenating split lines and removing
+reply-indicators such as ``Re:''. A hash of the normalized subject with all
+white space removed is also stored.
+The hash for any message
+within a thread is almost always the same and is used together with the order
+of receipt to connect a set of messages into a ``thread''. A hash is needed
+due to the inconsistent handling by MUAs of white space in rfc2047-encoded
+subject headers.
+<P>The message index is stored as <B>DIR/archive/n/index</B>,
+where ``n'' is the message
+number mod 100.
+Thus, the directory <B>DIR/archive/52/</B> stores messages 5200
+through 5299 and the file ``index'' which contains the index for those
+messages.
+<P>The message index can be retrieved with the -index command (see
+<a href="ezmlm-get.1.html">ezmlm-get(1)</a>). You can also retrieve a range of messages, a specific thread,
+or generate a message digest (see <a href="ezmlm-get.1.html">ezmlm-get(1)</a>). Each of these commands can
+be disabled or restricted as desired by the list owner.
+<P>The <a href="ezmlm-idx.1.html">ezmlm-idx(1)</a> can be used at any time to either
+reconstruct an existing index or create one an index for an existing message
+archive. 
+without one.
+<P>
+<H2><A NAME="ss4.21">4.21 How threading works.</A>
+</H2>
+
+<P>A ezmlm thread is just a message number-ordered set of messages with
+identical ``normalized'' subject entries. This is a very reliable
+method for threading messages. It does not rely on
+any variably present ``In-Reply-To:'' or ``References:'' headers. If the
+subject changes, the continuation becomes a separate thread very close
+to the original thread in a digest. ezmlm uses this mechanism to return
+message sets threaded and with a thread and author index, unless
+specifically told not to do so with the ``n'' format specifier. Naturally,
+lists set up without a message index (using the ezmlm-make ``-I'' switch)
+do not maintain thread information.
+<P>
+<H2><A NAME="how_digests"></A> <A NAME="ss4.22">4.22 How digests work.</A>
+</H2>
+
+<P>A ``digest'' is just an ordered collection of messages from a list, usually
+sent out regularly depending on the time and traffic volume since the last
+digest. Digest subscribers thus can read messages as ``threads'' once daily,
+rather than receiving a constant trickle of messages.
+<P>As a major change in ezmlm-idx-0.30, the digest is no longer a totally separate
+ezmlm-list, but a part of the main list. This has security advantages,
+makes setup and administration easier, saves space, and allows a consistent
+way for subscribers of both ``list'' and ``list-digest''
+to retrieve missed messages from a single archive.
+<P>The digest of the list ``list'' is always called ``list-digest''. To set up
+a list with a digest, simply use the <a href="ezmlm-make.1.html">ezmlm-make(1)</a> ``-d'' switch. You subscribe
+to and unsubscribe from a digest the same way as for the main list, except that
+the request is sent to e.g. <CODE>list-digest-subscribe@host</CODE> rather than
+to <CODE>list-subscribe@host</CODE>.
+<P>Any option such as remote admin or subscription moderation that is active for
+the list applies also to the digest list. Any restrictions in posts or
+archive retrieval set up for the list, automatically accept both subscribers of
+the main list and of the digest list.
+<P>The changes in ezmlm-idx&gt;=0.30 allow all programs to service both list and
+list-digest functions.
+All digest-specific files are stored in <B>DIR/digest/</B>.
+Digest list subscriber addresses in <B>DIR/digest/subscribers/</B>
+and digest list
+bounce information in <B>DIR/digest/bounce/</B>. Text files are shared between
+list and digest. To get the local part of the list or list-digest name in a
+context sensitive manner, use ``&lt;#l#&gt;'' (lower case ``L'')
+in the text file.
+<P>In order to generate digest, the list needs to be archived and
+indexed (both default).
+You can retrieve sets of messages
+from the message archive. Such sets are always returned to the SENDER of
+the request. ``Digests'' are a special form of such a set/request. First,
+there are no restrictions on the number of messages that can be in a digest
+(which is balanced by the requirement for a ``digest code'' that needs to be
+specified in order to create a digest based on a mailed request).
+Second, special files (<B>DIR/digissue</B>
+and <B>DIR/dignum</B>) keep track of the digest issue and the message number,
+amount, and time when the last digest was created.
+Thus, the system is adapted to make it easy to create
+the regular collections of messages commonly referred to as ``digests''.
+<P>Digest can be generated in several different ways:
+<DL>
+<DT><B>Command line</B><DD><P>ezmlm-get can be invoked on the command line, or via a script from e.g.
+<a href="crond.8.html">crond(8)</a>:
+<BLOCKQUOTE><CODE>
+<PRE>
+        % ezmlm-get DIR
+</PRE>
+</CODE></BLOCKQUOTE>
+
+If for some reason the digest should be disseminated via a separate list,
+the digest can be
+redirected to a ``target address'' with the <a href="ezmlm-get.1.html">ezmlm-get(1)</a> ``-t'' switch. This
+may be useful if a non-standard digest list name is required. In this case,
+the list disseminating the digest
+must be set up as a sublist of the main list (see
+<A HREF="#how_sublist">How sublists work</A>).
+<P>
+<DT><B>from <B>DIR/editor</B></B><DD><P>This is the default and does not require and additional setup. It works well
+with most lists. The only possible advantage is for very low traffic lists
+and for lists where it is important that a digest be sent out at a specific
+time (as <B>DIR/editor</B> digests
+are triggered only when messages are received).
+<P>In <B>DIR/editor</B>,
+<a href="ezmlm-get.1.html">ezmlm-get(1)</a> needs to be combined with <a href="ezmlm-tstdig.1.html">ezmlm-tstdig(1)</a> so that digests
+are generated only if certain criteria are met (in this case, more than
+30 messages, 64 kbytes of message body or 48 hours since the latest
+digest). Add these lines after the ezmlm-send line in <B>DIR/editor</B>:
+<BLOCKQUOTE><CODE>
+<PRE>
+        |/usr/local/bin/ezmlm/ezmlm-tstdig -t48 -m30 -k64 DIR || exit 99
+        |/usr/local/bin/ezmlm/ezmlm-get diglist@host DIR || exit 0
+</PRE>
+</CODE></BLOCKQUOTE>
+
+To set this up automatically when you create the list:
+<BLOCKQUOTE><CODE>
+<PRE>
+        % ezmlm-make -d DIR dot local host [code]
+</PRE>
+</CODE></BLOCKQUOTE>
+
+Again, the <a href="ezmlm-get.1.html">ezmlm-get(1)</a> ``-t'' switch can be used for non-standard arrangements
+to redirect the digest.
+The <a href="ezmlm-make.1.html">ezmlm-make(1)</a> ``-4'' switch can be used to
+specify alternative <a href="ezmlm-tstdig.1.html">ezmlm-tstdig(1)</a> parameters.
+<DT><B>from <B>DIR/manager</B></B><DD><P>This is useful only if you want digests at specific times, and you
+do not have access to <a href="crond.8.html">crond(8)</a> on the list host.
+<a href="ezmlm-get.1.html">ezmlm-get(1)</a> is in it's normal place in <B>DIR/manager</B>
+before <a href="ezmlm-manage.1.html">ezmlm-manage(1)</a>, but
+a digest code is specified in the <a href="ezmlm-get.1.html">ezmlm-get(1)</a> command line. To trigger
+digests requires a regular trigger messages generated from e.g. <a href="crond.8.html">crond(8)</a>
+(see below), but this can be done from _any_ host, not only the list host.
+<a href="ezmlm-make.1.html">ezmlm-make(1)</a> sets up <a href="ezmlm-get.1.html">ezmlm-get(1)</a> this way if a digest ``code'' is
+given as the 5th <a href="ezmlm-make.1.html">ezmlm-make(1)</a> command line argument. However, you need to
+set up the trigger messages separately (see below):
+<BLOCKQUOTE><CODE>
+<PRE>
+        % ezmlm-make DIR dot local host code
+</PRE>
+</CODE></BLOCKQUOTE>
+
+To also test for message volume with this setup, generate trigger messages
+with the granularity you'd like, and add a <a href="ezmlm-tstdig.1.html">ezmlm-tstdig(1)</a> line to
+<B>DIR/manager</B>. E.g., use a trigger message every 3 hours and the following
+<a href="ezmlm-tstdig.1.html">ezmlm-tstdig(1)</a> line before <a href="ezmlm-get.1.html">ezmlm-get(1)</a>:
+<BLOCKQUOTE><CODE>
+<PRE>
+        |/usr/local/bin/ezmlm/ezmlm-tstdig -t24 -m30 -k64 DIR || exit 99
+</PRE>
+</CODE></BLOCKQUOTE>
+
+In general, a cron-triggered digest is preferred for very large lists
+and for lists with very low traffic.
+Again, the <a href="ezmlm-get.1.html">ezmlm-get(1)</a> ``-t'' switch can be used for non-standard arrangements
+to redirect the digest.
+For most lists, the digesting from
+<B>DIR/editor</B> works very well, and does not require any extra setup
+work.
+<DT><B>Combination setups</B><DD><P>The default setup in the <a href="ezmlmrc.5.html">ezmlmrc(5)</a> file included in the distribution
+is the <B>DIR/editor</B> triggered setup described above.
+If you in addition use <a href="ezmlm-cron.1.html">ezmlm-cron(1)</a> or <a href="crond.8.html">crond(8)</a> directly to generate trigger
+messages to <CODE>list-dig.code@host</CODE>, you can get regular digests (via
+the trigger messages and <B>DIR/manager</B>),
+with extra digest sent when traffic
+is unusually high (via the ezmlm-tstdig/ezmlm-get limits set in
+<B>DIR/editor</B>).
+This works best when the time argument on the <a href="ezmlm-tstdig.1.html">ezmlm-tstdig(1)</a> command line
+is the same as the trigger message interval, and the other <a href="ezmlm-tstdig.1.html">ezmlm-tstdig(1)</a>
+parameters are set so that they are only rarely exceeded within the normal
+digest interval.
+</DL>
+<P>
+<H2><A NAME="ss4.23">4.23 How ezmlm-tstdig works.</A>
+</H2>
+
+<P><a href="ezmlm-tstdig.1.html">ezmlm-tstdig(1)</a> looks at <B>DIR/num</B> and <B>DIR/dignum</B>
+to determine how many
+messages and how much traffic (in terms of bytes of message body) has arrived 
+to the list since the latest
+digest. It also determines how much time has passed since the last digest
+was generated. If any of the
+criteria specified by command line switches exists, <a href="ezmlm-tstdig.1.html">ezmlm-tstdig(1)</a> exits 0,
+causing the invocation of the next line in the .qmail file. If not,
+<a href="ezmlm-tstdig.1.html">ezmlm-tstdig(1)</a> exits 99 causing qmail to skip the rest of the .qmail
+file. <a href="ezmlm-tstdig.1.html">ezmlm-tstdig(1)</a> looks at LOCAL to determine if
+it is invoked in the command line, in <B>DIR/editor</B>,
+or in <B>DIR/manager</B>. In
+the latter two cases, <a href="ezmlm-tstdig.1.html">ezmlm-tstdig(1)</a> verifies that the list local address
+is correct. If invoked in <B>DIR/manager</B>, <a href="ezmlm-tstdig.1.html">ezmlm-tstdig(1)</a> exits 0 for all
+action requests except <CODE>list-dig</CODE>,
+so that is does not interfere with the
+normal functions of <a href="ezmlm-get.1.html">ezmlm-get(1)</a> and <a href="ezmlm-manage.1.html">ezmlm-manage(1)</a>. <a href="ezmlm-tstdig.1.html">ezmlm-tstdig(1)</a> uses
+<B>DIR/tstdig</B> as a flag to avoid problems caused by starting
+the program when another copy is already running.
+<P><a href="ezmlm-make.1.html">ezmlm-make(1)</a> automatically configures <a href="ezmlm-tstdig.1.html">ezmlm-tstdig(1)</a> with the
+parameters ``-t48 -m30 -k64'', which can be overridden with the ``-3'' switch.
+<P>
+<H2><A NAME="how_sublist"></A> <A NAME="ss4.24">4.24 How sublists work.</A>
+</H2>
+
+<P>ezmlm uses the concept of sublists.
+Sublists are regular ezmlm lists, except that
+they only accept messages from their parent list, which is 
+placed in the file <B>DIR/sublist</B>. 
+<P>sublists are used to split the load of a large mailing list among several
+hosts. All you need to do to set up a local sublist of e.g.
+the <CODE>qmail@list.cr.yp.to</CODE> list is to create a ezmlm list,
+and put ``qmail@list.cr.yp.to'' into <B>DIR/sublist</B> of you list,
+and subscribe the sublist to the main qmail list. Now anyone can subscribe
+to your local list which handles its own bounces, subscribe requests, etc.
+The load on the main list is only the single message to your local list.
+<P>Sublists will not add their own mailing list header and
+they will not add a subject prefix. Normally, sublists will use their own
+message number, rather than that used by the main list.
+With ezmlm-idx&gt;=0.23, sublists that are not archived and not indexed, will
+instead use the main list message number. This way, bounce messages from
+the sublist can refer the subscriber to the main list archive. This is not
+done for indexed/archived sublists for security reasons (an attacker could
+overwrite messages in the sublist archive).
+<P>With ezmlm-idx&gt;=0.31, there is support for using ezmlm as a sublist of
+a mailing list run by another mailing list manager. To set this up, set up
+a normal ezmlm sublist, then edit <B>DIR/editor</B> so that the
+<EM>ezmlm-send</EM> line contains the command line
+option ``<B>-h</B> <EM>X-Listprocessor-Version:</EM>'' (before
+<B>DIR</B>). As the header text, you need to use a header that the
+main list manager adds to messages. Now your sublist will accept only messages
+from the main list requiring that they come from that list <EM>and</EM>
+contain the header specified.
+<P>ezmlm-idx&gt;=0.313 also has added protection against
+the malicious subscription of the
+ezmlm list to mailing lists run by other list managers. If the
+<a href="ezmlm-reject.1.html">ezmlm-reject(1)</a> line in
+<B>DIR/editor</B> has ``-h'' and ``<B>DIR</B>''
+on it, <a href="ezmlm-reject.1.html">ezmlm-reject(1)</a> will read <B>DIR/headerreject</B> and reject messages
+that have any header specified in that file. See the <a href="ezmlm-reject.1.html">ezmlm-reject(1)</a> man
+page for suitable headers.
+<P>
+<H2><A NAME="ss4.25">4.25 How sublisting can be made transparent to the user.</A>
+</H2>
+
+<P>Often you create a local sublist of a list that you do not control. Local
+users know to subscribe to your local list. However, occasionally, you want
+to run your own list as a main list and a series of sublists per
+geographic site, or
+split onto several hosts if the list is too large to be handled by a single
+computer. You
+may also want to split the load of a ``well known'' list host that is getting
+overwhelmed with traffic. ezmlm supports sublists, but here the fact that 
+the user has to interact with the correct sublist is a problem. What if
+the user doesn't remember which sublist s/he is subscribed to? What if
+you change the name of a sublist host or move a sublist to a different host?
+<P>ezmlm-idx&amp;-0.32 adds <a href="ezmlm-split.1.html">ezmlm-split(1)</a>, which allows sublisting transparent
+to the user. This program is invoked before <a href="ezmlm-manage.1.html">ezmlm-manage(1)</a> in
+<B>DIR/manager</B>. If it detects a <CODE>subscribe</CODE> or <CODE>unsubscribe</CODE>
+command, it will forward the command to the appropriate sublist based
+on a ``split file'' <B>DIR/split</B>. This file contains entries, one per
+line, of the format:
+<BLOCKQUOTE><CODE>
+<PRE>
+        domain:lo:hi:sublistname@sublisthost
+        edu:::othersub@otherhost
+        :1:26:third@thirdhost
+</PRE>
+</CODE></BLOCKQUOTE>
+
+For each address, a hash in the range 0-52 is calculated. The ``domain'' is
+the last two parts of the host name, reversed. Thus, for <CODE>id.wustl.edu</CODE>
+it would be ``edu.wustl''. The domain is considered to match if the characters
+in the split file match. It is advisable to use only the last part of the
+domain for compatibility with the SQL version
+version  (see section 
+<A HREF="FAQ-5.html#sql">ezmlm support for SQL datbases</A>).
+<P>Thus, any address <CODE>*@*.domain</CODE> with a hash between ``lo'' and ``hi''
+inclusive
+would match the first line and be forwarded to <CODE>sublistname@sublisthost</CODE>.
+<CODE>*@*.edu</CODE> (independent of hash)
+would match the second line and be forwarded to
+<CODE>othersub@otherhost</CODE>. Of remaining requests, a request for any
+target address with a hash between 1 and 26 would be forwarded to
+the sublist <CODE>third@thirdhost</CODE>. Remaining requests would be passed
+on to the local list.
+<P>The domain is useful for ``geographic'' splitting, and the hash for load
+splitting (within a domain). The user interacts only with the main list,
+and does not need to know from which sublist s/he is serviced.
+<P>ezmlm-idx sublists use the message number of the main list message if they
+are not indexed. This allows sublists to in bounce messages refer the
+subscriber to the main list archive. Use <a href="ezmlm-make.1.html">ezmlm-make(1)</a> in conjunction
+with <a href="ezmlmsubrc.5.html">ezmlmsubrc(5)</a> to set up the sublists. See man pages for further details.
+<P>Since the addresses are stored locally, the system is very fast and
+robust, but it is difficult to add new sublists. <a href="ezmlm-split.1.html">ezmlm-split(1)</a> -D supports
+parsing addresses on stdin and splitting them to stdout (see man page). Thus,
+if you divide the domain of some sublist(s) onto a net set of sublists,
+you can use <a href="ezmlm-list.1.html">ezmlm-list(1)</a> to collect the addresses, ezmlm-split -D with the
+new split file to split them, then after clearing the local subscriber
+databases use <a href="ezmlm-sub.1.html">ezmlm-sub(1)</a> to add the correct addresses to each new sublist.
+The section on SQL support describes an alternative way of managing
+sublists (see section 
+<A HREF="FAQ-5.html#sql">ezmlm support for SQL datbases</A>).
+<P>
+<H2><A NAME="ss4.26">4.26 How to service commands in the subject line.</A>
+</H2>
+
+<P>Rfc2142 (standards track) says that for each mailing list <CODE>list@host</CODE>,
+there MUST be an administrative address <CODE>list-request@host</CODE>. This
+is not the default for ezmlm, but can be added with
+<a href="ezmlm-make.1.html">ezmlm-make(1)</a> ``-q'', which adds a <a href="ezmlm-request.1.html">ezmlm-request(1)</a> line before the
+<a href="ezmlm-manage.1.html">ezmlm-manage(1)</a> line in <B>DIR/manager</B>. This address is used to
+manage commands in the ``Subject:'' line, by translating them into
+appropriate ezmlm command messages.
+<P>When migrating from other mailing list managers which
+use this method to issue list commands, configuring ezmlm to respond to such
+commands may be useful. In addition, some software
+manufacturers sell MUAs and mail gateways that are unable to correctly
+transport rfc822-compliant Internet mail with certain characters in the
+local part of the address.
+<P><a href="ezmlm-request.1.html">ezmlm-request(1)</a> services the <CODE>list-request@host</CODE> address per
+rfc2142 (standards track). It is usually invoked in <B>DIR/manager</B>
+before <a href="ezmlm-get.1.html">ezmlm-get(1)</a> and
+<a href="ezmlm-manage.1.html">ezmlm-manage(1)</a>. It ignores all requests that are not for the list-request
+address. For requests to the <CODE>list-request@host</CODE> address,
+<a href="ezmlm-request.1.html">ezmlm-request(1)</a> parses
+the ``Subject:'' line. If a ezmlm command address starting with the contents
+of <B>DIR/outlocal</B>
+(e.g. <CODE>list-get45</CODE>) is on the command line,
+<a href="ezmlm-request.1.html">ezmlm-request(1)</a> generates the
+corresponding full ezmlm request message. If the subject does not start with
+the contents of <B>DIR/outlocal</B>, <a href="ezmlm-request.1.html">ezmlm-request(1)</a> prefixes the line
+with the contents of <B>DIR/outlocal</B>, thereby
+building a complete ezmlm command. If a host name is specified, it must
+match the contents of <B>DIR/outhost</B>, i.e. <a href="ezmlm-request.1.html">ezmlm-request(1)</a> in this
+function will only generate command messages for the local list.
+<P>Thus, a subject of ``subscribe'' to <CODE>list-request@host</CODE>
+will be auto-magically
+rewritten as a message to <CODE>list-subscribe-userlocal=userhost@host</CODE>.
+Similarly, any ezmlm command
+or ``Reply-To:'' address can be pasted into the subject field and sent to
+<CODE>list-request@host</CODE>.
+<a href="ezmlm-request.1.html">ezmlm-request(1)</a> does not validate the command name, but
+invalid commands result in a ``help'' message in reply via <a href="ezmlm-manage.1.html">ezmlm-manage(1)</a>. This
+allows <a href="ezmlm-request.1.html">ezmlm-request(1)</a> to also service custom commands,
+like <CODE>list-faq@host</CODE> that you may have created for your list.
+<P>If the ``Subject:'' is empty or does not start with a letter, <a href="ezmlm-request.1.html">ezmlm-request(1)</a>
+will attempt to interpret the first message body line that starts with a letter
+in the first position.
+<P>When <a href="ezmlm-request.1.html">ezmlm-request(1)</a> has successfully processed a ''request'' command,
+it exits 99 to skip the rest of <B>DIR/manager</B>.
+<P>To set up a list to include ezmlm-request processing, use the 
+<a href="ezmlm-make.1.html">ezmlm-make(1)</a> ``-q'' switch. The default is to not do this.
+<P>
+<H2><A NAME="ss4.27">4.27 How to support alternative command names.</A>
+</H2>
+
+<P>ezmlm-idx&gt;=0.23 allows alternate names for all user commands. This can be
+used to e.g. make a message to <CODE>list-remove@host</CODE> to result in
+an ``unsubscribe'' action. This may help migration from other mailing list
+managers and in non-English environments. The use of aliases allows ezmlm
+to respond to new command names, while always responding correctly to the 
+standard commands. If <a href="ezmlm-request.1.html">ezmlm-request(1)</a> is used it will automatically
+be able to deal with any commands you set up for the list, within ezmlm or as
+separate programs.
+See 
+<A HREF="FAQ-19.html#language">Multiple language support</A>
+on how to set up command aliases.
+<P>
+<H2><A NAME="add_command"></A> <A NAME="ss4.28">4.28 How to add your own commands.</A>
+</H2>
+
+<P>The qmail/ezmlm mechanism makes it very easy to add your own commands.
+You can add them to <B>DIR/manager</B>, but this requires great care
+in terms of ordering and exit codes. Easier is to set them up separately
+with a <B>.qmail-list-command</B> file.
+<P>Let's assume you want to allow anyone to determine how many subscribers
+are subscribed to your list with the command <CODE>list-count@host</CODE>.
+Just create a program to do the work:
+<BLOCKQUOTE><CODE>
+<PRE>
+        #!/bin/sh
+        DTLINE='Delivered-To: list-count@host processor'
+        grep "$DTLINE" > /dev/null &amp;&amp;
+                { echo "This message is looping"; exit 100; }
+        {
+          echo "$DTLINE"
+          cat &lt;&lt;EOF
+          From: list-help@host
+          To: $SENDER
+          Subject: list@host subscriber count
+
+          Current number of subscribers:
+          EOF
+          ezmlm-list ~/DIR | wc -l
+        } | /var/qmail/qmail-inject -f list-return- "$SENDER"
+        exit 0
+</PRE>
+</CODE></BLOCKQUOTE>
+
+Then, create <B>DIR/count</B> containing ``|/path/program'' and
+then do ``ln -sf DIR/count ~/.qmail-list-count''. Now, the command
+will pass the message to ``program''. The first thing ``program'' looks
+for is its delivered-to line to detect looping. If not found, it goes on
+to print this header, followed by some minimal text and the subscriber
+number. This can of course be made prettier with ezmlm-list error checking,
+and maybe in perl, but shows how easy it is to extend ezmlm. All thanks
+to the DJB/qmail delivery mechanism.
+<P>
+<H2><A NAME="subscriber_list"></A> <A NAME="ss4.29">4.29 How remote administrators can retrieve a subscriber list</A>
+</H2>
+
+<P>A user with shell access can always manipulate subscriber lists with
+<a href="ezmlm-sub.1.html">ezmlm-sub(1)</a>, <a href="ezmlm-unsub.1.html">ezmlm-unsub(1)</a>, and <a href="ezmlm-list.1.html">ezmlm-list(1)</a> for the lists s/he owns.
+<P>Sometimes a remote administrator requires a list of subscriber E-mail
+addresses. At the same time, the list should be kept out of the hands of
+spammers and all unauthorized entities. By default, ezmlm does not allow
+remote subscriber list retrieval.
+You can enable the ``-list'' command for remote
+retrieval of a subscriber list by using the <a href="ezmlm-make.1.html">ezmlm-make(1)</a> ``-l'' switch or
+by adding the ``-l'' switch to the <a href="ezmlm-manage.1.html">ezmlm-manage(1)</a> line in DIR/manager. With
+this switch, ezmlm will permit retrieval of a subscriber list, but only to 
+remote administrators.
+Subscribers cannot get the list membership, and any outsider
+would have to be able to read a remote administrator's mail to get the list.
+<EM>Note: This option is not functional unless the list is configured
+for remote administration, i.e. the <a href="ezmlm-make.1.html">ezmlm-make(1)</a> ``-rl'' switches need to
+both be used.</EM>
+<P>The list returned is unsorted for efficiency reasons. You can easily sort it
+or use your mail reader to find a specific entry. The number of subscribers
+is shown at the bottom of the list. To get the number of subscribers from
+the command line, use:
+<BLOCKQUOTE><CODE>
+<PRE>
+        % ezmlm-list DIR | wc -l
+</PRE>
+</CODE></BLOCKQUOTE>
+<P>
+<H2><A NAME="subscription_log"></A> <A NAME="ss4.30">4.30 How remote administrators can search the subscription log</A>
+</H2>
+
+<P>The same conditions that enable remote administrators to retrieve a
+subscriber list (see 
+<A HREF="#subscriber_list">subscriber_list</A>
+) also enable the remote admin
+to retrieve the subscription log, i.e. the log of changes made to the subscriber
+list. The command is <CODE>list-log@host</CODE>. The entries are of the
+form ``date timestamp dir event address comment''. ``dir'' is ``+'' for addition
+of an address, ``-'' for removal, ``event'' is empty for
+normal (un)subscribe ``manual'' for changes made with ezmlm-(un)sub,
+and ``probe'' for removals via bounce handling. ``address'' is the subscription
+address, and ``comment'' is empty or the subscribers ``From:'' line. The
+log can be used to look at recent additions/removals and to try to track down
+a subscriber address from e.g. the name on the ``From:'' line. The log is
+written on a best-effort basis. In contrast to the subscriber database,
+entries in the log may be lost at a system crash.
+<P>The remote administrator can do a case-insensitive search through the log with
+the command <CODE>list-log.xxx@host</CODE>, where ``xxx'' is any sequence of
+letters/numbers that must occur on a line in order for that line to be
+included in the reply. A ``_'' is a wild card and should be used for special
+characters as well. Thus, to search for any entry with a host
+name of <CODE>host*</CODE> mail <CODE>list-log._host</CODE> and to find entries
+for ``Keith John...'' etc, use <CODE>list-log.keith_john</CODE>.
+<P>For SQL-enabled lists, this command searches the ``list_slog'' table.
+<P>
+<H2><A NAME="how_edit"></A> <A NAME="ss4.31">4.31 How text file editing works.</A>
+</H2>
+
+<P>If a list is set up with the <a href="ezmlm-make.1.html">ezmlm-make(1)</a> ``-n'' switch,
+or if the ``-e'' switch is added to the
+<a href="ezmlm-manage.1.html">ezmlm-manage(1)</a> line in <B>DIR/manager</B>, ezmlm allows remote administrators
+to edit the text files that make up most of the ezmlm responses.
+Of course, this will work only
+if remote administration is enabled for the list. Replies are sent only if the
+target address is a remote administrator.
+Thus, ezmlm does not rely on SENDER (easily
+forged) but on the notion that only the recipient receives the message.
+This is a reasonable
+assumption for remote administrators that receive mail on the local system.
+<P>With this switch, ezmlm replies to the <CODE>-edit</CODE> command with a list of the
+files in <B>DIR/text/</B>.
+Only files where editing seems reasonable are included in
+the list. The remote administrator can edit any file in <B>DIR/text/</B>
+by sending e-mail containing the new text to
+<CODE>-edit.file</CODE> where ``<CODE>file</CODE>''
+is the name of the file replaced (edited). The file must exist and
+the name consist of only lower case letters and '-'. Any '-' (hyphen)
+must be
+substituted by a '_' (underscore). For remote administrator convenience, the
+substitution has been made in the list of files sent in reply to the
+<CODE>-edit</CODE> command.
+<P>In reply to this command, ezmlm sends a message with the file and editing
+instructions. A ``cookie'' based on the date, file name, and contents of the
+file is added to the ``Reply-To:'' address. The cookie becomes invalid as
+soon as the file has been changed, or after 27 hours, whichever is shorter.
+Also, the cookie cannot be used to edit any other file, even if the other
+file has exactly the same contents. If you sent an edit request, and decide
+not to edit the file, you can simply delete the message.
+<P>To apply standard changes to all your text files it is easier
+to edit <B>~/.ezmlmrc</B>. To reset the
+list's text files back to their default contents (as specified by
+<B><a href="ezmlmrc.5.html">ezmlmrc(5)</a></B>),
+use the <a href="ezmlm-make.1.html">ezmlm-make(1)</a>
+``-e'' switch together with any other switches used to set up the list.
+<P>
+<H2><A NAME="ss4.32">4.32 How subject line prefixes work.</A>
+</H2>
+
+<P>First of all, it is against a number of RFCs to modify the ``Subject:'' header
+of messages. However, it is frequently requested by users who have seen it
+on other list managers. Second, it is many times worse to have a prefix that
+changes from message to message, such as a prefix with the message number.
+However, a number of lists, especially in Japan, use this feature and in its
+absence these lists might be unable to take advantage of ezmlm. Thus, while
+we recommend against using a prefix, ezmlm-idx supports it.
+<P>To add a subject prefix, just put the text into <B>DIR/prefix</B>. The only
+format that makes any sense is ``list:'' or ``(list)'' or such.
+<P>The message number prefix is activated by putting e.g. ``(list-#)'' into
+<B>DIR/prefix</B>. ``#'' is replaced by the message number. ezmlm refuses
+to make more drastic changes in the subject of a message. As a consequence,
+the message number prefix is added only when the subject does not already
+contain a prefix. Thus, replies will have the message number of the original
+message. Doing anything else and still supporting rfc2047-encoded
+subjects in the archive threading (much more important) would require decoding
+the subject, removing/editing the prefix, and re-encoding the subject. This
+is far too invasive.
+<P>The entire thread can always be retrieved by sending a message to
+<CODE>list-thread-x</CODE> where ``x'' is the message number in the prefix of
+any message in the thread.
+<P>
+<H2><A NAME="ss4.33">4.33 How bounces are handled.</A>
+</H2>
+
+<P>Ezmlm messages are sent with an envelope sender (``Return-Path'')
+that directs bounces to <B>DIR/bouncer</B>
+and also via ``VERP'' contain information about the intended recipient. Thus,
+programs run from <B>DIR/bouncer</B> know the subscriber for whom the
+message bounced. <a href="ezmlm-weed.1.html">ezmlm-weed(1)</a> is used to weed out delivery delay
+notification and other junk.
+For others <a href="ezmlm-return.1.html">ezmlm-return(1)</a> decides if the address is a subscriber.
+If so, it saves the first bounce message and a list of
+bounced-message numbers. <a href="ezmlm-warn.1.html">ezmlm-warn(1)</a>
+executed from e.g. <B>DIR/editor</B> goes through these bounce files. If it
+finds any that are older than 1,000,000 seconds (about 11.6 days) it sends a
+warning message to the subscriber. If this warning message bounces,
+<a href="ezmlm-return.1.html">ezmlm-return(1)</a> sets up a "warning flag" for the subscriber. If <a href="ezmlm-warn.1.html">ezmlm-warn(1)</a>
+finds a warning flag older than 11.6 days, it sends a "probe" to the subscriber.
+If <a href="ezmlm-return.1.html">ezmlm-return(1)</a> receives a bounced probe, the subscriber is automatically
+unsubscribed.
+<P>The <a href="ezmlm-warn.1.html">ezmlm-warn(1)</a> ``-t'' switch can be used to change the time-out (in days).
+The <a href="ezmlm-warn.1.html">ezmlm-warn(1)</a> ``-d'' switch causes processing of ``list-digest'' bounces
+rather than ``list'' bounces. <a href="ezmlm-weed.1.html">ezmlm-weed(1)</a> and <a href="ezmlm-return.1.html">ezmlm-return(1)</a> can handle
+bounces for either list.
+<P><a href="ezmlm-warn.1.html">ezmlm-warn(1)</a> also removes any files in the bounce directory that are older
+than 3 times the bounce time-out.
+<P><a href="ezmlm-warn.1.html">ezmlm-warn(1)</a> is normally run from <B>DIR/editor</B>. This can take quite
+a lot of resources, if there are a large number of bouncing
+addresses (&gt;&gt;1000) on a busy list, since by default all bounces
+are stored in a single directory and <a href="ezmlm-warn.1.html">ezmlm-warn(1)</a> examines all of them
+with each invocation.
+ezmlm-idx-&gt;=0.32 changes bounce
+handling to improve performance for large lists. Bounces are stored in
+subdirectories of <B>DIR/bounce/d/</B>, one per 10,000 seconds. The
+corresponding address hashes are stored in 16 subdirectories of
+<B>DIR/bounce/h/</B>. Instead of looking at all bounces, <a href="ezmlm-warn.1.html">ezmlm-warn(1)</a>
+processes only the bounces in <B>DIR/bounce/d/</B> subdirectories that
+are ``due''. In addition, <a href="ezmlm-warn.1.html">ezmlm-warn(1)</a> uses <B>DIR/bounce/lastd</B>
+as a simple lockout, to assure that it will do work only at most once every
+5.5 hours. (Times are scaled to the <a href="ezmlm-warn.1.html">ezmlm-warn(1)</a> ``-t'' argument if used.)
+Together, these changes assure that bounce handling will scale
+well in the default configuration, even for very large lists.
+<P>
+<H2><A NAME="ss4.34">4.34 How the info and faq commands work.</A>
+</H2>
+
+<P>The <EM>-info</EM> and <EM>-faq</EM> commands simply reply with the contents
+of the <B>DIR/text/info</B> and <B>DIR/text/faq</B> files. Edit these
+files directly or remotely
+(see 
+<A HREF="FAQ-21.html#remote_edit">How to remotely edit dir/text files</A>).
+The <B>DIR/text/info</B> file should start
+with a single line that is meaningful as is and describes the list. This
+will be used in later versions to allow automatic assembly of the
+global ``list-of-lists'' (see 
+<A HREF="FAQ-15.html#ezdomo">How to set up a global list address like majordomo@host or listserv@host</A>).  
+<P>
+<H2><A NAME="ss4.35">4.35 How the global ezmlm list address works.</A>
+</H2>
+
+<P>Sometimes, it is desirable to have a host- or user-wide address that
+can list available mailing lists.
+<P><a href="ezmlm-request.1.html">ezmlm-request(1)</a> can be used to set up a global address, such as
+<CODE>ezmlm@host</CODE> which allows the user to see and interact with a
+number of different mailing lists. This is especially useful when your
+users are used to other mailing list managers,
+such as ``majordomo'' or ``listproc''. <a href="ezmlm-request.1.html">ezmlm-request(1)</a> is set up to
+answer requests to the address (see
+<A HREF="FAQ-15.html#ezdomo">How to set up a global list address like majordomo@host or listserv@host</A>).  
+There, it interprets the first line of the message body as a command. It
+will reply directly to ``lists'' and ``which'' commands. All other commands
+will be used to construct messages to the respective lists. Where other
+mailing list managers use synonyms of ezmlm commands, <a href="ezmlm-request.1.html">ezmlm-request(1)</a>
+recognizes these and translates them to the corresponding ezmlm commands.
+<a href="ezmlm-request.1.html">ezmlm-request(1)</a> will build commands also of unrecognized commands. Thus,
+if you create new commands for a list, <a href="ezmlm-request.1.html">ezmlm-request(1)</a> will automatically
+support them.
+<P>If the user
+does not specify the complete list address, <a href="ezmlm-request.1.html">ezmlm-request(1)</a> will attempt
+to complete the name. See the <a href="ezmlm-reject.1.html">ezmlm-reject(1)</a> man page for more info.
+<P>
+<H2><A NAME="ss4.36">4.36 How ezmlm-cron works.</A>
+</H2>
+
+<P>If you are a user and have <a href="crond.8.html">crond(8)</a> access, if you do not need to get
+digests at specific times, or if you are a system administrator setting
+up lists, there is no reason for you to use <a href="ezmlm-cron.1.html">ezmlm-cron(1)</a>. If you are a
+system administrator not allowing users <a href="crond.8.html">crond(8)</a> access or a user that needs
+digests at specific times, but without <a href="crond.8.html">crond(8)</a> access, read on.
+<P><a href="ezmlm-cron.1.html">ezmlm-cron(1)</a> is a very restrictive interface to <a href="crond.8.html">crond(8)</a>.
+<a href="ezmlm-cron.1.html">ezmlm-cron(1)</a> can be used
+to create digest trigger messages. If a list is set up with a digest
+code (see <a href="ezmlm-make.1.html">ezmlm-make(1)</a> and <a href="ezmlm-get.1.html">ezmlm-get(1)</a>) ezmlm will generate a digest 
+from the list <CODE>joe-sos@host</CODE> sent to
+to subscribers of <CODE>joe-sos-digest@dighost</CODE> when receiving a message
+to <CODE>joe-sos-dig-code@host</CODE> where ``code'' is the
+digest code. <a href="ezmlm-cron.1.html">ezmlm-cron(1)</a> can be 
+used to generate such messages at regular intervals.
+The file <B>ezcronrc</B> is set up by the sysadmin and controls what trigger
+messages specific users may set up via <a href="ezmlm-cron.1.html">ezmlm-cron(1)</a>.
+<P>Usually, the
+ezcronrc of that use will have an entry like ``user:user-:host:10''
+allowing ``user'' to create trigger messages for up to 10 lists
+with names starting with ``user-'' and on the host ``host''.
+<P>To list the ezcronrc line controlling your use of <a href="ezmlm-cron.1.html">ezmlm-cron(1)</a>:
+<BLOCKQUOTE><CODE>
+<PRE>
+        % ezmlm-cron -c
+</PRE>
+</CODE></BLOCKQUOTE>
+
+To list all entries that you've created:
+<BLOCKQUOTE><CODE>
+<PRE>
+        % ezmlm-cron -l
+</PRE>
+</CODE></BLOCKQUOTE>
+
+To add an entry to trigger digests from <CODE>list@host</CODE>
+every morning at 0230:
+<BLOCKQUOTE><CODE>
+<PRE>
+        % ezmlm-cron -t 02:30 -i24 list@host code
+</PRE>
+</CODE></BLOCKQUOTE>
+
+A new entry for the same list overwrites an old entry.
+<P>To delete the entry above:
+<BLOCKQUOTE><CODE>
+<PRE>
+        % ezmlm-cron -d list@host
+</PRE>
+</CODE></BLOCKQUOTE>
+
+or use ezmlm-cron to trigger messages at a different time:
+<BLOCKQUOTE><CODE>
+<PRE>
+        % ezmlm-cron -t 16:16 -i24 list@host code
+</PRE>
+</CODE></BLOCKQUOTE>
+<P>
+<H2><A NAME="ss4.37">4.37 How ezmlm-make works.</A>
+</H2>
+
+<P>ezmlm lists allow almost infinite customization. The component build,
+together with the qmail delivery mechanism makes it possible to
+create any variant of list function imaginable. However, this complexity
+makes it somewhat daunting to the average user wanting to set up a
+mailing list. <a href="ezmlm-make.1.html">ezmlm-make(1)</a> allows automated list setup, while permitting
+a large amount of configurability.
+<P>At first glance, <a href="ezmlm-make.1.html">ezmlm-make(1)</a> has many complicated options. However, these
+can be applied iteratively through the <a href="ezmlm-make.1.html">ezmlm-make(1)</a> edit mechanism. Also,
+they are intended to be relatively complete so that execution of
+<a href="ezmlm-make.1.html">ezmlm-make(1)</a> by e.g. a GUI can be used to safely set up and edit any list.
+<P><a href="ezmlm-make.1.html">ezmlm-make(1)</a> reads its command line arguments and switches, then creates
+the list directory. If the ``-e'' edit or ``-+'' sticky edit switches are
+not specified, <a href="ezmlm-make.1.html">ezmlm-make(1)</a>
+will fail if the directory already exists. The directory argument must
+be an absolute path starting with a slash. The dot-qmail file argument,
+if specified, must also be absolute.
+<P><a href="ezmlm-make.1.html">ezmlm-make(1)</a> next reads <a href="ezmlmrc.5.html">ezmlmrc(5)</a> located in the <B>/etc/</B> directory with
+a default install. If not found, the file in the ezmlm binary directory
+will be used. The second ezmlm-make command line argument specify the
+root name of the .qmail files. If the <a href="ezmlm-make.1.html">ezmlm-make(1)</a> ``-c'' switch is used,
+<a href="ezmlm-make.1.html">ezmlm-make(1)</a> will look in that directory for a <B>.ezmlmrc</B>
+file and use it
+instead. If this file does not exist, <a href="ezmlm-make.1.html">ezmlm-make(1)</a> will print a warning
+and use the previously discussed <a href="ezmlmrc.5.html">ezmlmrc(5)</a> files in the same order.
+You can also
+use ``-C <EM>ezmlmrc.alt</EM>'' to use <EM>ezmlmrc.alt</EM> as the <a href="ezmlmrc.5.html">ezmlmrc(5)</a>
+file. Again, <a href="ezmlm-make.1.html">ezmlm-make(1)</a> will fall back to the others with a warning, if
+the specified <a href="ezmlmrc.5.html">ezmlmrc(5)</a> file is not found.
+<P>When not run in ``-e edit'' or ``-+'' sticky edit modes,
+<a href="ezmlm-make.1.html">ezmlm-make(1)</a> first creates the list directory.
+It also as the last step of its action creates <B>DIR/key</B>
+containing the key used for cookie generation.
+<P>The <a href="ezmlmrc.5.html">ezmlmrc(5)</a> file consists of a number of file names relative to the list
+directory, followed by conditional flags (see <a href="ezmlm-make.1.html">ezmlm-make(1)</a> and
+<a href="ezmlmrc.5.html">ezmlmrc(5)</a> for details). If all the conditional flags (controlled
+by the corresponding command line switches) are true, the lines that
+follow are entered into the named file. There are also tags to erase files.
+Tags in the format &lt;#X#&gt; (where ``X'' is any number,
+except ``1'' and ``2'') are replaced by
+the corresponding <a href="ezmlm-make.1.html">ezmlm-make(1)</a> switch argument. The <a href="ezmlm-make.1.html">ezmlm-make(1)</a>
+command line arguments and the ezmlm binary path can be similarly substituted
+into the text. Thus, <a href="ezmlmrc.5.html">ezmlmrc(5)</a> controls (within reason) the entire operation
+of <a href="ezmlm-make.1.html">ezmlm-make(1)</a>. <a href="ezmlmrc.5.html">ezmlmrc(5)</a> is also set up so that no messages or file
+containing list state information are lost. Therefore, <a href="ezmlm-make.1.html">ezmlm-make(1)</a> can be 
+used to safely edit existing lists. The only caveat is that the list state
+is undefined while editing is in progress. Thus, it is advisable to prevent
+mail delivery by setting the ``sticky'' bit on the user's home directory
+while editing lists.
+<P><a href="ezmlm-make.1.html">ezmlm-make(1)</a> will create the file <B>DIR/config</B>. This files saves all the
+flags that were set at the last execution of ezmlm-make,
+as well as all the switch
+and command line arguments. When editing a list, only ``DIR'' and the
+non-default letter switches need to be specified. Other command line
+arguments and the ``digit switch'' arguments are read from <B>DIR/config</B>.
+To remove a digit switch, simply use it with two single quotes as the
+argument.
+<P>You can also easily determine how a list was set up by looking at
+<B>DIR/config</B>.
+<P>
+<H2><A NAME="what_names"></A> <A NAME="ss4.38">4.38 What names can I use for my lists?</A>
+</H2>
+
+<P>Rather than restrict you to a single E-mail address (<CODE>user@host</CODE>), qmail
+in the default setup gives you control over an infinite number of addresses
+<CODE>user-*@host</CODE>. Of course, you (normally) have no way of controlling
+<CODE>elsewhere@host</CODE> since that could lead to overlap between
+users' ``e-mail address space''. As a consequence, all you mailing lists
+have to be named <CODE>user-xx@host</CODE> where ``user'' is your user name
+and ``xx'' is anything. You cannot create e.g. <CODE>mylist@host</CODE>, only
+<CODE>user-mylist@host</CODE>. To create the list <CODE>user-list@host</CODE> do:
+<BLOCKQUOTE><CODE>
+<PRE>
+        % ezmlm-make ~/list ~/.qmail-list user-list host
+</PRE>
+</CODE></BLOCKQUOTE>
+
+Notice that ``user'' is <B>not</B> part of the
+<B>.qmail</B> file name.
+<P>There are two way to create lists with names not starting with your user name:
+First, qmail can be set up so that you control a virtual domain (see below).
+Second, the system administrator can set up lists with arbitrary names
+within the <B>~alias/</B> directory.
+<P>
+<H2><A NAME="virtual_domain"></A> <A NAME="ss4.39">4.39 Lists in virtual domains</A>
+</H2>
+
+<P>If you use qmail&gt;=1.02 and ezmlm-idx&gt;=0.32, lists under virtual
+domains work just like other lists and require no adjustments. You can
+choose any local name for the list and the <a href="ezmlm-make.1.html">ezmlm-make(1)</a> argument ``local''
+is that name; ``host'' is the name of the virtual domain.
+<P>
+<H2><A NAME="ss4.40">4.40 How do I make customization simple for me/my users?</A>
+</H2>
+
+<P>All non-default switches, <a href="ezmlm-issubn.1.html">ezmlm-issubn(1)</a> setups, etc, can be made
+standard for new lists by customizing the <a href="ezmlm-make.1.html">ezmlm-make(1)</a> configuration
+file named ``<B>ezmlmrc</B>''.
+A default <B><a href="ezmlmrc.5.html">ezmlmrc(5)</a></B> is installed in the ezmlm
+binary directory. If installed, a system-wide customized ezmlmrc
+file in <B>/etc/ezmlmrc</B> (or symlinked from there) overrides this.
+Installing a <B>~/.ezmlmrc</B> file in a
+user <B>dotdir</B> and using the <a href="ezmlm-make.1.html">ezmlm-make(1)</a> ``-c'' switch allows further
+per user customization
+(see 
+<A HREF="FAQ-7.html#make_cust">Customizing ezmlm-make operation</A>).
+<P>
+<HR>
+<A HREF="FAQ-5.html">Next</A>
+<A HREF="FAQ-3.html">Previous</A>
+<A HREF="FAQ.html#toc4">Contents</A>
+</BODY>
+</HTML>

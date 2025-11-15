@@ -1,0 +1,103 @@
+  <TITLE>UNIX man pages : ./ezmlm-receipt.1 ()</TITLE>
+  <hr>
+<PRE>
+
+ezmlm-receipt(1)                                 ezmlm-receipt(1)
+
+<H2>NAME</H2>
+       ezmlm-receipt - handle sublist replies at the main list
+
+<H2>SYNOPSIS</H2>
+       <b>ezmlm-receipt</b> [ <b>-dD</b> ] <i>dir</i>
+
+<H2>DESCRIPTION</H2>
+       <b>ezmlm-receipt</b>  handles mail from sublists of the main list
+       stored in <i>dir</i> and,  if  it  exists,  the  associated  main
+       digest  list.   <b>ezmlm-receipt</b>  is  used for main list with
+       only sublists as subscribers. It is not useful for  normal
+       mailing lists.
+
+       <b>ezmlm-receipt</b>  is normally invoked from a <b>.qmail</b> file.  It
+       reads a mail message from its standard input, and  a  mail
+       envelope  from  the  <b>SENDER</b>,  <b>LOCAL</b>,  and <b>HOST</b> environment
+       variables.
+
+       <b>ezmlm-receipt</b> has two functions. It  takes  the  place  of
+       <b><A HREF="ezmlm-receipt.1.html">ezmlm-receipt(1)</A></b> for main lists that have only sublists as
+       subscribers.  Bounces do not lead to removal of the bounc-
+       ing address.  <b>emzlm-receipt</b> saves the bounce, and logs the
+       event to the  mail  log.   <b>ezmlm-receipt</b>  also  saves  the
+       bounce  to  <i>dir</i><b>/bounce/dnnn.ppp</b>  where <b>nnn</b> is a time stamp
+       and <b>ppp</b> the PID of the process. A maximum  of  50  bounces
+       are  saved.  Further  bounces  are discarded until room is
+       made in the bounce directory by manually  removing  files.
+       If  the  list uses and SQL database, the even is logged to
+       the _mlog table instead,  and  only  if  the  distribution
+       cookie  matches. The bounce is still saved, but only if it
+       contained a matching distribution cookie.
+
+       <b>ezmlm-receipt</b> also handles feedback messages from the sub-
+       list.  These  are used to monitor that the sublist is able
+       to send out messages.  Receipt  of  feedback  messages  is
+       logged  to  the  mail  log.   If  the  list  uses  and SQL
+       database, the even is logged to the _mlog  table  instead,
+       and only if the distribution cookie matches.
+
+<H2>OPTIONS</H2>
+       <b>-d</b>     <b>ezmlm-receipt</b>  will  assume  the  message  is for a
+              digest list.  Normally, <b>ezmlm-receipt</b> will  autode-
+              tect  this  from  the bounce address. Autodetection
+              makes  <b>ezmlm-receipt</b>  less  flexible  and  will  be
+              removed in future versions.
+
+       <b>-D</b>     <b>ezmlm-receipt</b>  will assume that the bounce is for a
+              normal (non-digest) list.  Normally,  <b>ezmlm-receipt</b>
+              will  autodetect  this  from  the  bounce  address.
+              Autodetection makes <b>ezmlm-receipt</b> less flexible and
+              will be removed in future versions.  <b>-D</b> will become
+              the default.
+
+                                                                1
+
+ezmlm-receipt(1)                                 ezmlm-receipt(1)
+
+<H2>ADDRESSES</H2>
+       <b>ezmlm-receipt</b> handles mail sent to any  of  the  following
+       addresses:
+
+       <i>local</i><b>-return-</b>
+              Trash.   A help message or subscription acknowledg-
+              ment bounced.
+
+       <i>local</i><b>-return-</b><i>msg</i><b>-</b><i>box</i><b>=</b><i>domain</i>
+              Distribution bounce.  Message number <i>msg</i>  was  lost
+              on the way to the sublist <i>box</i><b>@</b><i>domain</i>.
+
+       <i>local</i><b>-return-</b><i>msg</i><b>-</b>
+              Pre-VERP  distribution  bounce,  in  QSBMF  format.
+              Message number <i>msg</i> was lost on the way  to  one  or
+              more  sublists; <b>ezmlm-receipt</b> will parse the bounce
+              to figure out the addresses.
+
+       <i>local</i><b>-return-receipt</b>
+              Feedback message  from  a  sublist.   <b>ezmlm-receipt</b>
+              will  figure out message number and sublist address
+              from the envelope sender.
+
+              For all the above addresses if, <i>local</i>  is  followed
+              by  <i>-digest</i>,  messages are assumed to relate to the
+              digest list, and are  stored  in  <i>dir</i><b>/digest/bounce</b>
+              rather than in <i>dir</i> <b>/bounce</b> <b>.</b>
+
+<H2>SEE ALSO</H2>
+       <A HREF="ezmlm-manage.1.html">ezmlm-manage(1)</A>,  <A HREF="ezmlm-make.1.html">ezmlm-make(1)</A>,  <A HREF="ezmlm-return.1.html">ezmlm-return(1)</A>,  <A HREF="ezmlmsend.1.html">ezmlmsend(1)</A>
+       ,  <A HREF="ezmlm-sub.1.html">ezmlm-sub(1)</A>,   <A HREF="ezmlm-unsub.1.html">ezmlm-unsub(1)</A>,   <A HREF="ezmlm-weed.1.html">ezmlm-weed(1)</A>,
+       <A HREF="ezmlm.5.html">ezmlm(5)</A>, <A HREF="qmail-command.8.html">qmail-command(8)</A>
+
+                                                                2
+
+</PRE>
+  <hr>
+  <ADDRESS>
+  © 1994 <A HREF="http://www.ntua.gr/~christia/man-cgi.html">Man-cgi 1.15</A>, Panagiotis Christias &lt;christia@theseas.ntua.gr&gt;
+  </ADDRESS>

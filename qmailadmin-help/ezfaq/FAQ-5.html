@@ -1,0 +1,552 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<HTML>
+<HEAD>
+ <META NAME="GENERATOR" CONTENT="SGML-Tools 1.0.7">
+ <TITLE>EZFAQ 0.32 - ezmlm-idx and ezmlm FAQ: ezmlm support for SQL databases.</TITLE>
+ <LINK HREF="FAQ-6.html" REL=next>
+ <LINK HREF="FAQ-4.html" REL=previous>
+ <LINK HREF="FAQ.html#toc5" REL=contents>
+</HEAD>
+<BODY vlink="#004400" link="#008800" bgcolor="#ffffff" alink="#ff0000"><FONT FACE="helvetica,times,arial">
+<A HREF="FAQ-6.html">Next</A>
+<A HREF="FAQ-4.html">Previous</A>
+<A HREF="FAQ.html#toc5">Contents</A>
+<HR>
+<H2><A NAME="sql"></A> <A NAME="s5">5. ezmlm support for SQL databases.</A></H2>
+
+<P>
+<H2><A NAME="ss5.1">5.1 Why use an SQL database with ezmlm?</A>
+</H2>
+
+<P>MySQL support is experimental. The main advantages are that you are using 
+an address database system that can easily be accessed from any number of
+other programs via ODBC, perl, java, PHP, ... You can easily hook up
+ezmlm with your customer database, etc. An even bigger advantage is
+for use with distributed lists, which can be easily managed, changed, and
+monitored via a central database. ezmlm programs compiled with MySQL
+support (and
+when available also those compiled with support for other SQL servers)
+are entirely backwards compatible. You can mix SQL dbs with normal ezmlm dbs,
+and convert lists between them.
+<P>
+<H2><A NAME="ss5.2">5.2 Why not to use an SQL database with ezmlm.</A>
+</H2>
+
+<P>The main disadvantages of the MySQL version are that you need to be familiar
+with MySQL, the binaries are quite a bit larger,
+and you are trusting your
+addresses to a large database program, rather than a small and easily audited
+set of ezmlm programs. Also, the SQL server becomes a single point of failure.
+<P>MySQL is <EM>very</EM> robust and is used in many mission-critical situations.
+Also, ezmlm with MySQL support continues to rely on
+qmail stability. If connection fails, ezmlm aborts with a temporary error
+causing redelivery at a later time point.
+<P>If you create list clusters with main list and sublists,
+security for normal ezmlm sublists scales well: compromise of one sublist
+may lead to loss of that sublist. Security for the SQL sublists does not scale
+well: compromise of one sublist may lead to the loss of the entire list.
+This is of minimal importance if you want to split the load of a list onto
+a few local hosts (such as when your main list host becomes overloaded due
+to the popularity of your lists). Here, all host are under your control and
+equally secure.
+<P>There are other ways to do this: First, we could send the addresses with
+the message. This would use a single communication channel. I would prefer
+this model with a compressed and PGP-encrypted address block. However, it
+is hard to do within the framework of ezmlm (backwards compatibility) and
+encryption support is made complicated by ITAR. The dual channel
+system has advantages: addresses are harder to capture and logging is more
+reliable. Also, you can easy to tunnel MySQL and SMTP through ssh, if
+you desire encrypted communication.
+<P>In future, QMTP might become more available and able to transfer messages
+with multiple recipient addresses. This would allow outgoing load splitting
+from an ezmlm list host. Our implementation with ezmlm has more overhead,
+with the advantage that it is available now and that it also distributes
+the load of bounce handling.
+<P>Most parts of ezmlm-idx have been thoroughly tested through several versions.
+MySQL support is new for this version of ezmlm-idx. It is not
+as well tested as other parts of ezmlm/idx, it is not as well documented, and
+it may change in the future. This means that you can help to improve it.
+If this ``newness'' bothers you, compile your binaries without MySQL
+support.
+<P>
+<H2><A NAME="ss5.3">5.3 Tables used for (My)SQL support.</A>
+</H2>
+
+<P>The basic philosophy is that the database can be on any host (if you use
+SENDER restrictions, connectivity to the main host is more important than
+to the sublists), and you choose the database and ``table root'' names. The
+default database is ``ezmlm'' and the default table root is ``list''. Each
+list has a separate table root. Any number of lists can share a database.
+<P>The main list address table is named with the table root only, others have
+that name with various suffixes. In the following ``list'' is used as the
+table root.
+<P>
+<H3>Address tables.</H3>
+
+<P>
+<DL>
+<DT><B>list</B><DD><P>List subscriber addresses.
+<DT><B>list_digest</B><DD><P>Digest list subscriber addresses.
+<DT><B>list_allow</B><DD><P>List subscriber alias addresses. Used only if SENDER restrictions are 
+used for the list. This is configured in the default SQL list setup, but
+a local (ezmlm-style non-SQL) database could also be used.
+<DT><B>list_deny</B><DD><P>List deny addresses. This table is created, but the default configuration,
+if it uses the ``deny'' addresses at all, will do so with a local database.
+<DT><B>list_mod</B><DD><P>Moderator addresses. Created for completeness, but not used in the default
+configuration. If moderators are used, the addresses are stored in a
+local database.
+</DL>
+<P>
+<H3>Subscriber log tables.</H3>
+
+<P>For each of the above tables, there is a ``*_slog'' table that contains
+one row per transaction against the corresponding address table. The entries
+contain a time stamp, the subscription address; a direction indicator (``-''
+for removals, ``+'' for additions); a type indicator (blank for
+ezmlm-manage, ``m'' for ``manual'', ``p'' for ``probe, i.e. bounce handling;
+and the subscriber ``From:'' line contents (only additions and only
+when made by ezmlm-manage or by ``<a href="ezmlm-sub.1.html">ezmlm-sub(1)</a> -n'').
+<P>
+<H3>Message logging tables.</H3>
+
+<P>For both the list and the digest list, there are a pair of tables that 
+log messages:
+<P>
+<DL>
+<DT><B>list_cookie</B><DD><P>The main list stores the message number and a pseudo-random cookie
+in this table when it processes the message. The cookie is derived from
+the secret <B>DIR/key</B>, the message sender and the message number. Thus,
+it is non-repeating and virtually impossible to guess beforehand. Sublists
+will check that the cookie sent with the message is the same as the one
+received with the message.
+<P>The digest list is created similarly, except that it is <a href="ezmlm-get.1.html">ezmlm-get(1)</a> that
+originates the message and creates the cookie.
+This is done in ``list_digest_cookie''.
+<P>
+<DT><B>list_mlog</B><DD><P>Both the main list and the sublists make entries in this table. Each entry
+consists of a time stamp, a message number, a list number, and a code. The
+code is 0 for message arrival, 1 for ``finished processing'', 2 for ``receipt
+received'' and -1 for bounce. The lists will refuse to process messages
+that do not have the correct cookie, or if the message already has an entry
+with a code of greater than 0. To inject a message at the sublist, an attacker
+would have to inject a message with the correct code before the list has
+processed the ``real'' message, or subvert the SQL server. In practice, this
+is very hard to do, unless the attacker has broken security at the database
+server or a sublist. This authentication mechanism is intended to make
+it safe to sublist moderated lists. It also blocks any message duplication
+between main list and sublist from being propagated to the subscribers.
+<P>The codes 2 for ``receipt received'' and -1 for bounce are entered by 
+<a href="ezmlm-receipt.1.html">ezmlm-receipt(1)</a> at the main list. This program is configured instead
+of <a href="ezmlm-return.1.html">ezmlm-return(1)</a> if the main list was set up with ``ezmlm-make -w6''.
+<a href="ezmlm-receipt.1.html">ezmlm-receipt(1)</a> checks the cookie of messages addresses to
+<CODE>mainlocal-return-receipt@mainhost</CODE> and if correct enters the ``receipt
+received'' code. This address is normally in the subscriber database with
+a hash of 98, so that each list sends a message to the address <EM>after</EM>
+all subscriber addresses.
+<P>Bounces of sublist messages should not lead to removal of the sublist from
+the database. <a href="ezmlm-receipt.1.html">ezmlm-receipt(1)</a> will instead log the bounce to the ``list_mlog''
+table. It will also store up to 50 bounces in the bounce directory. This
+helps error detection and diagnosis. After the first 50 bounces, no more
+bounces are stored, until you manually remove the old ones. This is to
+prevent filling up your hard disk in case a configuration error causes
+a deluge of bounces.
+<P>The digest list is treated in the same manner. Here, the tables
+is ``list_digest_mlog'' and the feedback address is
+<CODE>mainlocal-digest-return-receipt@mainhost</CODE>.
+</DL>
+<P>
+<H3>Sublist split tables.</H3>
+
+<P>Two tables are responsible for defining which sublist is responsible
+for which addresses. These tables are used only for distributed lists.
+<P>
+<DL>
+<DT><B>list_name</B><DD><P>This is the sublist split table for the main list. It contains the
+list number (listno) as an auto_increment column, the list address (name),
+a flag to make the entry not active (notuse), and a range of message
+numbers for which the entry is active (msgnum_lo, msgnum_hi). The latter
+are useful when updating running lists, but can be ignored for now.
+<P>There is a ``domain'' column which contains the first 3 letters of the
+last part of the address domain that this list services. Thus, it would
+be ``jp'' for <CODE>*@*.jp</CODE>, ``edu'' for <CODE>*@*.edu></CODE>,
+and ``hom'' for the hypothetical domain ``home''. The default is that
+domain is empty.
+<P>In addition, there is a hash range (hash_lo, hash_hi). The entry will
+apply only to addresses with a hash in that range. Since the hash of
+addresses is approximately evenly distributed in the available range of 0-52,
+the range corresponds to the fraction of addresses covered.
+<P>
+<DT><B>list_digest_name</B><DD><P>This works as the main list split table, but for the digest list.
+</DL>
+<P>
+<H2><A NAME="ss5.4">5.4 How addresses are distributed among sublists.</A>
+</H2>
+
+<P>To determine which addresses are handled by which sublists,
+the inactive sublist split table entries (notuse != 0 or current message
+number not in the msgnum_lo to msgnum_hi range) are first eliminated. Next,
+each sublist with a defined domain gets in that domain the addresses that
+fall within the hash range. Entries with a blank domain handle addresses with
+a blank domain as well as those not handled by other entries. The addresses
+handled by a list are the union of addresses handled by all entries for the
+particular list.
+<P>This means that the administrator needs to assure that there are lists
+with a blank domain covering the entire hash range 0-52. For each defined
+domain, the administrator must likewise assure that the entire hash range
+is covered. However, there is no corresponding requirement to cover
+the ``domain range'' since domains not specifically covered are handled by
+the entries with blank domains. This arrangement makes the database queries
+a little more complex, but makes administration considerable easier than
+other arrangements, while still allowing on-the-fly reconfiguration.
+See 
+<A HREF="FAQ-14.html#sql_split">setting up a distributed ezmlm list with SQL support</A> for a detailed example.
+<P>For logging, the listno is determined as the lowest listno of a ``list_name''
+entry that is active for the current message.
+<P>
+<H2><A NAME="ss5.5">5.5 How to set up a simple list with SQL support.</A>
+</H2>
+
+<P>To use SQL database support, you have to compile the programs with SQL
+support. Currently, only MySQL support is available. See <B>INSTALL.idx</B>
+in the package on how to do this.
+<P>The programs with SQL support will work exactly like the normal programs for
+standard lists. However, if the file <B>sql</B> exists in the basedir,
+it turns on the SQL mode and it is expected to contain SQL server connect
+info in the format
+<BLOCKQUOTE><CODE>
+``host:port:user:password:database:table''
+</CODE></BLOCKQUOTE>
+
+Here, ``Host''
+is the SQL database server host, ``port'' can be left blank to use
+the default port, ``user'' and  ``password'' are connection credentials
+for a user you need to define and grant access to the database. ``Table'' is
+the name of the address table (``list'' in the examples above
+and ``list_digest'' for the corresponding digest list). For list
+clusters, ``:sublist'' is suffixed to this info and it is the name/address
+of the sublist.
+<P>For each address database, you also need to create the address table as
+well as the ``*_slog'' subscription log table. In addition, you should
+create a ``*_cookie'' and ``*_mlog'' table for message logging. This is all
+it takes to start using an SQL database.
+<P>
+<H3>Helper programs for SQL-enabled lists.</H3>
+
+<P>Two programs are supplied in the distribution to make it easier to create
+the database user and tables. Also, <a href="ezmlm-make.1.html">ezmlm-make(1)</a> has support for setting
+up SQL-enabled lists.
+<P>
+<DL>
+<DT><B>Creating the tables</B><DD><P><a href="ezmlm-mktab.1.html">ezmlm-mktab(1)</a> will create the necessary tables:
+<BLOCKQUOTE><CODE>
+<PRE>
+        % ezmlm-mktab -d table
+</PRE>
+</CODE></BLOCKQUOTE>
+
+Pipe this into the SQL client with
+the appropriate administrator credentials needed to create
+tables (see MySQL documentation, e.g. 
+<A HREF="http://www.tcx.se/">http://www.tcx.se/</A>).
+<P>For most lists, the only addresses that are stored in the SQL database are
+the subscribers of list and digest, and the ``allow'' aliases. It is NOT
+normally advisable to store moderator addresses there, since they are
+needed only at the main list and secrecy is more important. ``Deny'' addresses
+are few and again only needed at the main list. ``Allow'' are put in the
+SQL database when using the default ezmlmrc file only to make all relevant
+addresses manipulatable via the SQL server. The other tables are created, in
+case they are  wanted (the cost for having them as empty table is zero). The
+basedir/sql file is the decision point. If it exists, an SQL table is used;
+if not a local ezmlm db is used.
+<P>
+<DT><B>Creating a user entry</B><DD><P><a href="ezmlm-grant.1.html">ezmlm-grant(1)</a> helps you to create a list user:
+<BLOCKQUOTE><CODE>
+<PRE>
+        % ezmlm-grant -d database -t table host user password
+</PRE>
+</CODE></BLOCKQUOTE>
+
+This will grant minimal access to ``user'' with ``password''
+to ``database'' on ``host'' with table ``table, ``table_digest'', etc,
+conceivably needed. Just pipe this into the SQL client, e.g. mysql with
+the appropriate administrator credentials needed to modify grant
+tables (see MySQL documentation, e.g. 
+<A HREF="http://www.tcx.se/">http://www.tcx.se/</A>).
+<P>
+<DT><B>Creating the list</B><DD><P><a href="ezmlm-make.1.html">ezmlm-make(1)</a> supports SQL-enabled lists with the ``-6'' switch:
+<BLOCKQUOTE><CODE>
+<PRE>
+        % ezmlm-make other_switches -6 'host:port:user:pw:db:table' \
+                dir dot local host
+</PRE>
+</CODE></BLOCKQUOTE>
+
+Will create an SQL-enabled list that uses the SQL server for the main list
+subscribers, digest list subscribers (if configured) and ``allow'' poster
+alias addresses (if configured).
+</DL>
+<P>
+<H2><A NAME="ss5.6">5.6 Manually manipulating the subscribers of a SQL-enabled list.</A>
+</H2>
+
+<P><a href="ezmlm-sub.1.html">ezmlm-sub(1)</a>, <a href="ezmlm-unsub.1.html">ezmlm-unsub(1)</a>, and <a href="ezmlm-list.1.html">ezmlm-list(1)</a> work as you would expect
+also with a SQL-enabled list. <a href="ezmlm-list.1.html">ezmlm-list(1)</a> may be minimally
+slower (depending on network speed) if the SQL server is not local.
+<a href="ezmlm-sub.1.html">ezmlm-sub(1)</a> and <a href="ezmlm-unsub.1.html">ezmlm-unsub(1)</a> will be faster, but this is noticeable only
+with very large subscriber lists and addition/removal of large numbers of
+addresses (more than several thousands).
+<P>
+<H2><A NAME="ss5.7">5.7 Converting to and from and SQL database.</A>
+</H2>
+
+<P>Just like other programs, <a href="ezmlm-list.1.html">ezmlm-list(1)</a>, <a href="ezmlm-sub.1.html">ezmlm-sub(1)</a>, and <a href="ezmlm-unsub.1.html">ezmlm-unsub(1)</a> will
+work with normal address databases in the absence of <B>DIR/sql</B>.
+However, they also have a ``-M'' switch to force this behavior even in
+the presence of <B>DIR/sql</B>. This is used to convert an address
+database from the standard type to the SQL type:
+<BLOCKQUOTE><CODE>
+<PRE>
+        % ezmlm-list -M dir | xargs ezmlm-sub dir
+</PRE>
+</CODE></BLOCKQUOTE>
+
+or from the SQL version to the standard type:
+<BLOCKQUOTE><CODE>
+<PRE>
+        % ezmlm-list dir | xargs ezmlm-sub -M dir
+</PRE>
+</CODE></BLOCKQUOTE>
+
+To synchronize the two, remove one and then update it with <a href="ezmlm-sub.1.html">ezmlm-sub(1)</a> from
+the other. Alternatively, sort the <a href="ezmlm-list.1.html">ezmlm-list(1)</a> output for both, use
+diff and sed/awk to get separate files of the differences, and use <a href="ezmlm-sub.1.html">ezmlm-sub(1)</a>
+and <a href="ezmlm-unsub.1.html">ezmlm-unsub(1)</a> to apply the differences to the appropriate database.
+<P>This type of conversion can serve as a convenient means to convert a list
+from one type to another, to back up databases, and to move subscriber
+addresses from a standard list to a SQL table for other purposes, or from
+a SQL database to a standard mailing list (you may need to use addresses from
+a SQL table, without wanting your lists to be dependent on an SQL server
+for day to day operation).
+<P><EM>Note:</EM> This inter-conversion requires the <B>DIR/sql</B> file. If
+you do not run the list against an SQL server, you need to disable deliveries
+before you temporarily create this file. Otherwise, the list will run against
+the SQL database during the time <B>DIR/sql</B> exists.
+<P>
+<H2><A NAME="ss5.8">5.8 Implementation of sublisting with SQL-enabled lists.</A>
+</H2>
+
+<P>For more info on the SQL databases, see 
+<A HREF="#sql">sql</A>
+. In essence, we use
+one address table for the list and one for the digest list. For each address,
+a hash and domain is also stored. A ``*_name'' table has entries for
+sublists with sublist name, domain and hash range they serve. Multiple
+entries per list are allowed. In addition, there is a message number range
+and a ``notuse'' flag. These are provided to make it easier to make
+a new configuration take effect at exactly the same time as the old one
+ceases to be active. A sublist with an empty domain handles all domains
+not handled by another list. At least one such sublist is required. If you
+create an entry for a specific domain, it is your responsibility to make sure
+that the entire hash range is covered for that domain.
+<P>There are similar address databases for ``allow'', ``deny'', and ``mod''.
+Normally, none of these or only ``allow'' is used. ezmlm programs fall back
+on normal ezmlm databases, so it is quite possible (and advisable) to
+use a local ``mod'' database for a moderated list with an SQL table for
+subscriber addresses.
+<P>For each address database there is a ``*_slog'' table that contains one row
+per transaction, just like <B>DIR/Log</B>.
+<P>SQL sublists also use a ``*_cookie'' database. For each message processed
+by the main list, a pseudo-random ``cookie'' is generated and stored in this
+table. A header ``X-ezauth:'' with this cookie is added to the message.
+Sublists will explode a message only if the cookie matches the message number
+in the table, and if that sublist has not already processed that message. This
+makes it very hard (not impossible) for an attacker to inject messages
+at the sublist level.
+<P>To distinguish sublist addresses from normal addresses, sublists are added
+with a hash of 99. Thus, the main list only sends messages to addresses
+with this hash. The only way to make or remove such an entry is from the
+command line with:
+<BLOCKQUOTE><CODE>
+<PRE>
+        % ezmlm-sub -s dir sublist@subhost
+</PRE>
+</CODE></BLOCKQUOTE>
+
+This makes it impossible for users to remotely subscribe sublists to each
+other, or to unsubscribe sublists from the main list.
+<P>A hash of 98 also receives special treatment. Both the main list and all
+sublists send a message to such addresses, <EM>after</EM> all other addresses.
+Thus, receipt of such a message (at a remote address) means that all remote
+subscriber addresses have been tried at least once for this message.
+Normally, you subscribe a feedback
+address ``<CODE>mainlocal-return-receipt@mainhost</CODE>'' with this hash:
+<BLOCKQUOTE><CODE>
+<PRE>
+        % ezmlm-sub -r dir mainlocal-return-receipt@mainhost
+</PRE>
+</CODE></BLOCKQUOTE>
+
+This address is manned by <a href="ezmlm-receipt.1.html">ezmlm-receipt(1)</a> which logs to the SQL database.
+A monitoring tool (e.g. <B>status.pl</B> supplied in the package) can
+be used to keep track of sublist function and efficiency.
+<P>Other hashed not in the normal (0-52) range can also be used. Messages are
+never sent to them. Since they cannot be remotely manipulated, their presence
+prevents normal subscription of the address. Here, you should add addresses
+that you wish to prevent from subscribing, such as possible
+aliases of sublist and mainlist. Even if done, the ``X-ezauth'' mechanism
+will thwart most attempts that we can think of.
+<P>
+<H2><A NAME="ss5.9">5.9 Interpreting the message log.</A>
+</H2>
+
+<P>This is easy. For each combination (listno,msgnum,done) there can be only
+one entry. Each entry has a time stamp in addition to this information.
+The first entry will remain and subsequent entries will fail. For
+any list, ``listno'' is the lowest list number for an entry in the ``*_name''
+table which is active for the respective message. When the message arrives at
+the main list, a cookie is calculated for it, entered into the ``*_cookie''
+table, and added to the message. An entry is made for message arrival (done=0)
+in the message log. When the list has finished processing the message and
+qmail has returned success, and entry for processed (done=1) is made. If
+the message processing fails, the message is redelivered, but the ``arrival''
+entry first made stands. Thus, this is the time the message first arrived
+at the list/sublist.
+<P>At the end of all subscriber addresses, the return-receipt address is sent
+to qmail. If this is remote (usually) it will be tried after all (remote)
+subscriber addresses. Thus, sending it means that all subscriber addresses
+have been tried at least once. When the return-receipt is received at the
+main list by <a href="ezmlm-receipt.1.html">ezmlm-receipt(1)</a>, this program makes an entry
+for ``receceived'' (done=2) if the cookie is present and correct. If the message
+to the sublist bounces, <a href="ezmlm-receipt.1.html">ezmlm-receipt(1)</a> makes an entry
+for ``bounce'' (done=-1) and saves the bounce in <B>DIR/bounce</B>.
+<P>Sublists will bounce messages for which there is already an entry with
+done of ``processed'' or ``receipt received'' (done &gt; 0). If there is
+duplication of the message, or on rare occasions when the sublist
+operating systems misbehaves. Thus, you may have an entry both
+for ``receipt'' and ``bounce''. In this case, check your setup, but don't
+worry. The message was delivered ok.
+<P>If there is a long delay between ``processed'' on the main list and ``arrived''
+on the sublist(s), there is an outgoing qmail problem at the main list,
+a network problem between the host, an incoming qmail problem at the sublist
+or possibly a list configuration problem. If there is a long delay
+between ``arrived'' and ``processed'' the sublist <a href="ezmlm-send.1.html">ezmlm-send(1)</a> may be failing
+due to misconfiguration, memory shortage, etc. Alternatively, the sublist
+has trouble connecting to the SQL server. A long delay
+between ``processed'' and ``receipt'' suggests an outgoing qmail failure at
+the sublist, a network problem between sublist and main list, or an incoming
+failure at the main list. As <a href="ezmlm-receipt.1.html">ezmlm-receipt(1)</a> at the main list needs to
+access the SQL server to log receipt, it is also possible that there is a
+problem in that communication. All this said, problems other than those
+caused by network outages and list server load are all that we've seen
+in testing, despite several network hardware failures, memory shortage, etc.
+<P>Since bouces can be ignored in the light of other entries, the best way
+to find out about the status of a message is to look for the entry on
+the particular sublist and message number with the highest ``done'' code.
+<B>utils/status.pl</B> in the distribution interprets status codes and
+presents an overview over the last 10 messages (default). Most table entries
+are links to message and list statistics and explanatory texts. Depending
+on your particular lists, you may want to adapt the specific breakpoints
+in time chosen in the program.
+<P>
+<H2><A NAME="ss5.10">5.10 Optimizing MySQL for ezmlm.</A>
+</H2>
+
+<P>
+<H3>Address SELECTs.</H3>
+
+<P>If you run a simple list without sublists, address selection from the
+SQL table is (almost) a simple dump of all records. This is very fast
+and does not require any optimization of MySQL irrespective of subscriber
+number.
+<P>For list clusters with sublists, each sublist runs a more complicated
+SELECT against the database. This uses keys, but does not require sorting.
+A table JOIN is used, but the second table (``list_name'') is very small,
+so tuning of join and sort buffers should never be required.
+<P>MySQL is extremely efficient as a database for large ezmlm lists. The address
+table structure is optimized to make it even faster. On a 586-100 Mhz/32 Mb
+RAM IDE machine (Linux 2.0.34) with a key_buffer of 4M, 12 sublists,
+19 ``list_name'' rows,
+and 200,000 subscribers it takes 100 s for all 12 address queries to complete.
+This can be improved by a factor of 10 by use of a faster processor, e.g.
+a Pentium II-266 MHz. More memory will also improve performance as will (if
+you have it) multiple processors. Assuming that each sublist host can
+deliver at a sustained rate on 1.5 M deliveries per day, the query time
+should be compared to the 16 min delivery would take.
+If you have lists with 100,000-1,000,000 subscribers, you might be able
+to afford a faster SQL server than the one used by us. Query time seems to scale
+about linearly with number of subscribers between 100,000 and 400,000
+subscribers (not tested beyond, YMMV).
+<P>The format chosen where a (set of) list(s) handles all domains not handled
+by any other list is a trade-off. It leads to more complicated address
+queries, but without it administration becomes too difficult.
+<P>
+<H3>Address addition/removal.</H3>
+
+<P>INSERTS/subscribes run at about 400/s when the table is empty, down to
+200/s above 150,000 subscribers staying at that speed at least up to 400,000
+addresses (PII-266 MHz, 112 Mb RAM/IDE, key_buffer=4M). On the same machine
+adding addresses to a standard ezmlm database took 42 min for the first
+18,000 scaling poorly above 3000 or so. Of course, with normal list use
+this is not a concern since subscriber address transactions are rare compared
+with message processing.
+<P>The speed can be increased by removing indices, then recreating them after
+the addition/removal of addresses. However, the address index itself (``a'')
+is required in the process. Removing the ``d'' and ``h'' indices on our
+test system
+increased the speed to 900/s. Indices can then be added in a minute
+or two (the domain and hash indices are essential for fast SELECTS). See the
+MySQL documentation (
+<A HREF="http://www.rcx.se">http://www.rcx.se</A>) for more info.
+<P>Even if you do not use sublists, a hash and domain are calculated for each
+address. This overhead is minimal. Addition/removal of addresses also
+requires updating of 3 indices (address, domain, hash)
+in the address table which takes some time. The latter 2 are used only for
+sublisting. Removal of these indices will speed up the process. If you
+frequently bulk add/remove large numbers of addresses (more than
+10,000 or so) it might be worth to delete those indices. If the list does
+not use sublists, there is no need to recreate these indices.
+<P>
+<H3>Tunable MySQL parameters.</H3>
+
+<P>
+<H3>Key_buffer.</H3>
+
+<P>No change necessary unless you use the sublist features in combination
+with very large lists.
+Lists under 100,000 subscribers should do fine with 4MB,
+and then increasing by 4MB/100,000 subscribers should yield near maximal
+performance.
+<P>
+<H3>Others.</H3>
+
+<P>With up to 400,000 subscribers, we have failed to see any impact of increases
+in join_buffer, record_buffer, etc. However, this may be due to the excellent
+caching of linux. If you have information on how to improve performance,
+please E-mail details to <CODE>lindberg@id.wustl.edu</CODE>.
+<P>
+<H2><A NAME="ss5.11">5.11 Maintenance of the MySQL database.</A>
+</H2>
+
+<P>Weekly to monthly error checks on MySQL tables is recommended. Best is
+to use:
+<BLOCKQUOTE><CODE>
+<PRE>
+        # isamchk -s -O readbuffer=2M */*.ISM
+</PRE>
+</CODE></BLOCKQUOTE>
+
+Other options allow automatic correction of errors, but are dangerous if
+tables are accessed while isamchk is running.
+<P>Other isamchk options allow recovery of space after frequent insert/delete
+of addresses (can also be done with ``OPTIMIZE TABLE''), key optimization,
+etc.
+See the
+MySQL documentation (
+<A HREF="http://www.rcx.se">http://www.rcx.se</A>) for more info.
+<P>
+<HR>
+<A HREF="FAQ-6.html">Next</A>
+<A HREF="FAQ-4.html">Previous</A>
+<A HREF="FAQ.html#toc5">Contents</A>
+</BODY>
+</HTML>

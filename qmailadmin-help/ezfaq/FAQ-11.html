@@ -1,0 +1,81 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<HTML>
+<HEAD>
+ <META NAME="GENERATOR" CONTENT="SGML-Tools 1.0.7">
+ <TITLE>EZFAQ 0.32 - ezmlm-idx and ezmlm FAQ: Restricting archive retrieval.</TITLE>
+ <LINK HREF="FAQ-12.html" REL=next>
+ <LINK HREF="FAQ-10.html" REL=previous>
+ <LINK HREF="FAQ.html#toc11" REL=contents>
+</HEAD>
+<BODY vlink="#004400" link="#008800" bgcolor="#ffffff" alink="#ff0000"><FONT FACE="helvetica,times,arial">
+<A HREF="FAQ-12.html">Next</A>
+<A HREF="FAQ-10.html">Previous</A>
+<A HREF="FAQ.html#toc11">Contents</A>
+<HR>
+<H2><A NAME="restr_arch"></A> <A NAME="s11">11. Restricting archive retrieval.</A></H2>
+
+<P>
+<H2><A NAME="restr_arch_sub"></A> <A NAME="ss11.1">11.1 Restricting archive access to subscribers.</A>
+</H2>
+
+<P>If you use <a href="ezmlm-get.1.html">ezmlm-get(1)</a>, archive retrieval can be restricted by using the
+<a href="ezmlm-make.1.html">ezmlm-make(1)</a> ``-g'' (guard archive) switch. This in turn sets <a href="ezmlm-get.1.html">ezmlm-get(1)</a>
+up with its ``-s'' switch,
+allowing access only to addresses that are subscribers of the list,
+or of the digest list, or that are present in an extra address database
+stored in <B>DIR/allow/</B>. Addresses can be added remotely by
+mailing <CODE>list-allow-useralias=userhost@listhost</CODE>. Other commands,
+such as ``subscribe'' work as expected. As you can see, the different programs
+have many options and <a href="ezmlm-make.1.html">ezmlm-make(1)</a> organizes most of them into the most
+useful sets to make it easier. Don't hesitate to look at the <a href="ezmlmrc.5.html">ezmlmrc(5)</a>
+man page and man pages for individual commands. There are many useful options
+to more finely tune your lists to your taste. Via modification of <a href="ezmlmrc.5.html">ezmlmrc(5)</a>
+you can make your favorite options the default!
+<P>Since ezmlm-get always sends
+the reply to SENDER, this assures that only subscribers
+can get archive excerpts. Since SENDER is easily
+faked, anyone can still request archive info (and drain system
+resources), but replies go only to subscriber E-mail addresses.
+The <B>DIR/allow/</B> database can be used to manually add
+addresses that should be given archive access, but are not subscribers. This
+may be an address of a subscriber who posts from an address other than his or
+her subscription address.
+<P>
+<H2><A NAME="restr_arch_cmds"></A> <A NAME="ss11.2">11.2 Restricting available archive retrieval commands.</A>
+</H2>
+
+<P>If you want to disable all archive retrieval except digest
+creation, simply add the ``-C'' command line switch to the
+<a href="ezmlm-get.1.html">ezmlm-get(1)</a> line in <B>DIR/manager</B>. If you don't want digest creation via
+trigger messages and <B>DIR/manager</B>, but use other means to created digests,
+you can remove the <a href="ezmlm-get.1.html">ezmlm-get(1)</a> line from <B>DIR/manager</B>.
+<P>
+<H2><A NAME="ss11.3">11.3 Restricting archive retrieval to moderators.</A>
+</H2>
+
+<P>If <B>DIR/public</B> does not exist, <a href="ezmlm-manage.1.html">ezmlm-manage(1)</a> and <a href="ezmlm-get.1.html">ezmlm-get(1)</a>
+modify their behavior. They disallow user requests, but for
+remote administration lists, honor moderator requests.
+Thus, for a remote admin list without <B>DIR/public</B>, only
+subscription moderators or remote administrators can receive archive
+retrievals and only remote administrators can subscribe and
+unsubscribe user addresses.
+<P>If you'd like this restriction of archive
+retrieval with maintained user-initiated <a href="ezmlm-manage.1.html">ezmlm-manage(1)</a> subscription
+functions, use the <a href="ezmlm-get.1.html">ezmlm-get(1)</a> ``-P'' (not public)
+switch, and retain <B>DIR/public</B>.
+<P>
+<H2><A NAME="ss11.4">11.4 Allowing archive retrieval from a non-public list.</A>
+</H2>
+
+<P>A non-public list lacks <B>DIR/public</B>. <a href="ezmlm-manage.1.html">ezmlm-manage(1)</a> will reject
+user requests for (un) subscription and for archive
+retrieval. The restriction on archive retrieval can be removed
+with the <a href="ezmlm-get.1.html">ezmlm-get(1)</a> ``-p'' (public) switch.
+<P>
+<HR>
+<A HREF="FAQ-12.html">Next</A>
+<A HREF="FAQ-10.html">Previous</A>
+<A HREF="FAQ.html#toc11">Contents</A>
+</BODY>
+</HTML>

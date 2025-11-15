@@ -1,0 +1,65 @@
+  <TITLE>UNIX man pages : ./ezmlm-return.1 ()</TITLE>
+  <hr>
+<PRE>
+
+ezmlm-return(1)                                   ezmlm-return(1)
+
+<H2>NAME</H2>
+       ezmlm-return - handle mailing list bounces
+
+<H2>SYNOPSIS</H2>
+       <b>ezmlm-return</b> <i>dir</i>
+
+<H2>DESCRIPTION</H2>
+       <b>ezmlm-return</b>  handles  bounces for the mailing list stored
+       in <i>dir</i> and, if it exists, the associated digest list.
+
+       <b>ezmlm-return</b> is normally invoked from a <b>.qmail</b>  file.   It
+       reads  a  mail message from its standard input, and a mail
+       envelope from the  <b>SENDER</b>,  <b>LOCAL</b>,  and  <b>HOST</b>  environment
+       variables.
+
+<H2>ADDRESSES</H2>
+       <b>ezmlm-return</b>  handles  mail  sent  to any of the following
+       addresses:
+
+       <i>local</i><b>-return-</b>
+              Trash.  A help message or subscription  acknowledg-
+              ment bounced.
+
+       <i>local</i><b>-return-</b><i>msg</i><b>-</b><i>box</i><b>=</b><i>domain</i>
+              Distribution  bounce.   Message number <i>msg</i> was lost
+              on the way to <i>box</i><b>@</b><i>domain</i>.
+
+       <i>local</i><b>-return-</b><i>msg</i><b>-</b>
+              Pre-VERP  distribution  bounce,  in  QSBMF  format.
+              Message  number  <i>msg</i>  was lost on the way to one or
+              more addresses; <b>ezmlm-return</b> will parse the  bounce
+              to figure out the addresses.
+
+       <i>local</i><b>-return-warn-</b><i>cookie</i><b>-</b><i>box</i><b>=</b><i>domain</i>
+              Warning  bounce.  A warning message from <b>ezmlm-warn</b>
+              bounced.
+
+       <i>local</i><b>-return-probe-</b><i>cookie</i><b>-</b><i>box</i><b>=</b><i>domain</i>
+              Probe bounce.  A  probe  from  <b>ezmlm-warn</b>  bounced.
+              <b>ezmlm-return</b>  will remove <i>box</i><b>@</b><i>domain</i> from the mail-
+              ing list.
+
+              For all the above addresses if, <i>local</i>  is  followed
+              by  <i>-digest</i>,  bounces  are  assumed  to be from the
+              digest list, and are  stored  in  <i>dir</i><b>/digest/bounce</b>
+              rather than in <i>dir</i> <b>/bounce</b> <b>.</b>
+
+<H2>SEE ALSO</H2>
+       <A HREF="ezmlm-manage.1.html">ezmlm-manage(1)</A>,   <A HREF="ezmlm-make.1.html">ezmlm-make(1)</A>,   <A HREF="ezmlm-send.1.html">ezmlm-send(1)</A>,  <A HREF="ezmlmsub.1.html">ezmlmsub(1)</A>
+       ,  <A HREF="ezmlm-unsub.1.html">ezmlm-unsub(1)</A>,   <A HREF="ezmlm-warn.1.html">ezmlm-warn(1)</A>,   <A HREF="ezmlm-weed.1.html">ezmlm-weed(1)</A>,
+       <A HREF="ezmlm.5.html">ezmlm(5)</A>, <A HREF="qmail-command.8.html">qmail-command(8)</A>
+
+                                                                1
+
+</PRE>
+  <hr>
+  <ADDRESS>
+  © 1994 <A HREF="http://www.ntua.gr/~christia/man-cgi.html">Man-cgi 1.15</A>, Panagiotis Christias &lt;christia@theseas.ntua.gr&gt;
+  </ADDRESS>

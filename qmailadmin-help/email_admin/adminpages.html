@@ -1,0 +1,264 @@
+<!-- $Header: /home/cvsroot/admin_cfes_ca/email_admin/adminpages.html,v 1.6 2001/08/17 05:32:52 tdrennan Exp $ -->
+<html><!-- #BeginTemplate "/Templates/Admin_Documents.dwt" -->
+<head>
+<!-- #BeginEditable "doctitle" --> 
+<title>Email Administration Guide - Admin Pages</title>
+<!-- #EndEditable -->
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<link rel="stylesheet" href="../admin.css" type="text/css">
+</head>
+
+<body bgcolor="#FFFFFF" text="#000000">
+<table width="100%" border="0" bgcolor="#999999">
+  <tr> 
+    <td class="Template_Header">&gt;<a href="../index.html">Main Admin Page</a> 
+      &gt;<a href="index.html">Email Administration Guide Index</a> 
+    </td>
+  </tr>
+</table>
+<!-- #BeginEditable "main" --> 
+<h2 class="basicfont"><a name="top"></a><a name="admin_pages"></a>The Admin Pages</h2>
+<h3 class="basicfont"><a name="pop_accounts"></a>Pop Accounts</h3>
+<p class="basictext">The pop account screen lets you:</p>
+<ul class="index">
+  <li><a href="#pop_create">Create A New POP Email Account</a></li>
+  <li><a href="#pop_change">Change a Password For a POP Email Account</a></li>
+  <li><a href="#pop_delete">Delete a Pop Email Account</a></li>
+  <li><a href="#pop_catchall">A Note on the &quot;Catch All&quot; Account</a></li>
+</ul>
+<h4 class="basicfont"></h4>
+<h3 align="center"><img src="images/pop_accounts.jpg" width="518" height="516" alt="Picture of the pop accounts screen"></h3>
+<h4 class="basictext"><a name="pop_create"></a>Creating a POP Email Account</h4>
+<p class="basicfont">This simply jumps you to the <a href="quicklinks.html#new_pop_account">New 
+  POP Account</a> Page.</p>
+<h4 class="basicfont"><a name="pop_change"></a>Changing an Account Password</h4>
+<p class="basicfont">As the administrator it may become necessary to change the 
+  password for one of your users because they have forgotten it, or more likely, 
+  they recently changed it and now don't know what they changed it to.</p>
+<p class="basicfont">Using the change password button for any user will take you 
+  the modify user page</p>
+<p class="basicfont" align="center"><img src="images/modify_user.jpg" width="533" height="245"></p>
+<p class="basicfont">You are required to enter the new password for the user twice 
+  to ensure you don't make a error while entering it. The <span class="reference">Real 
+  Name</span> field is for the administrators reference only and will not effect 
+  their email in any way.</p>
+<h4 class="basicfont"><a name="pop_delete"></a>Deleting a POP Email Account</h4>
+<p class="basicfont">Choosing to delete a user brings up the delete confirmation 
+  page.</p>
+<p class="basicfont" align="center"><img src="images/pop_delete_confirm.jpg" width="306" height="355"></p>
+<p class="basicfont">You can also choose to create a forwarding account to replace 
+  the pop account when it is being deleted. To do so simply enable Forward email 
+  and enter the address the account will be forwarding to.</p>
+<h4 class="basicfont"><a name="pop_catchall"></a>The &quot;Catch All&quot; Account</h4>
+<b>What is a &quot;catch-all?&quot;</b> 
+<p class="basictext"> It is a means of receiving any and all email sent to your 
+  domain regardless of if the particular account exists or not. For instance, 
+  lets say there is an email account called wazzerjbouski@yourdomain.com... people 
+  may make a mistake typing in the email address. Making a catch all account will 
+  ensure that someone at your domain gets the message.</p>
+<p class="basictext">If you were the only user of your domain you could choose 
+  to make only one email account in the domain and set it as the catch all. Doing 
+  this makes it possible for you to make up email addresses at will. Note that 
+  <a href="accounts.html#sub_accounts">sub accounts</a> are also available meaning 
+  that all users have a virtually limitless number of accounts available to them.</p>
+<p class="basictext">In general it is not recommended that you create &quot;Catch 
+  All&quot; accounts if you have more users in your domain than yourself as a 
+  simple typo would result in the catch all account getting the message instead 
+  of it being bounced back to the original sender and they then correcting their 
+  mistake and re-sending it.</p>
+<p class="basicfont"><b>Setting the &quot;catch-all&quot;</b></p>
+<p class="basictext">By default, the catch-all account is disabled. To enable 
+  it click the button under <span class="reference">CatchAll Account</span> for 
+  the account that will be the Catch all account. If you return to the pop account 
+  menu you should see the account you select now says <span class="reference">default</span> 
+  under the <span class="reference">CatchAll Account</span> heading.</p>
+<p class="basictext" align="center"><img src="images/catch_all_on.jpg" width="536" height="511"></p>
+<p class="basictext"><b>Clearing the &quot;catch-all&quot;</b></p>
+<p class="basictext">To clear the catch all account simply click the<span class="reference"> 
+  Set no default catch all account</span> link at the bottom of the page. If you 
+  return to the pop accounts page you will know that it has been cleared because 
+  it no longer says <span class="reference">default</span> under the <span class="reference">CatchAll 
+  Account</span> heading.</p>
+<hr>
+<div align="right"><span class="Template_Header"><a href="#top">Back to top</a></span><br>
+</div>
+<h3><a name="aliases"></a>Aliases</h3>
+<p>The aliases page lets you do the following:</p>
+<ul>
+  <li class="index"><a href="#alias_add">Add A New Alias</a></li>
+  <li class="index"><a href="#alias_modify">Modify An Existing Alias</a></li>
+  <li class="index"><a href="#alias_delete">Delete An Existing Alias</a></li>
+</ul>
+<p align="center"><img src="images/aliases.jpg" width="513" height="552"></p>
+<p>The aliases page shows you the alias accounts that have been created for your 
+  domain. </p>
+<h4><a name="alias_add"></a>Add New Alias</h4>
+<p>The <span class="reference">Add New Alias</span> command jumps you to the <a href="quicklinks.html#add_aliases">Add 
+  Aliases</a> page.</p>
+<h4><a name="alias_modify"></a>Modifying An Alias (or Forward)</h4>
+<p>When you select the modify button for a user you will be presented with the 
+  following page.</p>
+<p align="center"><img src="images/alias_modify.jpg" width="529" height="300"></p>
+<p>Once a alias or forward has been created it is effective the same except for 
+  which list it appears under off of the main menu. If the account was created 
+  as an alias is will always appear under the alias menu, if the account was created 
+  as a forward it will always appear as a forward.</p>
+<p>This page allows you to add additional destinations for the account in question. 
+  If you would like to add additional email accounts that this account fowards 
+  to enter them in the <span class="reference">Add Email Address</span> field 
+  and select <span class="reference">Add</span>. If you wish to have this alias 
+  deliver email to additional local accounts select them from the drop down menu 
+  and select <span class="reference">Add</span>.</p>
+<p>The following shows the result of adding an additional local alias (vpsd) and 
+  forwarding email account (other@domain.com).</p>
+<p align="center"><img src="images/alias_modify_full.jpg" width="509" height="375"></p>
+<p>If you wish to delete any of the forwards or aliases for the account simply 
+  select the delete button on the appropriate line which matches the account you 
+  with to remove.</p>
+<h4><a name="alias_delete"></a>Deleting an Alias</h4>
+<p>To delete an alias altogether simply select the delete button from the appropriate 
+  line from the main alias page. You will be presented with a confirmation page 
+  where you can choose to confirm the deletion or cancel as shown below.</p>
+<p align="center"><img src="images/alias_delete_confirm.jpg" width="329" height="282"></p>
+<hr>
+<div align="right"><span class="Template_Header"><a href="#top">Back to top</a></span></div>
+<h3><a name="forwards"></a>Forwards</h3>
+<p>The Forwards page will let you do the following:</p>
+<ul class="index">
+  <li><a href="#forward_add">Add A New Forward</a></li>
+  <li><a href="#forward_modify">Modify An Existing Forward</a></li>
+  <li><a href="#forward_delete">Delete An Existing Forward</a></li>
+</ul>
+<p align="center"><img src="images/forwards.jpg" width="515" height="373"></p>
+<h4><a name="forward_add"></a>Adding A New Forward</h4>
+<p>The Add New Forward Link simply takes you to the <span class="reference">New 
+  Forwards</span> page.</p>
+<h4><a name="forward_modify"></a>Modifying An Existing Forward</h4>
+<p>Modifying forwards is identical to modifying aliases. See the section above 
+  on <a href="#alias_modify">modifying aliases</a>.</p>
+<h4><a name="forward_delete"></a>Deleting An Existing Forward</h4>
+<p>As with deleting an alias if you delete an forwarding account you will be presented 
+  with a confirmation page which allows you to either confirm the deletion or 
+  cancel.</p>
+<p align="center"><img src="images/forward_confirm_delete.jpg" width="346" height="281"> 
+</p>
+<hr>
+<div align="right"><span class="Template_Header"><a href="#top">Back to top</a></span></div>
+<h3><a name="autoresponders"></a>Autoresponders</h3>
+<p>From the autoresponders page you can do the following:</p>
+<ul class="index">
+  <li><a href="#autoresponder_add">Add A New Autoresponder</a></li>
+  <li><a href="#autoresponder_modify">Modify An Existing Autoresponder</a></li>
+  <li><a href="#autoresponder_delete">Delete An Existing Autoresponder</a></li>
+</ul>
+<h3 align="center"><img src="images/autoresponders.jpg" width="523" height="230"></h3>
+<h4><a name="autoresponder_add"></a>Add A New Autoresponder</h4>
+<p>Selecting the link for New Autoresponder simply takes you to the <a href="quicklinks.html#new_autoresponder">New 
+  Autoresponder</a> page. </p>
+<h4><a name="autoresponder_modify"></a>Modify An Existing Autoresponder</h4>
+<p>If you choose to modify an autoresponder you will be presented with the following 
+  page:</p>
+<p align="center"><img src="images/autorespond_modify.jpg" width="513" height="641"> 
+</p>
+<p><span class="reference">Autoresponder Name</span>: The account that this autoresponder 
+  is associated with.</p>
+<p><span class="reference">Modify autoresponder</span>: The email address that 
+  the message is forwarded to.</p>
+<p><span class="reference">Subject</span>: The subject of the message received 
+  by the person who sends a message to this autoresponder account.</p>
+<p><span class="reference">Message</span>: The body of the message received by 
+  the person who sends a message to this autoresponder account.</p>
+<h4><a name="autoresponder_delete"></a>Delete An Existing Autoresponder</h4>
+<p>Like the rest of the account types deleting an autoresponder account causes 
+  a confirmation message to be presented.</p>
+<p align="center"><img src="images/autorespond_confirm_delete.jpg" width="393" height="263"></p>
+<hr>
+<div align="right"><span class="Template_Header"><a href="#top">Back to top</a></span></div>
+<h3><a name="mailing_lists"></a>Mailing Lists</h3>
+<p>From the autoresponders page you can do the following:</p>
+<ul class="index">
+  <li><a href="#mailinglist_keyterms">Key Terms</a></li>
+  <li><a href="#mailinglist_add">Create A New Mailing List</a></li>
+  <li><a href="#mailinglist_modify">Modify An Existing Mailing List</a> 
+    <ul>
+      <li><a href="#mailinglist_add_subscriber">Add A Subscriber</a></li>
+      <li><a href="#mailinglist_delete_subscriber">Delete A Subscriber</a></li>
+      <li><a href="#mailinglist_show_subscriber">Show the Subscriber List</a></li>
+      <li><a href="#mailinglist_add_moderator">Add a Moderator</a></li>
+      <li><a href="#mailinglist_delete_moderator">Delete A Moderator</a></li>
+      <li><a href="#mailinglist_show_moderator">Show the Moderator List</a></li>
+    </ul>
+  </li>
+  <li><a href="#mailinglist_delete">Delete An Existing Mailing List</a></li>
+</ul>
+<p align="center"><img src="images/mail_lists.jpg" width="658" height="449"></p>
+<h4></h4>
+<p>&nbsp;</p>
+<h4><a name="mailinglist_keyterms"></a>Key Terms</h4>
+<p><span class="reference">Subscriber:</span> The general readers of the mailing 
+  list. These users will receive the messages posted to the mailing list.</p>
+<p><span class="reference">Moderator:</span> These are individuals who are given 
+  the ability to either limit who can subscribe to a given link or who can post 
+  to a given link.</p>
+<p>For additional information about how mailing lists should be setup see the 
+  section on <a href="quicklinks.html#new_mailing_lists">Creating Mailing Lists.</a></p>
+<h4><a name="mailinglist_add"></a>Create A New Mailing List</h4>
+<p>Clicking the <span class="reference">New Mailing List</span> link simply takes 
+  you to the <a href="quicklinks.html#new_mailing_lists">New Mailing List</a> 
+  page. </p>
+<h4><a name="mailinglist_modify"></a>Modify An Existing Mailing List</h4>
+<p>Currently QmailAdmin does not support modifications to the operations of mailing 
+  lists. It will only allow you to add and remove subscribers and moderators. 
+  If you wish to make changes to the operations of the list please contact your 
+  system administrator and they will be more than willing to assist you with your 
+  needs.</p>
+<h5><a name="mailinglist_add_subscriber"></a>Add A Subscriber</h5>
+<p align="left">To add a subscriber simply select the <span class="reference">Add 
+  Subscriber</span> button for the appropriate list. This will present you with 
+  the following page:</p>
+<p align="center"><img src="images/mailing_list_addsub.jpg" width="530" height="270"></p>
+<p><span class="reference">Email Address:</span> The email address you wish to 
+  add to the list</p>
+<h5><a name="mailinglist_delete_subscriber"></a>Delete A Subscriber</h5>
+<p>To delete a subscriber simply select the <span class="reference">Delete Subscriber</span> 
+  button for the appropriate list. This will present you with the following page:</p>
+<p align="center"><img src="images/mailing_list_delsub.jpg" width="438" height="216"></p>
+<p><span class="reference">Email Address:</span> The email address you wish to 
+  delete from the list</p>
+<h5><a name="mailinglist_show_subscriber"></a>Show the Subscriber List</h5>
+<p>To view the subscriber list simply select the <span class="reference">Show 
+  Subscriber</span> button for the appropriate list. This will present you with 
+  the following page:</p>
+<p align="center"><img src="images/mailing_list_showsub.jpg" width="480" height="270"></p>
+<h5><a name="mailinglist_add_moderator"></a>Add A Moderator</h5>
+<p>To add a moderator simply select the <span class="reference">Add Moderator</span> 
+  button for the appropriate list. This will present you with the following page:</p>
+<p align="center"><img src="images/mailing_list_addmod.jpg" width="518" height="287"></p>
+<p><span class="reference">Email Address:</span> The email address you wish to 
+  add as a moderator of the list</p>
+<h5><a name="mailinglist_delete_moderator"></a>Delete A Moderator</h5>
+<p>To delete a moderator simply select the <span class="reference">Delete Moderator</span> 
+  button for the appropriate list. This will present you with the following page:</p>
+<p align="center"><img src="images/mailing_list_delmod.jpg" width="451" height="212"></p>
+<p><span class="reference">Email Address:</span> The email address of the moderator 
+  you wish to delete from the list</p>
+<h5><a name="mailinglist_show_moderator"></a>Show the Moderator List</h5>
+<p>To show the list of moderators simply select the <span class="reference">Show 
+  Moderators</span> button for the appropriate list. This will present you with 
+  the following page:</p>
+<p align="center"><img src="images/mailing_list_showmod.jpg" width="443" height="245"></p>
+<h4><a name="mailinglist_delete"></a>Delete An Existing Mailing List</h4>
+<p>To delete a mailing list simply select <span class="reference">Delete</span> 
+  for the appropriate list. You will presented with a confirm page as shown where 
+  you can choose to confirm the deletion or return to the main menu.</p>
+<p align="center"><img src="images/mailing_list_delete.jpg" width="357" height="273"></p>
+<!-- #EndEditable --> 
+<table width="100%" border="0" bgcolor="#999999">
+  <tr> 
+    <td class="Template_Header">&gt;<a href="../index.html">Main Admin Page</a> 
+      <span class="Template_Header">&gt;</span><a href="index.html">Email 
+      Administration Guide Index</a></td>
+  </tr>
+</table>
+</body>
+<!-- #EndTemplate --></html>

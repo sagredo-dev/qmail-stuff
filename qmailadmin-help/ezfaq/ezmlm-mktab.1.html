@@ -1,0 +1,54 @@
+  <TITLE>UNIX man pages : ./ezmlm-mktab.1 ()</TITLE>
+  <hr>
+<PRE>
+
+ezmlm-mktab(1)                                     ezmlm-mktab(1)
+
+<H2>NAME</H2>
+       ezmlm-mktab - create SQL table definition for ezmlm list
+
+<H2>SYNOPSIS</H2>
+       <b>ezmlm-mktab</b> [ <b>-dC</b> ] <i>table_root</i>
+
+<H2>DESCRIPTION</H2>
+       <b>ezmlm-mktab</b>  takes <i>table_root</i> and prints table definitions
+       for <i>table_root</i>, <i>table_root_</i><b>slog</b>, etc. All  subscriber  and
+       log  tables  are  defined, although normally only a subset
+       are used.
+
+       <b>ezmlm-mktab</b> also can also print the SQL drop  commands  to
+       remove the same tables.
+
+<H2>OPTIONS</H2>
+       <b>-C</b>     Do  not  print  the table definitions for list cre-
+              ation. By default, table definitions are printed.
+
+       <b>-d</b>     Print table drop commands. Normally, they are omit-
+              ted.  When  printed,  they  are  printed before the
+              table definitions,  so  that  existing  tables  are
+              removed, then recreated.
+
+<H2>USAGE</H2>
+       <b>ezmlm-mktab</b> <b>-d</b> <i>list</i>  | mysql -hhost -uuser -p -f db
+
+       This  connects to the mysql server on ``host'' as ``user''
+       (prompting for the password) and in database  ``db''  cre-
+       ates  tables <i>list</i>, <i>list_</i><b>slog</b>, <i>list_</i><b>mlog</b>, the corresponding
+       table  sets  for  address  lists  <i>list_</i><b>allow</b>,   <i>list_</i><b>deny</b>,
+       <i>list_</i><b>digest,</b>    <i>list_</i><b>mod,</b>    as    well    as   <i>list_</i><b>name</b>,
+       <i>list_</i><b>digest</b><i>_</i><b>name</b>, <i>list_</i><b>cookie</b>, and <i>list_</i><b>digest</b><i>_</i><b>cookie</b>.
+
+       Since the <b>-d</b> switch is used, any of these  tables  already
+       existing  are first dropped, with loss of any data already
+       in them.
+
+<H2>SEE ALSO</H2>
+       <A HREF="ezmlm-send.1.html">ezmlm-send(1)</A>, <A HREF="ezmlm.5.html">ezmlm(5)</A>, <A HREF="mysql.1.html">mysql(1)</A>
+
+                                                                1
+
+</PRE>
+  <hr>
+  <ADDRESS>
+  © 1994 <A HREF="http://www.ntua.gr/~christia/man-cgi.html">Man-cgi 1.15</A>, Panagiotis Christias &lt;christia@theseas.ntua.gr&gt;
+  </ADDRESS>

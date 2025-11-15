@@ -1,0 +1,300 @@
+  <TITLE>UNIX man pages : ./ezmlm-get.1 ()</TITLE>
+  <hr>
+<PRE>
+
+ezmlm-get(1)                                         ezmlm-get(1)
+
+<H2>NAME</H2>
+       ezmlm-get  -  handles  mailing  list archive retrieval and
+       digests
+
+<H2>SYNOPSIS</H2>
+       <b>ezmlm-get</b> [ <b>-bBcCpPsSvV</b> ][ <b>-f</b> <i>format</i> ][ <b>-t</b> <i>digaddr</i> ] <i>dir</i> [
+       <i>digestcode[f]</i> ]
+
+<H2>OPTIONS</H2>
+       <b>-b</b>     (Default.)  Copy administrative information and the
+              request to the bottom of replies.  This informs the
+              recipient  of other commands, and allows some error
+              tracking in case the recipient  did  not  originate
+              the request.
+
+       <b>-B</b>     Suppress  the normal administrative information and
+              request copy. This  may  make  it  harder  for  the
+              recipient  to diagnose problems and learn commands.
+
+       <b>-c</b>     (Default.)  Process and reply to commands (does not
+              affect digests).
+
+       <b>-C</b>     Ignore all commands except digest.
+
+       <b>-f</b> <i>format</i>
+              <b>ezmlm-get</b> will use <i>format</i> as the default format for
+              all returned message collections.  The  default  is
+              'm' for MIME with a header subset (see below). For-
+              mat specifiers send with individual requests  over-
+              ride the default set with the <b>-f</b> switch.
+
+       <b>-p</b>     -get, -index, and -thread commands are available to
+              all users, provided  other  flags  are  permissive.
+              This  overrides  normal behavior, which is to allow
+              archive retrieval only to moderators, when <i>dir</i><b>/pub-</b>
+              <b>lic</b>  does  not exist. This is useful to set up non-
+              public lists that still give users archive  access.
+
+       <b>-P</b>     -get,  -index,  and  -thread commands are available
+              only to moderators, even if <i>dir</i><b>/public</b> exists.  The
+              <b>-C</b>  and <b>-s</b> flags can restrict this further. This is
+              useful for  public  lists  with  archive  retrieval
+              restricted to a subset of users (moderators).
+
+       <b>-s</b>     -get,  -index,  and  -thread requests are processed
+              only if <b>SENDER</b> is a subscriber.
+
+       <b>-S</b>     (Default.)  Anyone  can  issue  -get,  -index,  and
+              -thread requests.
+
+       <b>-t</b> <i>digaddr</i>
+              When  this  switch  is  used,  <b>ezmlm-get</b>  sends any
+              digest generated to  <i>digaddr</i>  rather  than  to  the
+              digest  subscribers.  This switch makes it possible
+
+                                                                1
+
+ezmlm-get(1)                                         ezmlm-get(1)
+
+              to use a separate  digest  list,  rather  than  the
+              built-in  one,  allowing you to have different sub-
+              scriber policies for the two, keep  an  archive  of
+              digests,  or  use non-standard digest names. A <b>sub-</b>
+              <b>list</b>(see <b><A HREF="ezmlm-send.1.html">ezmlm-send(1)</A></b>) can be used to  disseminate
+              the digest.
+
+       <b>-v</b>     Print version info.
+
+       <b>-V</b>     Print version info.
+
+<H2>DESCRIPTION</H2>
+       <b>ezmlm-get</b>  handles  archive retrieval and optionally makes
+       and sends out digests for the mailing list stored in  <i>dir</i>.
+       Subscribers   of   the   digest   list   are   stored   in
+       <i>dir</i><b>/digest/subscribers/</b>.
+
+       The contents of <i>dir</i><b>/headeradd</b> are added to the  header  of
+       outgoing messages.
+
+       <b>ezmlm-get</b> is normally invoked from a <b>.<A HREF="qmail.7.html">qmail(7)</A></b> file.
+
+       It  reads  a  mail  message from its standard input, and a
+       mail envelope from the <b>SENDER</b>, <b>LOCAL</b>, and <b>HOST</b> environment
+       variables.
+
+       <b>ezmlm-get</b>  uses <b>LOCAL</b> to determine where it is invoked. If
+       <b>LOCAL</b> is the list local name only, <b>ezmlm-get</b> assumes it is
+       run  from  <i>dir</i><b>/editor</b>  to produce a digest.  The digest is
+       sent directly to the digest list subscribers.
+
+       If <b>LOCAL</b> is empty or undefined, <b>ezmlm-get</b>  assumes  it  is
+       run  from  the  command  line or a script. In this case it
+       behaves as if run from <i>dir</i><b>/editor</b> and sends out  a  digest
+       to the digest subscribers.
+
+       Otherwise, <b>ezmlm-get</b> expects <b>LOCAL</b> to be of the form <i>list</i><b>-</b>
+       <i>action</i>.  Here <i>list</i> is the first line  of  <i>dir</i><b>/inlocal</b>  and
+       <i>action</i>  is  a request.  The output is sent to the envelope
+       sender.
+
+       <b>ezmlm-get</b> checks <i>action</i> for <b>dig.</b><i>digestcode</i>, <b>index</b>, <b>thread</b>,
+       and <b>get</b>.  If <i>action</i> is one of these, <b>ezmlm-get</b> handles the
+       request and sends a reply.  If  successful,  it  exits  99
+       (ignore  remaining  <b>.<A HREF="qmail.7.html">qmail(7)</A></b> file entries).  If <i>action</i> is
+       not one of these, <b>ezmlm-get</b> exits 0 (success) to pass  the
+       message on to later handlers, such as <b><A HREF="ezmlm-manage.1.html">ezmlm-manage(1)</A></b>.
+
+       <b>ezmlm-get</b>   expects  <b>HOST</b>  to  match  the  first  line  of
+       <i>dir</i><b>/inhost</b>.
+
+       <b>ezmlm-dig.</b><i>digestcode</i> returns a digest of messages received
+       since  the  last  digest,  unless  numerical arguments are
+       given.  <i>digestcode</i> must be alphanumeric, and match  (case-
+
+                                                                2
+
+ezmlm-get(1)                                         ezmlm-get(1)
+
+       insensitive)  <i>digestcode</i>  on  the  <b>ezmlm-get</b> command line.
+       Otherwise,  the  request  will  be  ignored.  This  is  to
+       restrict  digest creation. The body of the requesting mes-
+       sage up to the first line starting with '-' is copied into
+       the  <i>administrivia</i> section of the digest. This is followed
+       by the contents of <i>dir</i><b>/text/digest</b>, if this file exists.
+
+       <b>Note:</b> Anyone who can read your <i>dir</i><b>/manager</b>  file,  digest-
+       requesting  scripts,  or mail log knows the <i>digestcode</i> and
+       can trigger digests.
+
+       <b>ezmlm-get</b> copies <i>dir</i><b>/mailinglist</b> into a <b>Mailing-List</b> field
+       in  its  response.  If the incoming message has a <b>Mailing-</b>
+       <b>List</b> field, <b>ezmlm-get</b> refuses to respond.  <b>ezmlm-get</b>  also
+       refuses to respond to bounce messages.
+
+       If  <i>dir</i><b>/public</b>  does  not  exist,  <b>ezmlm-get</b>  rejects  all
+       archive retrieval attempts, unless  the  <b>-p</b>  command  line
+       switch is used.
+
+       Archive  retrieval  actions  can be of the form <b>action[f]</b>,
+       <b>action[f].</b><i>num</i> or <b>action[f].</b><i>num_num2</i>, where <i>num</i> is the mes-
+       sage  number  for the action or <i>num_num2</i> the range of mes-
+       sage numbers for the action.
+
+       <b>f</b> is an optional format specifier for <i>-get</i>,  <i>-thread</i>,  and
+       <i>-dig</i>  requests.  It  is  allowed,  but  ignored for <i>-index</i>
+       requests. Currently, the following are allowed:
+
+       <b>r</b>      rfc1153. This is a ``plain''  non-MIME  format  for
+              dumb clients.
+
+       <b>m</b>      (Default.)  MIME  <i>multipart/digest</i> with a subset of
+              ordered headers sorted.  Currently,  the  following
+              headers  are  included  in the order listed: Date:,
+              To:, From:, Reply-To:, Cc:, MIME-Version:, Content-
+              Type:,  Message-ID:,  and  Keywords:.   This can be
+              customized with the optional  file  <i>dir</i><b>/digheaders</b>,
+              which  should contain the desired headers up to but
+              not including the colon.
+
+              The format is no longer compliant with rfc1153,  as
+              the  rfc1153  format  is incompatible with rfc2046,
+              which which the format is (should be) compatible.
+
+       <b>x</b>      MIXED: This is the same as the default MIME format,
+              except  that  the  Content-Type is <i>multipart/mixed</i>.
+              This helps circumnavigate  a  Pine  bug:  when  the
+              digest   is   content-transfer-encoded,  Pine  will
+              refuse to display the initial text/plain part of  a
+              <i>multipart/digest</i> message, but display the same part
+              of a <i>multipart/mixed</i> message. Some  MUAs  for  some
+              strange  reason  treat  the  two  multipart formats
+
+                                                                3
+
+ezmlm-get(1)                                         ezmlm-get(1)
+
+              differently. In some cases, ``x'' works better than
+              ``m''.
+
+       <b>v</b>      VIRGIN: This is MIME <i>multipart/digest</i> with messages
+              returned without any header filtering.
+
+       <b>n</b>      NATIVE: This is VIRGIN  format  without  threading,
+              i.e.  messages are presented in numerical order and
+              the message index is suppressed.
+
+       For flexibility and backwards compatibility, the '.' sepa-
+       rating  the action from the first argument can be replaced
+       by '-', or omitted.  Any  non-alphanumeric  character  can
+       separate <i>num2</i> from <i>num</i>.
+
+       If <i>action</i> is <i>dig.digestcode</i>, <b>ezmlm-get</b> returns a digest of
+       the messages received since the last digest,  and  updates
+       the digest issue counter.
+
+       If  <i>action</i>  is <i>get</i>, <b>ezmlm-get</b> sends back message(s) <i>num</i> or
+       <i>num</i> through <i>num2</i>.  from <i>dir</i><b>/archive/</b>.  If <i>num</i>  is  omitted
+       and  <i>dir</i><b>/dignum</b> does not exist or is 0, the latest HISTGET
+       message (default 30) are returned. Otherwise, the messages
+       since  the  latest  digest are returned including the last
+       message in that digest, so that always at least 1  message
+       is send. If the number of messages exceeds MAXGET (default
+       100), only the MAXGET last messages are returned.  if  <i>num</i>
+       is  greater  than  the latest message in the archive _and_
+       <i>num2</i> is specified, the latest  messages  back  to  HISTGET
+       before  the end of the latest digest up to MAXGET messages
+       are returned. This is a good  way  of  always  getting  at
+       least  the  latest  30 messages without knowing the latest
+       message number. A link with such a command  could  be  put
+       into e.g.  <i>dir</i><b>/text/sub-ok</b>.
+
+       <i>num</i>  and  <i>num2</i>  are adjusted to make both &gt; 0, and <i>num2</i> &gt;=
+       <i>num</i>.  If either is greater than the largest message number
+       processed,  it is silently set to the largest message num-
+       ber.  At most 100 messages are returned.
+
+       If <i>action</i> is <b>index</b><i>,</i> <b>ezmlm-get</b> sends back the subjects  and
+       authors  of the message(s) <i>num</i> or <i>num</i> through <i>num2</i> in sets
+       of 100 from <i>dir</i><b>/archive/</b>.  <i>num</i>  and  <i>num2</i>  are  reasonable
+       adjusted  as  for  'get'. No warnings are sent. At most 20
+       sets of 100 message entries are returned per  request.  If
+       <i>num</i> is omitted, <b>ezmlm-get</b> returns the last 100-200 message
+       entries, which automatically gives information  about  the
+       last message number.
+
+       If  <i>action</i>  is <b>thread</b><i>,</i> <b>ezmlm-get</b> sends back the message(s)
+       that have an index subject entry identical to that of mes-
+       sage <i>num</i> from <i>dir</i><b>/archive/</b>.
+
+                                                                4
+
+ezmlm-get(1)                                         ezmlm-get(1)
+
+       If  <i>num2</i>  is  given it is ignored. If <i>num</i> is out of range,
+       and error message is returned. The message  range  scanned
+       for  the  subject  is  limited to 2000 messages before and
+       after the master message, i.e. the <b>thread</b> argument.   This
+       limit  protects  very  large  archives.   Most threads are
+       expected to be  considerably  more  short-lived.   In  the
+       unlikely  event that there are further messages, these can
+       be retrieved by a second request  for  the  highest/lowest
+       message returned in the first request.
+
+<H2>CHARACTER SETS</H2>
+       If  <i>dir</i><b>/charset</b>  exists,  <b>ezmlm-get</b> will use the character
+       set listed for all messages. Otherwise, the default  ``us-
+       ascii'' will be used. The character set can be suffixed by
+       ``:'' followed by a code. If the code is  ``Q'',  outgoing
+       messages  are sent as ``Quoted-Printable'', if it is ``B''
+       they are sent ``base64'' encoded.  Otherwise, text is sent
+       as is.
+
+<H2>FILES</H2>
+       <i>dir</i><b>/dignum</b>
+              The last message included in the latest normal mode
+              digest.
+
+       <i>dir</i><b>/digissue</b>
+              The issue number of the latest normal mode  digest.
+
+       <i>dir</i><b>/text/get-bad</b>
+              Returned if a/the message cannot be found.
+
+       <i>dir</i><b>/text/digest</b>
+              Copied  into  the  <i>Administrivia</i> section of digests
+              after the body of the requesting message.
+
+       <i>dir</i><b>/charset</b>
+              The character set used for all  <b>ezmlm-get</b>  messages
+              (see  above).   If  not present, the default, ``us-
+              ascii'', is used without encoding.
+
+<H2>BUGS</H2>
+       The digest format per rfc2046 should (but is not  required
+       to)   be  multipart/mixed  with  the  table-of-contents  a
+       text/plain part, and the entire remainder of the digest  a
+       multipart/digest part. The multipart/digest in turn should
+       contain all the messages. Many MUA's fail to split out the
+       individual  messages  from such a hierarchy, so the format
+       used by <b>ezmlm-get</b> is a simple multipart/digest, explicitly
+       typing the table-of-contents to text/plain, with the ``x''
+       format changing the mail content-type to  multipart/mixed.
+
+<H2>SEE ALSO</H2>
+       <A HREF="ezmlm-make.1.html">ezmlm-make(1)</A>,  <A HREF="ezmlm-manage.1.html">ezmlm-manage(1)</A>,  <A HREF="ezmlm-send.1.html">ezmlm-send(1)</A>, <A HREF="ezmlm.5.html">ezmlm(5)</A>,
+       <A HREF="qmail-command.8.html">qmail-command(8)</A>
+
+                                                                5
+
+</PRE>
+  <hr>
+  <ADDRESS>
+  © 1994 <A HREF="http://www.ntua.gr/~christia/man-cgi.html">Man-cgi 1.15</A>, Panagiotis Christias &lt;christia@theseas.ntua.gr&gt;
+  </ADDRESS>

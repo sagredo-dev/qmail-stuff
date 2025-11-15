@@ -1,0 +1,83 @@
+  <TITLE>UNIX man pages : ./crontab.1 ()</TITLE>
+  <hr>
+<PRE>
+
+CRONTAB(1)                                             CRONTAB(1)
+
+<H2>NAME</H2>
+       crontab - maintain crontab files for individual users (V3)
+
+<H2>SYNOPSIS</H2>
+       crontab [ -u user ] file
+       crontab [ -u user ] { -l | -r | -e }
+
+<H2>DESCRIPTION</H2>
+       <i>Crontab</i> is the program used to install, deinstall or  list
+       the tables used to drive the <A HREF="cron.8.html"><i>cron</i>(8)</A> daemon in Vixie Cron.
+       Each user can have their own crontab, and though these are
+       files  in  /var,  they  are  not  intended  to  be  edited
+       directly.
+
+       If the <i>allow</i> file exists, then you must be listed  therein
+       in  order to be allowed to use this command.  If the <i>allow</i>
+       file does not exist but the <i>deny</i> file does exist, then you
+       must  <b>not</b>  be listed in the <i>deny</i> file in order to use this
+       command.  If neither of these files exists, then depending
+       on site-dependent configuration parameters, only the super
+       user will be allowed to use this  command,  or  all  users
+       will be able to use this command.
+
+       If  the  <i>-u</i>  option is given, it specifies the name of the
+       user whose crontab is to be tweaked.  If  this  option  is
+       not  given,  <i>crontab</i>  examines  "your"  crontab, i.e., the
+       crontab of the person executing the  command.   Note  that
+       <A HREF="su.8.html"><i>su</i>(8)</A>  can  confuse  <i>crontab</i>  and  that if you are running
+       inside of <A HREF="su.8.html"><i>su</i>(8)</A> you should always use the  <i>-u</i>  option  for
+       safety's sake.
+
+       The  first  form  of this command is used to install a new
+       crontab from some named file  or  standard  input  if  the
+       pseudo-filename ``-'' is given.
+
+       The  <i>-l</i>  option causes the current crontab to be displayed
+       on standard output.
+
+       The <i>-r</i> option causes the current crontab to be removed.
+
+       The <i>-e</i> option is used to edit the  current  crontab  using
+       the  editor  specified by the VISUAL or EDITOR environment
+       variables.  After you exit from the editor,  the  modified
+       crontab will be installed automatically.
+
+<H2>SEE ALSO</H2>
+       <A HREF="crontab.5.html">crontab(5)</A>, <A HREF="cron.8.html">cron(8)</A>
+
+<H2>FILES</H2>
+       /etc/cron.allow
+       /etc/cron.deny
+
+<H2>STANDARDS</H2>
+       The   <i>crontab</i>  command  conforms  to  IEEE  Std1003.2-1992
+
+                         29 December 1993                       1
+
+CRONTAB(1)                                             CRONTAB(1)
+
+       (``POSIX'').  This new command syntax differs from  previ-
+       ous  versions  of  Vixie Cron, as well as from the classic
+       SVR3 syntax.
+
+<H2>DIAGNOSTICS</H2>
+       A fairly informative usage message appears if you  run  it
+       with a bad command line.
+
+<H2>AUTHOR</H2>
+       Paul Vixie &lt;paul@vix.com&gt;
+
+                         29 December 1993                       2
+
+</PRE>
+  <hr>
+  <ADDRESS>
+  © 1994 <A HREF="http://www.ntua.gr/~christia/man-cgi.html">Man-cgi 1.15</A>, Panagiotis Christias &lt;christia@theseas.ntua.gr&gt;
+  </ADDRESS>

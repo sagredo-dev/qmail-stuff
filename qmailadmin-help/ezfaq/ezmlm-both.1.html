@@ -1,0 +1,53 @@
+  <TITLE>UNIX man pages : ./ezmlm-both.1 ()</TITLE>
+  <hr>
+<PRE>
+
+ezmlm-both(1)                                       ezmlm-both(1)
+
+<H2>NAME</H2>
+       ezmlm-both - Creates a mailing list and digest list
+
+<H2>SYNOPSIS</H2>
+       <b>ezmlm-both</b> <i>dir</i> <i>dot</i> <i>local</i> <i>host</i> <i>digestcode</i> <i>[</i> <i>address</i> <i>]</i>
+
+<H2>DESCRIPTION</H2>
+       <b>ezmlm-both</b> is a shell script to serve as an example of how
+       easy it is to create  complete  specialized  setups  using
+       components of <b><A HREF="ezmlm.5.html">ezmlm(5)</A></b>.
+
+       <b>ezmlm-both</b>  invokes <b><A HREF="ezmlm-make.1.html">ezmlm-make(1)</A></b> to create a mailing list
+       with digest enabled.
+
+       If <i>address</i> is given, <b>ezmlm-both</b> sets  up  the  lists  with
+       remote  administration  and installs <i>address</i> as the remote
+       administrator. messages  to  <i>list</i>-owner  and  <i>list-digest</i>-
+       owner  are  directed  to  <i>address</i>.  <i>address</i> is also made a
+       subscriber of both lists.
+
+       Posts to the list are restricted  to  subscribers  of  the
+       list, the digest list, or addresses added with:
+
+         % ezmlm-sub dir/extra address@host address2@host2 ...
+
+       Other  posts  are rejected. If <i>address</i> is specified, posts
+       from non-subscribers are sent to the remote  administrator
+       for  moderation,  instead  of  being  ignored.  The remote
+       administrator may accept the message or reject it. If  the
+       remote  administrator  ignores the moderation request, the
+       post will be ignored. The sender will not be  notified  in
+       this case.
+
+       If you are not the user receiving mail, you need to change
+       ownership of <i>dir</i>  and  its  contents  to  the  controlling
+       user/group.
+
+<H2>SEE ALSO</H2>
+       <A HREF="ezmlm.5.html">ezmlm(5)</A>, <A HREF="ezmlm-make.1.html">ezmlm-make(1)</A>, <A HREF="ezmlm-sub.1.html">ezmlm-sub(1)</A>
+
+                                                                1
+
+</PRE>
+  <hr>
+  <ADDRESS>
+  © 1994 <A HREF="http://www.ntua.gr/~christia/man-cgi.html">Man-cgi 1.15</A>, Panagiotis Christias &lt;christia@theseas.ntua.gr&gt;
+  </ADDRESS>

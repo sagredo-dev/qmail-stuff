@@ -1,0 +1,156 @@
+  <TITLE>UNIX man pages : ./ezmlm-split.1 ()</TITLE>
+  <hr>
+<PRE>
+
+ezmlm-split(1)                                     ezmlm-split(1)
+
+<H2>NAME</H2>
+       ezmlm-split  -  distribute  (un)subscribe requests to sub-
+       lists
+
+<H2>SYNOPSIS</H2>
+       <b>ezmlm-split</b> <i>dir</i> [ <b>-dD</b> ][ <i>splitfile</i> ]
+
+<H2>DESCRIPTION</H2>
+       If the action is <i>-subscribe</i> or  <i>-unsubscribe</i>,  <b>ezmlm-split</b>
+       analyzes the target of the request,
+        computing  a hash in the range 0-52 from the address, and
+       determines the ``domain key'', i.e.  the two top levels of
+       the host address in reverse order.  Thus, the domain entry
+       for ``d@a.b.c'' becomes ``c.b'' and the  one  for  ``d@a''
+       becomes ``a''.
+
+       The  hash and domain parts are then tested against succes-
+       sive lines of <i>splitfile</i>  (default  is  <i>dir</i><b>/split</b>).   If  a
+       match  is  found,  the  request is forwarded to the corre-
+       sponding sublist, and <b>ezmlm-split</b> exits 99. If a match  is
+       not  found  or  action  is not <i>-subscribe</i> or <i>-unsubscribe</i>,
+       <b>ezmlm-split</b> exits 0.
+
+       In <i>splitfile</i>, blank lines and lines with ``#'' in position
+       1  are ignored. Other lines are expected to be of the for-
+       mat ``dom:low:hi:list@host'', where  ``dom''  is  the  top
+       level   domain,  ``low''-``hi''  the  range  of  the  hash
+       (defaults 0 and 52), and ``list@host''  the  name  of  the
+       corresponding  list (default is the local list). A line is
+       considered to match if the address hash is between ``low''
+       and  ``hi''  inclusive  and  ``dom''  is  empty, or if the
+       ``domain key'' matches ``dom''  for  the  full  length  of
+       ``dom''.  Thus,  the  address ``user@aol.com'' would match
+       ``com'' and ``aol.com'', but not ``host.com''.
+
+       If the domain specified is the top level domain  up  to  3
+       characters, the split is identical as that used by the SQL
+       subscriber interface. This is recommended.  There  can  be
+       several entries for a given sublist.
+
+       <b>ezmlm-split</b>  can be used also for list with SQL-based sub-
+       listing. In this case, addresses  matching  the  <i>splitfile</i>
+       are  forwarded to the respective non-SQL sublist, and non-
+       matching addresses are handed by the SQL sublist.
+
+<H2>OPTIONS</H2>
+       <b>-d</b>     (Default.)  Do. Forward requests to the appropriate
+              list.
+
+       <b>-D</b>     Do  not  process  messages. Rather, read addresses,
+              one per line from stdin, and print  ``sublist@host:
+              address''  where ``sublist@host'' is the address to
+              which the request  would  have  been  forwarded  in
+
+                                                                1
+
+ezmlm-split(1)                                     ezmlm-split(1)
+
+              normal  operation. This is used to process a set of
+              existing addresses into a set  of  address  collec-
+              tions,  one  per  sublist. The output can be sorted
+              and easily processed into a set of files,  one  per
+              sublist  containing the addresses that sublist han-
+              dles.
+
+<H2>SPLIT LIST SETUP</H2>
+       To use a hierarchy of sublists, set up the master list and
+       add  a <b>ezmlm-split</b> line before the <b><A HREF="ezmlm-manage.1.html">ezmlm-manage(1)</A></b> line in
+       <i>dir</i><b>/manager</b>.  Create any number of sublists  of  the  main
+       list  on  other  local  or  distant  hosts. Ideally, these
+       should be non-archived, to point to  the  correct  message
+       numbers  of the main list archive (see <b><A HREF="ezmlm-send.1.html">ezmlm-send(1)</A></b>.  You
+       can use <b>ezmlm-make</b> <b>-C</b><i>ezmlmsubrc</i> for this.  If  you  don't,
+       use  the text files from the main list, except <i>bounce-bot-</i>
+       <i>tom</i>.  Next, create <i>split</i> in the  main  list  directory  to
+       achieve  an appropriate split. Load splitting between sev-
+       eral local hosts is best achieved by hash,  with  a  blank
+       domain.   Geographical  splitting  with hosts in different
+       countries is best done via  ``domain''  and  naturally,  a
+       large domain can be subdivided by hash.
+
+       Subscribers  will  receive  all  messages 'From:' the main
+       list. When they subscribe or unsubscribe, the request will
+       be forwarded to the appropriate sublist, which will handle
+       the confirmation. All  information,  except  <i>bounce-bottom</i>
+       refers  the  user  to the main list. Thus, to the user the
+       list appears as a single list with the address of the main
+       list, and distribution among sublists is at the discretion
+       of the administrator of the main list.
+
+ADDING/REMOVING SUBLISTS
+       In general, the main list should be disabled, while chang-
+       ing  the  sublist  split. This can be done by changing the
+       mode of <i>dir</i><b>/lock</b> to 0 or by setting the sticky bit for the
+       home directory of the user controlling the list.
+
+       To  remove  a  sublist, edit the lines for that sublist in
+       the splitfile to point to another list, and add the exist-
+       ing subscribers of the removed sublist to the sublist tak-
+       ing the load.  When splitting a sublist into several  sub-
+       lists, create the new sublists, and edit the split file to
+       distribute the load between them (usually by  hash).  Pro-
+       cess the subscribers of the old list with:
+
+        | ezmlm-split -D dir | sort | program
+
+       where to get one file of addresses per new sublist, ``pro-
+       gram'' could be:
+
+                                                                2
+
+ezmlm-split(1)                                     ezmlm-split(1)
+
+       #!/usr/bin/perl
+       while (&lt;&gt;) {
+         ($f,$t) = split (':');
+         $t =~ s/^ //;
+         if ($f ne $of) {
+           $of = $f;
+           close(OUT) if ($of);
+           open(OUT,"&gt;$f") or die("Unable to open $f");
+         }
+         print OUT $t;
+       }
+       close(OUT) if ($of);
+
+       Remove all subscribers from the  old  list,  and  add  the
+       respective subscribers to each list.
+
+       For any more drastic reorganizations, collect all the sub-
+       scribes of the affected  sublists,  create  the  new  sub-
+       scriber  lists, and update the subscribers of the affected
+       lists.
+
+       Reorganizations are easier done when lists  use  SQL  sup-
+       port.  By  temporarily  using SQL support, reorganizations
+       can be done on running  lists  even  when  normally  using
+       <b>ezmlm-split</b> and local subscriber databases.
+
+<H2>SEE ALSO</H2>
+       <A HREF="ezmlm-list.1.html">ezmlm-list(1)</A>,   <A HREF="ezmlm-make.1.html">ezmlm-make(1)</A>,   <A HREF="ezmlm-manage.1.html">ezmlm-manage(1)</A>,  <A HREF="ezmlmsub.1.html">ezmlmsub(1)</A>
+        <A HREF="ezmlm-unsub.1.html">ezmlm-unsub(1)</A>, <A HREF="ezmlm.5.html">ezmlm(5)</A>, <A HREF="ezmlmrc.5.html">ezmlmrc(5)</A>, <A HREF="ezmlmsubrc.5.html">ezmlmsubrc(5)</A>
+
+                                                                3
+
+</PRE>
+  <hr>
+  <ADDRESS>
+  © 1994 <A HREF="http://www.ntua.gr/~christia/man-cgi.html">Man-cgi 1.15</A>, Panagiotis Christias &lt;christia@theseas.ntua.gr&gt;
+  </ADDRESS>

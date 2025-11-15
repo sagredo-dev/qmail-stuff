@@ -1,0 +1,49 @@
+  <TITLE>UNIX man pages : ./crond.8 ()</TITLE>
+  <hr>
+<PRE>
+
+CRON(8)                                                   CRON(8)
+
+<H2>NAME</H2>
+       cron - daemon to execute scheduled commands (Vixie Cron)
+
+<H2>SYNOPSIS</H2>
+       cron
+
+<H2>DESCRIPTION</H2>
+       <i>Cron</i>  should be started from /etc/rc or /etc/rc.local.  It
+       will return immediately, so you don't  need  to  start  it
+       with '&'.
+
+       <i>Cron</i>  searches /var/spool/cron for crontab files which are
+       named after accounts in /etc/passwd;  crontabs  found  are
+       loaded  into  memory.  <i>Cron</i> also searches for /etc/crontab
+       which is in a different  format  (see  <i><A HREF="crontab.5.html">crontab(5)</A>).</i>   <i>Cron</i>
+       then wakes up every minute, examining all stored crontabs,
+       checking each command to see if it should be  run  in  the
+       current  minute.   When  executing commands, any output is
+       mailed to the owner of the crontab (or to the  user  named
+       in the MAILTO environment variable in the crontab, if such
+       exists).
+
+       Additionally, <i>cron</i> checks each minute to see if its  spool
+       directory's  modtime  (or the modtime on <i>/etc/crontab)</i> has
+       changed, and if it has, <i>cron</i> will then examine the modtime
+       on all crontabs and reload those which have changed.  Thus
+       <i>cron</i> need not be restarted whenever a crontab file is mod-
+       ified.   Note that the <A HREF="Crontab.1.html"><i>Crontab</i>(1)</A> command updates the mod-
+       time of the spool directory whenever it changes a crontab.
+
+<H2>SEE ALSO</H2>
+       <A HREF="crontab.1.html">crontab(1)</A>, <A HREF="crontab.5.html">crontab(5)</A>
+
+<H2>AUTHOR</H2>
+       Paul Vixie &lt;paul@vix.com&gt;
+
+                         20 December 1993                       1
+
+</PRE>
+  <hr>
+  <ADDRESS>
+  © 1994 <A HREF="http://www.ntua.gr/~christia/man-cgi.html">Man-cgi 1.15</A>, Panagiotis Christias &lt;christia@theseas.ntua.gr&gt;
+  </ADDRESS>

@@ -1,0 +1,245 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<HTML>
+<HEAD>
+ <META NAME="GENERATOR" CONTENT="SGML-Tools 1.0.7">
+ <TITLE>EZMLM/IDX MANUAL, Version 0.32: EZMLM/IDX MODERATOR'S AND ADMINISTRATOR'S MANUAL</TITLE>
+ <LINK HREF="ezman-3.html" REL=next>
+ <LINK HREF="ezman-1.html" REL=previous>
+ <LINK HREF="ezman.html#toc2" REL=contents>
+</HEAD>
+<BODY vlink="#004400" link="#008800" bgcolor="#ffffff" alink="#ff0000"><FONT FACE="helvetica,times,arial">
+<A HREF="ezman-3.html">Next</A>
+<A HREF="ezman-1.html">Previous</A>
+<A HREF="ezman.html#toc2">Contents</A>
+<HR>
+<H2><A NAME="s2">2. EZMLM/IDX MODERATOR'S AND ADMINISTRATOR'S MANUAL</A></H2>
+
+<P>
+<H2><A NAME="ss2.1">2.1 Introduction.</A>
+</H2>
+
+<P>This chapter describes how to be a moderator(*) (message and subscription) and
+remote administrator(*) for a mailing list run by ezmlm/idx
+<BLOCKQUOTE>Features that require ezmlm-idx are marked ``(*)''.</BLOCKQUOTE>
+
+.
+An ``administrator'' is a person responsible for the management of a mailing
+list. A ``remote administrator'' is an address with the rights to
+do certain administrative tasks remotely by E-mail. Depending on how the
+list is configured, remote administrators may have the right/ability to
+list subscribers, search for subscriber addresses by name, add and remove
+subscriber addresses and/or edit the texts that ezmlm sends in reply to
+list commands. A ``moderator'' is an address to which messages are sent
+for approval. The message will be passed on only if a moderator has approved
+it. ezmlm distinguishes between ``message moderators'' and ``subscription
+moderators''. Posts to a message moderated list are sent to the ``message
+moderators''. The list acts on the first moderator reply it receives to
+accept or reject the post. For subscription moderated lists, the users'
+subscription requests are sent to the ``subscription moderators''. If
+at least one subscription moderator approves the request the user address
+becomes a subscriber. While remote administration and subscription moderation
+are enabled separately, the addresses are always the same. Message moderators
+can be a different group of addresses, but in practice most lists use the
+same addresses for all 3 functions.
+<P>In all transactions ezmlm keeps the moderators' addresses secret, even from
+other moderators.
+If you want to
+tell the user who you are, send them a separate E-mail. Of course, a list owner
+may choose to make the moderators' identities public.
+<P>ezmlm also keeps subscriber addresses secret.
+Only if configured (see below) will
+it allow the addresses to be listed, and then only to
+remote administrators.
+<P>ezmlm sends special moderator help in response to a <EM>-help</EM> request for
+a moderator(*).
+To receive this information for <CODE>mailinglist@example.org</CODE>,
+send mail to <CODE>mailinglist-help@example.org</CODE>.
+<P>
+<H2><A NAME="ss2.2">2.2 Message moderation(*).</A>
+</H2>
+
+<P>ezmlm lists may be set up with message moderation. When ezmlm receives a
+message for the list, it saves it, sends a moderation request with the message
+enclosed to the moderator(s). 
+The subject of moderation request is ``MODERATE for ...''.
+<P>If you would like to
+approve the message, just reply to the ``Reply-To:'' address
+of the moderation request. Usually, this is the default for the ``reply''
+function of your mail program. Alternatively, click on the ``accept''
+address or copy and paste it into the ``To:'' field of a new message.
+<P>To reject the message, reply to the ''From:'' address, click on
+the ``reject'' address, or copy and paste the ``reject'' address into
+the ``To:'' field of a new message. You can also just replace
+the text ``accept'' in the accept address with ``reject''.
+Optionally, type a comment between
+two lines starting with ``%%%''. The sender of the message will receive
+a message from ezmlm explaining that the message was rejected. If you
+typed a comment, it will be put into the rejection notice.
+<P>The third alternative is to ignore the request. If no moderator has
+replied within 5 days, the message is returned to the sender with an
+explanation. The owner can also set up the list so that ignored posts are
+silently removed, which may be more suitable for some lists.
+<P>To minimize mail to busy moderators, ezmlm does not confirm
+moderator actions. More than one moderator may reply.
+The message will not be duplicated. The first valid reply that is received will
+decide the fate of the message. ezmlm will send an error message only if
+a later reply requests an action
+different from the one already taken. Thus, if
+you decide to accept the message, but another moderator has already rejected
+it, ezmlm will notify you. If instead the message had been previously accepted,
+ezmlm would log your request, but it will not send you a notification.
+<P>If a message is send <EM>by</EM> a moderator, it is sent for approval
+to that moderator only.
+The approval is necessary since anyone can claim
+to be a moderator, but only the moderator will be able
+to receive the moderation request. This feature is very useful for announcement
+lists where any moderator can make an announcement without bothering the
+others, while at the same time non-moderators cannot post without permission.
+<P>
+<H2><A NAME="remote_admin"></A> <A NAME="ss2.3">2.3 Remote administration(*).</A>
+</H2>
+
+<P>A remote administrator is an address that can add/remove addresses from the
+subscriber list. To subscribe <CODE>john@example.net</CODE> to the list
+<CODE>mailinglist@example.org</CODE>, send mail to
+<CODE>mailinglist-subscribe-john=example.net@example.org</CODE>. Normally,
+<CODE>john@example.net</CODE> will be asked to confirm. However, if you are a remote
+administrator, <EM>you</EM> will receive the confirmation request. Thus,
+<CODE>john@example.net</CODE> does not need to participate. When you've successfully
+added the address,
+<CODE>john@example.net</CODE> will receive a message acknowledging
+his subscription.
+<P>You can unsubscribe addresses (<EM>-unsubscribe</EM>) or determine if an address
+is a subscriber (<EM>-query</EM>).
+If the owner has chosen to enable these functions, you
+may also <EM>-list</EM> subscriber addresses
+list and/or <EM>-edit</EM> text files, such as the one sent in reply to
+the <EM>-help</EM> command (see
+<A HREF="#edit">Editing ezmlm administrative messages</A> below).
+You can also search the subscription
+log with e.g. the user's name (see 
+<A HREF="#log">Listing and searching the subscription log</A>). You can use all these functions to
+help users subscribe or unsubscribe to the list.
+See 
+<A HREF="ezman-3.html#help_unsubscribe">Helping users unsubscribe</A> in the
+OWNER'S introduction for details.
+<P>
+<H2><A NAME="add_allow"></A> <A NAME="ss2.4">2.4 Adding subscriber aliases(*).</A>
+</H2>
+
+<P>ezmlm lists may be set up to only allow subscribers to send messages to the
+list. This is less secure than moderation, but still keeps most ``garbage''
+off the list. Occasionally, a user may wish to send messages from an address
+other than the subscription address. As a remote administrator, you can add
+the user's alias to a special ``allow'' database.
+To add <CODE>john@example.net</CODE>
+as an alias to the <CODE>mailinglist@example.org</CODE>, send mail to
+<CODE>mailinglist-allow-subscribe-john=example.net@example.org</CODE>.
+<EM>-unsubscribe</EM>
+and other commands work the same way. The messages ezmlm sends talk about
+the <CODE>mailinglist-allow@example.org</CODE> mailing list, but of course you know
+that this is just a figure of speech.
+<P>On lists that do not have subscription moderation, users can add themselves
+to the ``allow'' database in the same way. This is
+documented only briefly in the USER'S manual.
+<P>Archive access may also be restricted to subscribers. Like subscribers
+of the list or the digest list, addresses in the ``allow'' database are allowed
+to access the archive.
+<P>
+<H2><A NAME="deny"></A> <A NAME="ss2.5">2.5 Preventing an address from posting(*).</A>
+</H2>
+
+<P>Just as you may want to allow some non-subscriber addresses to send messages
+to the list, you may want to (temporarily) prevent an address from posting
+to the list.
+This is easily defeated, but very useful if some defective mail robot or
+other mailing list sends messages to the list address.
+The system works just like
+the ``allow'' list, but is called ``deny''. To prevent <CODE>robot@druga.su</CODE>
+from posting to <CODE>mailinglist@example.org</CODE>, send mail to
+<CODE>mailinglist-deny-subscribe-robot=druga.su@example.org</CODE> and reply to the
+confirmation request, respectively.
+<P>You can do this only if you are a remote administrator and the list is
+set up to support this option.
+You can use <EM>-unsubscribe</EM>, <EM>-query</EM>, and other commands with
+this address collection, just as for the normal subscriber database.
+Normal users cannot access the database. This database
+does not affect archive access.
+<P>
+<H2><A NAME="list"></A> <A NAME="ss2.6">2.6 Listing subscribers(*).</A>
+</H2>
+
+<P>The list may be configured to allow remote administrators to obtain a list
+of subscriber addresses. If <CODE>mailinglist@example.org</CODE> is set up with
+this option and you are a remote administrator, mail to
+<CODE>mailinglist-list@example.org</CODE> will get you the list. If you are sending
+from another account,
+you can use <CODE>mailinglist-remote=admin.net@example.org</CODE>
+to get the list to <CODE>remote@admin.net</CODE>. Of course, this will work only
+if <CODE>remote@admin.net</CODE> is a remote administrator.
+<P>Subscriber lists for the ``digest'', ``deny''
+and ``allow'' databases are obtained in a
+similar manner by a message to
+<CODE>mailinglist-digest-list@example.org</CODE>,
+<CODE>mailinglist-deny-list@example.org</CODE>, or
+<CODE>mailinglist-allow-list@example.org</CODE>.
+<P>
+<H2><A NAME="sub_mod"></A> <A NAME="ss2.7">2.7 Subscription moderation(*).</A>
+</H2>
+
+<P>If the list is set up for subscription moderation, a moderator has to
+approve the user's subscription request. The process starts with a
+user <EM>-subscribe</EM> request,
+followed by the normal user confirmation. After
+this, ezmlm sends a second confirmation request to the moderator(s). If any
+moderator replies to this request, the user is accepted as a subscriber.
+<P>You may send the user a message to request further information. However,
+this will reveal your address/identity to the user.
+<P>Users may unsubscribe at any time without moderator assistance.
+<P>
+<H2><A NAME="log"></A> <A NAME="ss2.8">2.8 Searching and listing the subscription log(*).</A>
+</H2>
+
+<P>If configured, remote administrators may view or search the subscription
+log. This is a file that contains all changes in the subscriber database,
+one per line, in order of occurrence. Each line has the date,
+the direction (``+'' for additions, ``-'' for removals) and the way the
+change was made (blank for normal subscribe/unsubscribe, ``manual'' for
+manual additions from the command line, or ``probe'' for addresses removed
+via automated bounce handling), the addresses, and for additions usually
+the ``From:'' header contents from the subscription confirmation reply.
+<P>Listing this file allows the remote administrator to see recent additions
+and removals. This is done by sending a message to <CODE>list-log@host</CODE>.
+<P>Remote administrators can also search through the log.
+To retrieve all entries fr_d,
+where ``_'' can be any character, mail <CODE>list-log.fr_d@host</CODE>. The
+search is case insensitive. When you want to search for addresses, just
+replace the ``@'' in the address with ``_''. This feature is useful when
+a user wants to unsubscribe, but has changed his address and doesn't
+remember the subscription address. Just search for the host name, part of
+the user's name, etc. Usually it is obvious which of the few alternatives
+is the correct one. Construct an unsubscribe request from it, and if you
+are right, the user will receive a request to confirm the unsubscribe.
+Replying to it will remove the user from the subscribers.
+<P>The command works also for other address databases. Thus, to search through
+the digest subscriber log for ``Keith'' mail
+<CODE>list-digest-log.keith@host</CODE>.
+<P>
+<H2><A NAME="edit"></A> <A NAME="ss2.9">2.9 Editing ezmlm administrative messages(*).</A>
+</H2>
+
+<P>If configured, remote administrators may edit (via E-mail)
+ezmlm text files, such as the one sent in reply to the <EM>-help</EM> command.
+A list of editable files, their use, and instructions for editing may
+be obtained with the <EM>-edit</EM> command. Thus, for the list
+<CODE>mailinglist@example.org</CODE>, send a message to
+<CODE>mailinglist-edit@example.org</CODE> and follow the instructions.
+With or without
+ezmlm-idx, the messages can be modified locally with a text editor.
+<P>
+<HR>
+<A HREF="ezman-3.html">Next</A>
+<A HREF="ezman-1.html">Previous</A>
+<A HREF="ezman.html#toc2">Contents</A>
+</BODY>
+</HTML>

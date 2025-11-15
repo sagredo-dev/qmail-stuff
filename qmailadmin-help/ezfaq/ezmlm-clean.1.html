@@ -1,0 +1,93 @@
+  <TITLE>UNIX man pages : ./ezmlm-clean.1 ()</TITLE>
+  <hr>
+<PRE>
+
+ezmlm-clean(1)                                     ezmlm-clean(1)
+
+<H2>NAME</H2>
+       ezmlm-clean - clean moderation directory
+
+<H2>SYNOPSIS</H2>
+       <b>ezmlm-clean</b> <b>[mMrRvV]</b> <i>dir</i>
+
+<H2>DESCRIPTION</H2>
+       If  <i>dir</i><b>/modpost</b> exists, <b>ezmlm-clean</b> sends out messages for
+       timed-out posts in the moderation  directory  and  removes
+       stubs for rejected and accepted posts for the mailing list
+       stored in <i>dir</i>.  If <i>dir</i><b>/modpost</b> does not exist, <b>ezmlm-clean</b>
+       does nothing and exits.
+
+       <b>ezmlm-clean</b>  reads  <i>dir</i><b>/modtime</b>  and  extracts  a time-out
+       ``time'' in hours from it. If ``time'' is 0 or <i>dir</i><b>/modtime</b>
+       is  empty or doesn't exist, a default of 120 h is used. If
+       a time is given, it is limited to the range 24 h to 240 h.
+
+       <b>ezmlm-clean</b>   then  looks  through  <i>dir</i><b>/mod/accepted/</b>  and
+       <i>dir</i><b>/mod/rejected/</b> and removes  message  stubs  older  than
+       ``time''.  ``Time'' is a minimum retention time. Since the
+       files are processed only  when  <b>ezmlm-clean</b>  is  run,  the
+       delay  before  a message is timed-out may be substantially
+       longer if the list does not receive many messages.
+
+       Message age determined by the time parsed  <i>from</i>  <i>the</i>  <i>file</i>
+       <i>name,</i>  not from the creation time.  Thus, there is no good
+       way to extend the life of the file by  e.g.  touching  it.
+       Also,  files  in these directories are not checked for the
+       proper format.  Thus,  most  non-message  files  in  these
+       directories  will be deleted the first time <b>ezmlm-clean</b> is
+       run.
+
+       For messages in <i>dir</i><b>/mod/pending/</b> no  action  is  taken  on
+       read-only  files.  Messages  without the owner execute bit
+       set are silently removed, as they are the result of incom-
+       plete  <b><A HREF="ezmlm-store.1.html">ezmlm-store(1)</A></b>  executions.  For  other messages, a
+       notification of the time out is sent to the sender, before
+       the file is removed.
+
+       <b>ezmlm-clean</b>  logs  errors  to  the  mail log.  Re-delivery
+       should be avoided by suffixing any  <i>.qmail</i>  line  invoking
+       <b>ezmlm-clean</b> with '|| exit 0'.
+
+<H2>OPTIONS</H2>
+       <b>-m</b>     (Default.)   The  timed-out  post is sent as a MIME
+              enclosure.
+
+       <b>-M</b>     The timed-out post is appended to the message.
+
+       <b>-r</b>     (Default.)   The  timed-out  post  is  returned  to
+              sender.
+
+       <b>-R</b>     The  timed-out  post  is  discarded  without sender
+
+                                                                1
+
+ezmlm-clean(1)                                     ezmlm-clean(1)
+
+              notification.  <b>Note:</b> <b>ezmlm-clean</b>  is  normally  run
+              from  both  <i>dir</i><b>/editor</b>  and <i>dir</i><b>/moderator</b>.  To sup-
+              press sender notification, the switch needs  to  be
+              specified for all invocations of <b>ezmlm-clean</b>.
+
+       <b>-v</b>     Display <b>ezmlm-clean</b> version information.
+
+       <b>-V</b>     Display <b>ezmlm-clean</b> version information.
+
+<H2>CHARACTER SETS</H2>
+       If  <i>dir</i><b>/charset</b> exists, <b>ezmlm-clean</b> will use the character
+       set listed for all messages. Otherwise, the default  ``us-
+       ascii'' will be used. The character set can be suffixed by
+       ``:'' followed by a code. If the code is  ``Q'',  outgoing
+       messages  are sent as ``Quoted-Printable'', if it is ``B''
+       they are sent ``base64'' encoded.  Otherwise, text is sent
+       as is.
+
+<H2>SEE ALSO</H2>
+       <A HREF="ezmlm-make.1.html">ezmlm-make(1)</A>, <A HREF="ezmlm-moderate.1.html">ezmlm-moderate(1)</A>, <A HREF="ezmlm-store.1.html">ezmlm-store(1)</A>, <A HREF="ezmlm.5.html">ezmlm(5)</A>
+
+                                                                2
+
+</PRE>
+  <hr>
+  <ADDRESS>
+  © 1994 <A HREF="http://www.ntua.gr/~christia/man-cgi.html">Man-cgi 1.15</A>, Panagiotis Christias &lt;christia@theseas.ntua.gr&gt;
+  </ADDRESS>

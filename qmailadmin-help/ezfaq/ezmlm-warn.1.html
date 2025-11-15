@@ -1,0 +1,50 @@
+  <TITLE>UNIX man pages : ./ezmlm-warn.1 ()</TITLE>
+  <hr>
+<PRE>
+
+ezmlm-warn(1)                                       ezmlm-warn(1)
+
+<H2>NAME</H2>
+       ezmlm-warn - send out bounce warnings
+
+<H2>SYNOPSIS</H2>
+       <b>ezmlm-warn</b> [ <b>-dD</b> ][ <b>-t</b> <i>timeout</i> ] <i>dir</i>
+
+<H2>DESCRIPTION</H2>
+       <b>ezmlm-warn</b> sends out warning messages for the mailing list
+       stored in <i>dir</i>.
+
+       <b>ezmlm-warn</b> scans <i>dir</i><b>/bounce/</b> for bounce messages  received
+       by  <b>ezmlm-return</b>.   If  it  sees a distribution bounce for
+       <i>box</i><b>@</b><i>domain</i> received more  than  ten  days  ago,  it  sends
+       <i>box</i><b>@</b><i>domain</i>  a  list  of  all  the  message  numbers missed
+       recently, and deletes the bounce.  If it  sees  a  warning
+       bounce  for <i>box</i><b>@</b><i>domain</i> received more than ten days ago, it
+       sends <i>box</i><b>@</b><i>domain</i> a probe, and deletes the bounce.
+
+       <b>ezmlm-warn</b> will not send a warning or probe to an  address
+       that is not currently a subscriber.
+
+<H2>OPTIONS</H2>
+       <b>-d</b>     process  bounces  for  the digest list, rather than
+              for the main list.  Digest list bounces are  stored
+              in <i>dir</i><b>/digest/bounce/</b> rather than in <i>dir</i><b>/bounce/</b>.
+
+       <b>-D</b>     (Default.)  Process bounces for the main list.
+
+       <b>-t</b> <i>timeout</i>
+              Bounces  received  more  than  <i>timeout</i> days ago are
+              processed. This overrides the default  of  approxi-
+              mately  10  days  and  may  be useful for very busy
+              lists.
+
+<H2>SEE ALSO</H2>
+       <A HREF="ezmlm-make.1.html">ezmlm-make(1)</A>, <A HREF="ezmlm-return.1.html">ezmlm-return(1)</A>, <A HREF="ezmlm.5.html">ezmlm(5)</A>
+
+                                                                1
+
+</PRE>
+  <hr>
+  <ADDRESS>
+  © 1994 <A HREF="http://www.ntua.gr/~christia/man-cgi.html">Man-cgi 1.15</A>, Panagiotis Christias &lt;christia@theseas.ntua.gr&gt;
+  </ADDRESS>

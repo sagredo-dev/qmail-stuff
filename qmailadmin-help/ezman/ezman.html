@@ -1,0 +1,127 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<HTML>
+<HEAD>
+ <META NAME="GENERATOR" CONTENT="SGML-Tools 1.0.7">
+ <TITLE>EZMLM/IDX MANUAL, Version 0.32</TITLE>
+ <LINK HREF="ezman-1.html" REL=next>
+
+
+</HEAD>
+<BODY vlink="#004400" link="#008800" bgcolor="#ffffff" alink="#ff0000"><FONT FACE="helvetica,times,arial">
+<A HREF="ezman-1.html">Next</A>
+Previous
+Contents
+<HR>
+<H1>EZMLM/IDX MANUAL, Version 0.32</H1>
+
+<H2>(c) 1999, Fred Lindberg, <CODE>lindberg@id.wustl.edu</CODE></H2>10-MAR-1999
+<P><HR>
+<EM>EZMAN-0.32, a manual for ezmlm and ezmlm-idx. It is intended for non-technical
+users. For technical information, please see documentation in the ezmlm-idx
+package, especially the FAQ and the man pages. Features
+available only with ezmlm-idx are marked(*).
+The manual has 3 chapters.
+Chapter 1 is a ezmlm/idx user's manual. It is intended for people (wanting to
+be) subscribed
+to ezmlm mailing lists.
+It describes, how to subscribe, unsubscribe, post, and
+access the list archive.
+Chapter 2 is an ezmlm/idx moderator's and list administrator's manual.
+It is
+an extension of chapter 1 for people who function as moderators or
+remote administrators of ezmlm mailing lists.
+Chapter 3 is a ezmlm/idx list owner's introduction to ezmlm.
+It is an extension of Chapters 1 and 2
+for ezmlm list owners. It describes ezmlm list types, and what is possible
+with ezmlm/idx lists, and how to deal with common problems.
+The owner who wants to learn how to control the
+details of list customization should consult the documentation in the
+ezmlm and ezmlm-idx packages, especially the FAQ.
+The appendices give references to other sources of ezmlm information, a
+summary of ezmlm/idx commands, and a brief discussion of a user/host-wide
+interface that can be used to mimic other MLMs to make migration easier.
+Many thanks to Toshinori Maeno and others for helpful comments/suggestions.</EM>
+<HR>
+<P>
+<H2><A NAME="toc1">1.</A> <A HREF="ezman-1.html">EZMLM/IDX USER'S MANUAL</A></H2>
+
+<UL>
+<LI><A HREF="ezman-1.html#ss1.1">1.1 Introduction.</A>
+<LI><A HREF="ezman-1.html#ss1.2">1.2 Sending commands to an ezmlm/idx mailing list.</A>
+<LI><A HREF="ezman-1.html#ss1.3">1.3 Subscribing to an ezmlm mailing list.</A>
+<LI><A HREF="ezman-1.html#ss1.4">1.4 Unsubscribing from an ezmlm mailing list.</A>
+<LI><A HREF="ezman-1.html#ss1.5">1.5 Sending messages to an ezmlm mailing list.</A>
+<LI><A HREF="ezman-1.html#ss1.6">1.6 Replying to a message from an ezmlm mailing list.</A>
+<LI><A HREF="ezman-1.html#ss1.7">1.7 Accessing the ezmlm message archive.</A>
+<LI><A HREF="ezman-1.html#ss1.8">1.8 Getting ezmlm digests a few times per week</A>
+<LI><A HREF="ezman-1.html#ss1.9">1.9 Unsubscribing from an ezmlm digest list.</A>
+<LI><A HREF="ezman-1.html#ss1.10">1.10 Temporarily halting message delivery.</A>
+<LI><A HREF="ezman-1.html#ss1.11">1.11 Contacting the list-owner.</A>
+</UL>
+<P>
+<H2><A NAME="toc2">2.</A> <A HREF="ezman-2.html">EZMLM/IDX MODERATOR'S AND ADMINISTRATOR'S MANUAL</A></H2>
+
+<UL>
+<LI><A HREF="ezman-2.html#ss2.1">2.1 Introduction.</A>
+<LI><A HREF="ezman-2.html#ss2.2">2.2 Message moderation(*).</A>
+<LI><A HREF="ezman-2.html#ss2.3">2.3 Remote administration(*).</A>
+<LI><A HREF="ezman-2.html#ss2.4">2.4 Adding subscriber aliases(*).</A>
+<LI><A HREF="ezman-2.html#ss2.5">2.5 Preventing an address from posting(*).</A>
+<LI><A HREF="ezman-2.html#ss2.6">2.6 Listing subscribers(*).</A>
+<LI><A HREF="ezman-2.html#ss2.7">2.7 Subscription moderation(*).</A>
+<LI><A HREF="ezman-2.html#ss2.8">2.8 Searching and listing the subscription log(*).</A>
+<LI><A HREF="ezman-2.html#ss2.9">2.9 Editing ezmlm administrative messages(*).</A>
+</UL>
+<P>
+<H2><A NAME="toc3">3.</A> <A HREF="ezman-3.html">EZMLM/IDX OWNER'S INTRODUCTION</A></H2>
+
+<UL>
+<LI><A HREF="ezman-3.html#ss3.1">3.1 Introduction.</A>
+<LI><A HREF="ezman-3.html#ss3.2">3.2 Using auxiliary address databases(*).</A>
+<LI><A HREF="ezman-3.html#ss3.3">3.3 How ezmlm list setup is controlled.</A>
+<LI><A HREF="ezman-3.html#ss3.4">3.4 Basic list types.</A>
+<LI><A HREF="ezman-3.html#ss3.5">3.5 The ezmlm archive.</A>
+<LI><A HREF="ezman-3.html#ss3.6">3.6 Restricting list usage.</A>
+<LI><A HREF="ezman-3.html#ss3.7">3.7 Modifying messages sent by ezmlm.</A>
+<LI><A HREF="ezman-3.html#ss3.8">3.8 Allow remote administrators to list subscriber addresses(*).</A>
+<LI><A HREF="ezman-3.html#ss3.9">3.9 Allow remote administrators to access the subscription log(*).</A>
+<LI><A HREF="ezman-3.html#ss3.10">3.10 Allowing remote administrators to edit ezmlm text files(*).</A>
+<LI><A HREF="ezman-3.html#ss3.11">3.11 ezmlm handling of undeliverable/bounced messages.</A>
+<LI><A HREF="ezman-3.html#ss3.12">3.12 Helping users unsubscribe.</A>
+<LI><A HREF="ezman-3.html#ss3.13">3.13 Helping subscribers post and access the archive on subscriber-only lists(*).</A>
+<LI><A HREF="ezman-3.html#ss3.14">3.14 Stopping mail loops.</A>
+<LI><A HREF="ezman-3.html#ss3.15">3.15 Dealing with SPAM.</A>
+<LI><A HREF="ezman-3.html#ss3.16">3.16 Dealing with archiving servers.</A>
+<LI><A HREF="ezman-3.html#ss3.17">3.17 Making an existing list message or subscription moderated(*).</A>
+<LI><A HREF="ezman-3.html#ss3.18">3.18 Backing up and removing parts of the archive.</A>
+<LI><A HREF="ezman-3.html#ss3.19">3.19 Restoring parts of the archive.</A>
+</UL>
+<H2>Appendix</H2>
+<P>
+<H2><A NAME="toc4">4.</A> <A HREF="ezman-4.html">More information.</A></H2>
+
+<UL>
+<LI><A HREF="ezman-4.html#ss4.1">4.1 More about ezmlm and ezmlm-idx.</A>
+<LI><A HREF="ezman-4.html#ss4.2">4.2 More about this document.</A>
+</UL>
+<P>
+<H2><A NAME="toc5">5.</A> <A HREF="ezman-5.html">ezmlm Commands</A></H2>
+
+<UL>
+<LI><A HREF="ezman-5.html#ss5.1">5.1 Commands available to users.</A>
+<LI><A HREF="ezman-5.html#ss5.2">5.2 Additional commands that may be available to remote administrators(*)</A>
+<LI><A HREF="ezman-5.html#ss5.3">5.3 Command extensions for ezmlm address databases(*)</A>
+</UL>
+<P>
+<H2><A NAME="toc6">6.</A> <A HREF="ezman-6.html">Emulating other mailing list managers(*).</A></H2>
+
+<UL>
+<LI><A HREF="ezman-6.html#ss6.1">6.1 Global ezmlm commands (majordomo, listserv, listproc).</A>
+<LI><A HREF="ezman-6.html#ss6.2">6.2 Commands at the <CODE>list-request</CODE> address (smartlist).</A>
+</UL>
+<HR>
+<A HREF="ezman-1.html">Next</A>
+Previous
+Contents
+</BODY>
+</HTML>

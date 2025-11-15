@@ -1,0 +1,85 @@
+  <TITLE>UNIX man pages : ./ezmlm-tstdig.1 ()</TITLE>
+  <hr>
+<PRE>
+
+ezmlm-tstdig(1)                                   ezmlm-tstdig(1)
+
+<H2>NAME</H2>
+       ezmlm-tstdig - Tests if a digest should be created
+
+<H2>SYNOPSIS</H2>
+       <b>ezmlm-tstdig</b> [ <b>-k</b> <i>kbytes</i> ] [ <b>-m</b> <i>msg</i> ] [ <b>-t</b> <i>time</i> ] <i>dir</i>
+
+       <b>ezmlm-tstdig</b>  reads  files  in  the list directory <i>dir</i> and
+       determines if any of the criteria specified by the options
+       are  met.  If they are, or if all options specified are 0,
+       <b>ezmlm-tstdig</b> exits with success (0). Otherwise, <b>ezmlm-tst-</b>
+       <b>dig</b>  exits (99), or in case of errors, (100) for permanent
+       and (111) for temporary errors.
+
+       The normal use of <b>ezmlm-tstdig</b> is to place it in a  script
+       so that <b><A HREF="ezmlm-get.1.html">ezmlm-get(1)</A></b> is executed if <b>ezmlm-tstdig</b> exists 0,
+       but skipped otherwise.
+
+       <b>ezmlm-tstdig</b> uses LOCAL to adapt its behavior so  that  it
+       can  be  used  from  the  command  line, a script, or from
+       within  <i>dir</i><b>/editor</b>,  or  <i>dir</i><b>/manager</b>.   If  invoked   from
+       <i>dir</i><b>/editor</b>,  the  <b>ezmlm-tstdig</b> line should end in '|| exit
+       99'.  When used here, <b>ezmlm-tstdig</b>  if  digest  generation
+       criteria  are  met  tests  a  timestamp in <i>dir</i><b>/tstdig</b>.  If
+       <i>dir</i><b>/tstdig</b> is more than 1 hour old or a  digest  has  been
+       successfully  created since <i>dir</i><b>/tstdig</b> was written, <b>ezmlm-</b>
+       <b>tstdig</b> will set the timestamp to the current time and exit
+       0.  Otherwise  it  will  exit 99. This is to guard against
+       initiating duplicate digests when  messages  arrive  while
+       digesting is in progress.
+
+<H2>OPTIONS</H2>
+       <b>-k</b>     Success  if  more  than  <i>kbytes</i> of message body has
+              accumulated since the latest digest.
+
+       <b>-m</b>     Success if more than <i>msg</i> messages have  accumulated
+              since the latest digest.
+
+       <b>-t</b>     Success  if  more than <i>time</i> hours have passed since
+              the latest digest.
+
+<H2>USAGE</H2>
+       This is an example script for ezmlm-tstdig usage.
+
+              #!/bin/sh
+              #usage: script dir diglist@host
+              #digest if &gt; 64 kbytes message bodies,
+              #          &gt; 30 messages, or
+              #          &gt; 48 hours since last digest.
+
+              # ezmlm bin path - modify for your setup
+              EZPATH='/usr/local/bin/ezmlm'
+
+              EZTST="${EZPATH}/ezmlm-tstdig"
+              EZGET="${EZPATH}/ezmlm-get"
+
+                                                                1
+
+ezmlm-tstdig(1)                                   ezmlm-tstdig(1)
+
+              ${EZTST} -k64 -m30 -t48 "$1" || exit 0
+              ${EZGET} -t "'$2'" "'$1'" &lt; /dev/null
+              # improve by testing exit status
+
+<H2>BUGS</H2>
+       Obviously, <b>ezmlm-tstdig</b>  should  be  integrated  into  the
+       digesting  program so that <i>dir</i><b>/tstdig</b> will not be not nec-
+       essary. This may be done in the next version.
+
+<H2>SEE ALSO</H2>
+       <A HREF="ezmlm-get.1.html">ezmlm-get(1)</A>,   <A HREF="ezmlm-make.1.html">ezmlm-make(1)</A>,   <A HREF="ezmlm-manage.1.html">ezmlm-manage(1)</A>,   <A HREF="ezmlmsend.1.html">ezmlmsend(1)</A>
+       , <A HREF="ezmlm.5.html">ezmlm(5)</A>
+
+                                                                2
+
+</PRE>
+  <hr>
+  <ADDRESS>
+  © 1994 <A HREF="http://www.ntua.gr/~christia/man-cgi.html">Man-cgi 1.15</A>, Panagiotis Christias &lt;christia@theseas.ntua.gr&gt;
+  </ADDRESS>

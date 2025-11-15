@@ -1,0 +1,79 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<HTML>
+<HEAD>
+ <META NAME="GENERATOR" CONTENT="SGML-Tools 1.0.7">
+ <TITLE>EZFAQ 0.32 - ezmlm-idx and ezmlm FAQ: Quick start</TITLE>
+ <LINK HREF="FAQ-3.html" REL=next>
+ <LINK HREF="FAQ-1.html" REL=previous>
+ <LINK HREF="FAQ.html#toc2" REL=contents>
+</HEAD>
+<BODY vlink="#004400" link="#008800" bgcolor="#ffffff" alink="#ff0000"><FONT FACE="helvetica,times,arial">
+<A HREF="FAQ-3.html">Next</A>
+<A HREF="FAQ-1.html">Previous</A>
+<A HREF="FAQ.html#toc2">Contents</A>
+<HR>
+<H2><A NAME="s2">2. Quick start</A></H2>
+
+<P>
+<OL>
+<LI>Create a use ``eztest'' for testing. If you use another name, add the
+switch ``-u another_name'' to the <a href="ezmlm-test.1.html">ezmlm-test(1)</a> line below. (The space between
+the switch and the argument is required.)</LI>
+<LI>Unpack the ezmlm-0.53 distribution.</LI>
+<LI>Unpack the ezmlm-idx distribution.</LI>
+<LI>Move the ezmlm-idx files to the ezmlm-0.53 directory.</LI>
+<LI>Edit <B>conf-bin</B> and <B>conf-man</B>
+to reflect the target directories.</LI>
+<LI>build and install:
+<BLOCKQUOTE><CODE>
+<PRE>
+        % cd ezmlm-0.53 
+        % patch &lt; idx.patch
+        % make; make man
+        % su
+        # su eztest
+        % ./ezmlm-test
+        % exit
+        # make setup
+        # exit
+</PRE>
+</CODE></BLOCKQUOTE>
+</LI>
+<LI>Make a list and digest list
+<BLOCKQUOTE><CODE>
+<PRE>
+        % ezmlm-make -rdugm -5 me@host ~/list ~/.qmail-list me-list host
+        % ezmlm-sub ~/list me@host
+        % ezmlm-sub ~/list/digest me@host
+        % ezmlm-sub ~/list/mod me@host
+</PRE>
+</CODE></BLOCKQUOTE>
+
+where ``me'' is your user name and ``host'' the host your list is on. </LI>
+</OL>
+<P>Now,
+you are the owner, remote administrator, and subscriber of both
+<CODE>list@host</CODE> and the accompanying digest list
+<CODE>list-digest@host</CODE>. Only subscribers are allowed to access the
+archive and to post. To post to the list, mail to
+<CODE>list@host</CODE>. For a user to subscribe, s/he should mail to
+<CODE>list-subscribe@host</CODE> and for help to <CODE>list-help@host</CODE>.
+<P>When a non-subscriber posts, you will be asked to approve, reject, or
+ignore the request. If you want to subscriber <CODE>joe@joehost.dom</CODE>,
+mail <CODE>list-subscribe-joe=joehost.dom@host</CODE>.
+<P>Digests are generated about every two days, when 30 messages have arrived
+since the last digest, or when more than 64 kbytes of message body
+has arrived. To manage the digest list, use the same commands as the main list, but
+replace ``list'' with ``list-digest''.
+<P>The sender restriction on posting used in this setup works, but is not
+secure. For more info,
+read the man pages (start with <a href="ezmlm.5.html">ezmlm(5)</a> and <a href="ezmlm-make.1.html">ezmlm-make(1)</a>),
+this FAQ (<B>FAQ.idx</B> in the distribution),
+<B>README/README.idx</B>, <B>INSTALL/INSTALL.idx</B>, and <B>UPGRADE.idx</B>.
+<P>
+<HR>
+<A HREF="FAQ-3.html">Next</A>
+<A HREF="FAQ-1.html">Previous</A>
+<A HREF="FAQ.html#toc2">Contents</A>
+</BODY>
+</HTML>

@@ -1,0 +1,62 @@
+  <TITLE>UNIX man pages : ./ezmlm-idx.1 ()</TITLE>
+  <hr>
+<PRE>
+
+ezmlm-idx(1)                                         ezmlm-idx(1)
+
+<H2>NAME</H2>
+       ezmlm-idx - create index for mailing list archive
+
+<H2>SYNOPSIS</H2>
+       <b>ezmlm-idx</b> [ <b>-dD</b> ] <i>dir</i>
+
+<H2>DESCRIPTION</H2>
+       <b>ezmlm-idx</b>  reads all archived messages for the list in <i>dir</i>
+       from <i>dir</i><b>/archive/</b> and creates a message index.  The  index
+       file format is identical to that produced by <b><A HREF="ezmlm-send.1.html">ezmlm-send(1)</A></b>
+       (when <i>dir</i><b>/indexed</b> is present).
+
+       <b>ezmlm-idx</b> will ignore messages that do not have the  owner
+       execute bit set.
+
+       <b>ezmlm-idx</b> will create the the index file under a different
+       name and then move it into place.
+
+       If <i>dir</i><b>/indexed</b> does not exist, <b>ezmlm-idx</b> will create it to
+       enable  the  use  of  the newly created subject and author
+       index.
+
+       <b>ezmlm-idx</b> will remove reply-indicators and the prefix from
+       the  subject before entry into the index, as described for
+       <b><A HREF="ezmlm-send.1.html">ezmlm-send(1)</A></b>.  <b>ezmlm-idx</b> will decode rfc2047 encoded sub-
+       ject  and  author  headers.  When  unfolding  split lines,
+       <b>ezmlm-idx</b> will remove redundant escape sequences  for  the
+       character set specified in <i>dir</i><b>/charset</b>.
+
+       <b>ezmlm-idx</b>  calculates  a subject hash based on the normal-
+       ized subject header. Normalization removes linear  whites-
+       pace, case information, and message reply indicators.  The
+       subject hash is used by <b><A HREF="ezmlm-get.1.html">ezmlm-get(1)</A></b> for  message  thread-
+       ing.
+
+<H2>OPTIONS</H2>
+       <b>-d</b>     Use  the  ``Date:''  header  for  date information,
+              rather than the top ``Received:'' header.  This  is
+              unreliable,  but  useful  when  messages  have been
+              transferred from another type of archive by mailing
+              them  to ezmlm.  <b>ezmlm-idx</b> converts dates with two-
+              digit years ``xx'' to 19xx if xx is &gt;=  70.  Other-
+              wise, 20xx is assumed.
+
+       <b>-D</b>     (Default.)  Do not use the ``Date:'' header.
+
+<H2>SEE ALSO</H2>
+       <A HREF="ezmlm-get.1.html">ezmlm-get(1)</A>, <A HREF="ezmlm-send.1.html">ezmlm-send(1)</A>, <A HREF="ezmlm.5.html">ezmlm(5)</A>
+
+                                                                1
+
+</PRE>
+  <hr>
+  <ADDRESS>
+  © 1994 <A HREF="http://www.ntua.gr/~christia/man-cgi.html">Man-cgi 1.15</A>, Panagiotis Christias &lt;christia@theseas.ntua.gr&gt;
+  </ADDRESS>

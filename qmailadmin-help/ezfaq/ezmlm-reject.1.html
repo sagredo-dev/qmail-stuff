@@ -1,0 +1,113 @@
+  <TITLE>UNIX man pages : ./ezmlm-reject.1 ()</TITLE>
+  <hr>
+<PRE>
+
+ezmlm-reject(1)                                   ezmlm-reject(1)
+
+<H2>NAME</H2>
+       ezmlm-reject - reject messages unsuitable for distribution
+
+<H2>SYNOPSIS</H2>
+       <b>ezmlm-reject</b> [ <b>-cChHqQsStT</b> ][ <i>dir</i> ]
+
+<H2>DESCRIPTION</H2>
+       <b>ezmlm-reject</b> reads a mail message from its standard input.
+       It  rejects  the  message  if it sees something it doesn't
+       like.
+
+       If <i>dir</i> is specified, <b>ezmlm-reject</b> reads <i>dir</i><b>/msgsize</b> for  a
+       maximum:minimum  message body size in bytes. Either number
+       will be ignored if 0 or omitted.  <b>ezmlm-reject</b>  will  also
+       look    for   <i>dir</i><b>/mimereject</b>   and   <i>dir</i><b>/mimeremove</b>.    if
+       <i>dir</i><b>/mimereject</b> exists, Messages of the Content-Types spec-
+       ified  or with MIME parts of these types will be rejected.
+       If <i>dir</i><b>/mimeremove</b> exists, <b>ezmlm-reject</b>  will  reject  mes-
+       sages  of the Content-Types specified. These content-types
+       will be accepted as parts of  a  composite  MIME  message.
+       They will be stripped out later by <b><A HREF="ezmlm-send.1.html">ezmlm-send(1)</A></b>.
+
+       <b>ezmlm-reject</b>  will  exit  100 (permanent error) for rejec-
+       tions. If the list address is not in the  message  ``To:''
+       or  ``Cc:''  headers and the <b>-t</b> switch is active, the exit
+       code is 100 or 99, depending on the <b>-q</b> switch (see below).
+       If you would like to forward messages instead of rejecting
+       them, you can add ``||  exit  100''  to  the  <b>ezmlm-reject</b>
+       line.  Before  that  line,  add  an  address,  pointing to
+       another .qmail file,  e.g.  ``list-rej@host''.  Into  that
+       file, put (all on one line):
+
+            |{ /path/ezmlm-reject DIR && exit 99 ; } ; exit 0
+
+       Followed  by  the  address  of  e.g.  the  list owner. Now
+       rejected posts will go to this address, and the list owner
+       can take appropriate action.
+
+<H2>OPTIONS</H2>
+       <b>-c</b>     (Default.)   Commands are not permitted in the Sub-
+              ject line.  A Subject  line  consisting  solely  of
+              HELP,   REMOVE,   SUBSCRIBE,   or   UNSUBSCRIBE  is
+              rejected.
+
+       <b>-C</b>     Commands are permitted in the subject line.
+
+       <b>-h</b>     Reject message if any of the headers in <i>dir</i><b>/header-</b>
+              <b>reject</b> occur in the header. Mailing-List headers of
+              other mailing list managers can be  put  into  this
+              file,  one  per line, to prevent processing of mes-
+              sages from other mailing lists.  <i>dir</i> must be speci-
+              fied.
+
+              A  reasonable  set  of headers would be: ``Mailing-
+
+                                                                1
+
+ezmlm-reject(1)                                   ezmlm-reject(1)
+
+              List'', ``X-ml-name'',  ``ml-name'',``X-loop'',``X-
+              listprocessor-version'',``X-mailing-list''. Case is
+              not important.
+
+       <b>-H</b>     (Default.)  Ignore <i>dir</i><b>/headerreject</b>.  <b>-q</b> Quiet.  If
+              the  message  due  to  the lack of the list address
+              (see <b>-t</b>) is not accepted, this  is  logged  but  no
+              error message is sent to the sender.
+
+       <b>-q</b>     Quiet.  If  a  message  due to the lack of the list
+              address (see <b>-t</b>) is not accepted,  the  message  is
+              silently ignored.
+
+       <b>-Q</b>     (Default.)  Not quiet. If a message due to the lack
+              of the list address (see <b>-t</b>) is not  accepted,  the
+              sender is notified by an error message.
+
+       <b>-s</b>     (Default.)  A nonempty Subject line is required.
+
+       <b>-S</b>     A Subject line is not required.
+
+       <b>-t</b>     (Default.)   Reject  messages  that do not have the
+              list address in the ``To:'' or  ``Cc:''  header(s).
+              <b>ezmlm-reject</b>   needs   access  to  <i>dir</i><b>/outhost</b>  and
+              <i>dir</i><b>/outlocal</b> to check this. This check is  silently
+              omitted  if  <i>dir</i>  is not specified, to assure back-
+              wards compatibility with existing ezmlm lists.
+
+       <b>-T</b>     Do not require the list address in the  ``To:''  or
+              ``Cc:'' header(s).
+
+<H2>BUGS</H2>
+       <b>ezmlm-reject</b> does not handle rfc822 comments in ``Content-
+       Type:'' lines if present  before  the  type  or  boundary.
+       This  could be used to defeat the MIME rejection function.
+       OTOH, this function is intended  to  reduce  garbage,  not
+       guarantee its elimination.
+
+<H2>SEE ALSO</H2>
+       <A HREF="ezmlm-send.1.html">ezmlm-send(1)</A>, <A HREF="qmail-command.8.html">qmail-command(8)</A>
+
+                                                                2
+
+</PRE>
+  <hr>
+  <ADDRESS>
+  © 1994 <A HREF="http://www.ntua.gr/~christia/man-cgi.html">Man-cgi 1.15</A>, Panagiotis Christias &lt;christia@theseas.ntua.gr&gt;
+  </ADDRESS>

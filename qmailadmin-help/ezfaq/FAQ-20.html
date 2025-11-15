@@ -1,0 +1,72 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<HTML>
+<HEAD>
+ <META NAME="GENERATOR" CONTENT="SGML-Tools 1.0.7">
+ <TITLE>EZFAQ 0.32 - ezmlm-idx and ezmlm FAQ: Subscriber notification of moderation events.</TITLE>
+ <LINK HREF="FAQ-21.html" REL=next>
+ <LINK HREF="FAQ-19.html" REL=previous>
+ <LINK HREF="FAQ.html#toc20" REL=contents>
+</HEAD>
+<BODY vlink="#004400" link="#008800" bgcolor="#ffffff" alink="#ff0000"><FONT FACE="helvetica,times,arial">
+<A HREF="FAQ-21.html">Next</A>
+<A HREF="FAQ-19.html">Previous</A>
+<A HREF="FAQ.html#toc20">Contents</A>
+<HR>
+<H2><A NAME="s20">20. Subscriber notification of moderation events.</A></H2>
+
+<P>
+<H2><A NAME="ss20.1">20.1 General opinions.</A>
+</H2>
+
+<P>This is a collection of the authors opinions and an explanation of ezmlm-idx 
+moderation design, which you may or may not agree with.
+<P>
+<H2><A NAME="ss20.2">20.2 Users should know that the list is subscription moderated.</A>
+</H2>
+
+<P>List subscribers should be informed that subscriptions to the list are
+controlled by a moderator.
+ezmlm-idx in its default setup handles this notification during and after
+the subscribe handshake. Most of this can be disabled by manipulation of
+the <B>DIR/text/</B> files.
+<P>
+<H2><A NAME="ss20.3">20.3 Subscribers should know that posts are moderated.</A>
+</H2>
+
+<P>List subscribers should be informed that posts to the list are moderated. ezmlm-idx does
+this by adding the ``Delivered-To: moderator for ...'' header, but IOHO, the
+list owner should make the fact of list moderation plain in introductory
+messages, or other means, to the list subscribers.
+<P>
+<H2><A NAME="ss20.4">20.4 Senders of posts should be notified of rejections.</A>
+</H2>
+
+<P>With normal use of ezmlm-idx, the sender of a rejected post is notified that
+the post has been rejected and if the moderators chooses to comment, the sender
+receives this comment, usually describing why the post was rejected.
+This ezmlm behavior cannot be disabled at run time.
+<P>If post are neither accepted or rejected, they time out. <a href="ezmlm-clean.1.html">ezmlm-clean(1)</a>
+notifies the sender when this happens. This behavior can be disabled with the
+<a href="ezmlm-clean.1.html">ezmlm-clean(1)</a> ``-R'' (not return) switch,
+which has to be placed on the command line
+of all invocations of <a href="ezmlm-clean.1.html">ezmlm-clean(1)</a> (normally in <B>DIR/editor</B>
+and <B>DIR/moderator</B>).
+If you for some reason do not wish to inform the sender
+of your editorial decision, you can use this switch and let undesirable
+posts time out, rather than actively rejecting them. IOHO, it is better to
+be "above board" and use the normal notification mechanisms, together with
+active rejection and informative rejection comments.
+<P>The <a href="ezmlm-make.1.html">ezmlm-make(1)</a> ``-u'' switch uses moderation in a slightly
+different way. Here, posts are restricted to subscribers, but posts from
+non-subscribers are sent to the moderator(s) rather that being ignored. This
+to help the subscriber that posts from an alias of the subscribed address,
+or the occasional non-subscriber. In this case it is perfectly acceptable to just ignore
+non-accepted posts. Thus, using the <a href="ezmlm-make.1.html">ezmlm-make(1)</a> ``-u'' switch
+configures the <a href="ezmlm-clean.1.html">ezmlm-clean(1)</a> invocations with the ``-R'' switch.
+<P>
+<HR>
+<A HREF="FAQ-21.html">Next</A>
+<A HREF="FAQ-19.html">Previous</A>
+<A HREF="FAQ.html#toc20">Contents</A>
+</BODY>
+</HTML>

@@ -1,0 +1,67 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<HTML>
+<HEAD>
+ <META NAME="GENERATOR" CONTENT="SGML-Tools 1.0.7">
+ <TITLE>EZFAQ 0.32 - ezmlm-idx and ezmlm FAQ: Customizing archive retrieval.</TITLE>
+ <LINK HREF="FAQ-11.html" REL=next>
+ <LINK HREF="FAQ-9.html" REL=previous>
+ <LINK HREF="FAQ.html#toc10" REL=contents>
+</HEAD>
+<BODY vlink="#004400" link="#008800" bgcolor="#ffffff" alink="#ff0000"><FONT FACE="helvetica,times,arial">
+<A HREF="FAQ-11.html">Next</A>
+<A HREF="FAQ-9.html">Previous</A>
+<A HREF="FAQ.html#toc10">Contents</A>
+<HR>
+<H2><A NAME="s10">10. Customizing archive retrieval.</A></H2>
+
+<P>
+<H2><A NAME="format_spec"></A> <A NAME="ss10.1">10.1 Specifying the format for retrieved messages.</A>
+</H2>
+
+<P>Add a format (f) specifier after the archive retrieval
+command:
+<BLOCKQUOTE><CODE>
+<PRE>
+      
+list-getf@host
+</PRE>
+</CODE></BLOCKQUOTE>
+
+where ``f'' is ``r'' for rfc1153 format, ``m'' (mime; default) for MIME
+multipart/digest with subset of ordered headers,
+and ``v'' (virgin) MIME multipart/digest,
+i.e. with all headers retained
+from the archive,
+and ``n'' (native) the same as ``v'' except that no threading is
+performed and messages are returned in numerical order.
+Under some circumstances,
+it may be preferable to have a digest in ``multipart/mixed''.
+The ``x'' (mixed) format is identical to ``m'' except for this header.
+<P>For <a href="ezmlm-cron.1.html">ezmlm-cron(1)</a>, just suffix the format code to the digest code.
+<P>
+<H2><A NAME="ss10.2">10.2 Specifying the default format for digests and archive retrieval.</A>
+</H2>
+
+<P>The <a href="ezmlm-get.1.html">ezmlm-get(1)</a> ``-f'' switch can be used to change the default format
+(MIME with removal of less relevant headers) to other
+formats. The format specifiers are the same as for individual archive
+retrievals (see 
+<A HREF="#format_spec">Specifying the format for retrieved messages</A>).
+<P>
+<H2><A NAME="ss10.3">10.3 Limiting the number of messages per -get/-index request.</A>
+</H2>
+
+<P>By default, a single -get request returns a maximum of 100
+messages, and a single -index request 2000 subjects entries (20 files
+of 100 subjects entries each). This can be changed by editing MAXGET, and
+MAXINDEX in <B>idx.h</B> and recompiling. Remember to edit
+<B>text/bottom</B>, <B>text/bounce</B>,
+and <B><a href="ezmlmrc.5.html">ezmlmrc(5)</a></B> to reflect these changes
+so that your users won't get confused.
+<P>
+<HR>
+<A HREF="FAQ-11.html">Next</A>
+<A HREF="FAQ-9.html">Previous</A>
+<A HREF="FAQ.html#toc10">Contents</A>
+</BODY>
+</HTML>

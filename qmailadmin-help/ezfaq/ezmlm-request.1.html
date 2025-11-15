@@ -1,0 +1,164 @@
+  <TITLE>UNIX man pages : ./ezmlm-request.1 ()</TITLE>
+  <hr>
+<PRE>
+
+ezmlm-request(1)                                 ezmlm-request(1)
+
+<H2>NAME</H2>
+       ezmlm-request  -  Process subject line and body ezmlm com-
+       mands
+
+<H2>SYNOPSIS</H2>
+       <b>ezmlm-request</b> [ <b>-f</b> <i>config</i> ] <i>dir</i>
+
+<H2>DESCRIPTION</H2>
+       <b>ezmlm-request</b> processes ezmlm commands in the subject line
+       or message body.  <b>ezmlm-request</b> enables these uses to send
+       the message to <i>list</i><b>-request</b><i>@host</i> with the complete command
+       address  line  in  the subject field, or with commands and
+       arguments separated by white  space.   <b>ezmlm-request</b>  uses
+       the text to construct a ezmlm command message to the list.
+       If the subject does not start with a letter, <b>ezmlm-request</b>
+       instead  uses  the first body line that starts with a let-
+       ter. Processing terminates if a line with a hyphen in  the
+       first position is encountered.
+
+       All  commands  are expected to be in ezmlm command address
+       format or formatted as:
+
+       <b>command</b>[list@listhost<b>[user@userhost]]</b>
+
+       <b>ezmlm-request</b> when invoked with the <b>-f</b> switch and  a  con-
+       figuration  file (see below), ignores the subject and pro-
+       cesses the first body line (per rules above)  in  conjunc-
+       tion  with  the  configuration  file. It also services the
+       <b>lists</b> and <b>which</b> commands. This can be used to construct  a
+       global  list interface, similar to that used by some other
+       mailing list managers.
+
+       Messages at the <i>list</i><b>-request</b><i>@host</i> are  restricted  to  the
+       local list. When <b>ezmlm-request</b> is invoked with the <b>-f</b> <i>con-</i>
+       <i>fig</i> switch, command messages are limited to lists in  <i>con-</i>
+       <i>fig</i> or at the local host.
+
+       Invalid requests for an existing ezmlm list will lead to a
+       ``help'' message from <b><A HREF="ezmlm-manage.1.html">ezmlm-manage(1)</A></b>.
+
+<H2>OPTIONS</H2>
+       <b>-f</b> <i>config</i>
+              Function as a global interface to  ezmlm  lists  in
+              accordance  with  <i>config.</i>   This  file  consists of
+              lines  starting  in   the   first   position   with
+              ``list@host:listdir:description''.  Lines  that are
+              blank or start
+               with ``#'' are ignored. ``listdir'' and ``descrip-
+              tion''  are  optional.  If  only  ``list@host''  is
+              given, the list is used to restrict  commands  (see
+              below),  but  not  listed.  To allow the list to be
+              shown by a ``list'' command, use ``list@host:''. To
+              specify  only  the  list  name and description, use
+              ``list@host::description''.   If   ``listdir''   is
+
+                                                                1
+
+ezmlm-request(1)                                 ezmlm-request(1)
+
+              present, the <b>which</b> command attempts to determine if
+              the user is a subscriber of the list.   <b>NOTE:</b>  this
+              will  work  only  if the user running <b>ezmlm-request</b>
+              has read access to the lists subscriber database.
+
+              If ``listhost''  is  not  specified,  <b>ezmlm-request</b>
+              will  use  the  ``listhost''  from the first <i>config</i>
+              entry matching ``listlocal''.  If  ``listhost''  is
+              specified,  but  not  found in <i>config</i>, it is set to
+              the contents of <i>dir</i><b>/outhost</b>.
+
+<H2>USAGE</H2>
+       Place an invocation of <b>ezmlm-request</b> in  <i>dir</i><b>/manager</b>  any-
+       where before the <b><A HREF="ezmlm-manage.1.html">ezmlm-manage(1)</A></b> line.
+
+       Alternatively,  set  up  <i>dir</i><b>/request</b> with an invocation of
+       <b>ezmlm-request</b>.  Make a link from <i>~/.qmail-list-request</i>  to
+       this file.
+
+       For  the  global  interface,  place <b>/path/ezmlm-request</b> <b>-f</b>
+       <i>config</i> <i>dir</i> into a file.  Link <i>~/.qmail-ezmlm</i> and <i>~/.qmail-</i>
+       <i>ezmlm-default</i>  to  this  file.  The  latter  allows <b>ezmlm-</b>
+       <b>request</b> to handle its own bounces as well as to  reply  to
+       messages  to  e.g.  ``user-ezmlm-lists@listhost''.  Create
+       <i>dir</i><b>/inlocal</b> and <i>dir</i><b>/outlocal</b> with ``user-ezmlm'', <i>dir</i><b>/out-</b>
+       <b>host</b>  with  ``listhost'', <i>dir</i><b>/headerremove</b> with headers to
+       be   stripped   (copy   from   a   list),   <i>dir/text</i><b>/help</b>,
+       <i>dir/text</i><b>/top</b>,  and  <i>dir/text</i><b>/bottom</b>  with  the appropriate
+       texts.  Also, create <i>config</i> with the appropriate contents.
+
+       Mail  to  ``user-ezmlm@listhost''  will now be answered by
+       <b>ezmlm-request</b>.
+
+<H2>RECOGNIZED COMMANDS</H2>
+       Any command not recognized by <b>ezmlm-request</b> is assumed  to
+       be valid, as long as it consists of only letters, numbers,
+       hyphen, underscore, period, and ``+''. This allows  <b>ezmlm-</b>
+       <b>request</b>  to  correctly  handle  commands added by the list
+       owner.
+
+       A number of commands are recognized by  <b>ezmlm-request</b>  but
+       not  processed.  Instead  they  are mapped to <b>help</b> without
+       arguments. These are: <b>system</b>, <b>put</b>, and <b>set</b>.
+
+       <b>ezmlm-request</b> also handles a number of aliases  for  ezmlm
+       commands.  Since  <b>ezmlm-request</b> only passes on requests to
+       the list, local restrictions  apply.   For  commands  that
+       have aliases, accepted aliases are listed:
+
+       <b>subscribe</b>
+              sub
+
+       <b>unsubscribe</b>
+              unsub, signoff, remove.
+
+                                                                2
+
+ezmlm-request(1)                                 ezmlm-request(1)
+
+       <b>index</b>  ind.
+
+       <b>list</b>   recipients, showdist, review, rev, who.
+
+       Some  commands  are  handled  differently when used
+              without argu- ments:
+
+       <b>query</b>  Treated like ``which''.
+
+       <b>list</b>   Treated like ``lists''.
+
+<H2>BUGS</H2>
+       <b>ezmlm-request</b>  places  stricter  requirements on addresses
+       than rfc822. Thus, some addresses that are  rfc822-compli-
+       ant  cannot be used as <b>ezmlm-request</b> command arguments. If
+       you   fix   this,   please   send   a   patch   to   lind-
+       berg@id.wustl.edu. I think qmail has the same restriction,
+       though.
+
+       <b>ezmlm-request</b> uses NUL as a  line  terminator  internally.
+       Thus,  if  will  fail  if  NUL is found within the line it
+       tries to interpret as a command.  It  is  harmless,  other
+       than that the remainder of the line will be ignored.
+
+       The <b>ezmlm-request</b> ``which'' command does not differentiate
+       between a list for which the command is not  available,  a
+       list  for which the subscriber db is not accessible, and a
+       list for which the  address  is  not  a  subscriber.  This
+       should be considered a feature.
+
+<H2>SEE ALSO</H2>
+       <A HREF="ezmlm-get.1.html">ezmlm-get(1)</A>, <A HREF="ezmlm-manage.1.html">ezmlm-manage(1)</A>, <A HREF="ezmlm-send.1.html">ezmlm-send(1)</A>, <A HREF="ezmlm.5.html">ezmlm(5)</A>
+
+                                                                3
+
+</PRE>
+  <hr>
+  <ADDRESS>
+  © 1994 <A HREF="http://www.ntua.gr/~christia/man-cgi.html">Man-cgi 1.15</A>, Panagiotis Christias &lt;christia@theseas.ntua.gr&gt;
+  </ADDRESS>

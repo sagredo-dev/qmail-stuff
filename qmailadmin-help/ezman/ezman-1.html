@@ -1,0 +1,509 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<HTML>
+<HEAD>
+ <META NAME="GENERATOR" CONTENT="SGML-Tools 1.0.7">
+ <TITLE>EZMLM/IDX MANUAL, Version 0.32: EZMLM/IDX USER'S MANUAL</TITLE>
+ <LINK HREF="ezman-2.html" REL=next>
+
+ <LINK HREF="ezman.html#toc1" REL=contents>
+</HEAD>
+<BODY vlink="#004400" link="#008800" bgcolor="#ffffff" alink="#ff0000"><FONT FACE="helvetica,times,arial">
+<A HREF="ezman-2.html">Next</A>
+Previous
+<A HREF="ezman.html#toc1">Contents</A>
+<HR>
+<H2><A NAME="s1">1. EZMLM/IDX USER'S MANUAL</A></H2>
+
+<P>
+<H2><A NAME="ss1.1">1.1 Introduction.</A>
+</H2>
+
+<P>This chapter helps the (potential) subscriber to ezmlm/idx lists to
+learn the basic functions of the mailing list manager. It contains
+information on how to start and stop subscribing to ezmlm/idx list,
+how to access the list archive, how to send messages to the list, and
+how to contact the list owner, if necessary.
+<BLOCKQUOTE>Features marked ``(*)'' are available only if the list uses
+ezmlm-idx in addition to ezmlm. See 
+<A HREF="ezman-4.html#more_info">More information</A>
+for more information on ezmlm and ezmlm-idx.</BLOCKQUOTE>
+<P>ezmlm is a modern mailing list manager. Its purpose is to efficiently
+send a message to a large number of recipients with minimal delay.
+It allows automated additions and subtractions from the subscriber
+database. In addition, it may keep an archive of messages. It can also
+impose restrictions on what may be sent or retrieved and by whom.
+Some mailing list managers keep a database of subscriber information
+and tailor the message specifically for each subscriber. ezmlm sends
+the same message to all subscriber. This is much more efficient. The
+benefits to the user are that on average posts to ezmlm lists reach
+subscribers much faster than they would with other mailing list manager.
+<P>The <EM>digest list</EM>(*) is special kind of mailing list extension.
+Instead of
+receiving posts, it sends out ``digest'', ordered collections of
+messages, when a predetermined limit in time or traffic volume has been
+reached. From the subscriber point of view, the digest list for the
+mailing list <CODE>list@host</CODE> is called <CODE>list-digest@host</CODE>. You
+use the same commands when subscribing or unsubscribing to a digest as you
+do when you join of leave the main list. The only difference is the
+list name you use with your commands (<CODE>list-digest@host</CODE> and
+<CODE>list@host</CODE>, respectively. There is nothing to stop you from
+being a subscriber of both.
+<P>To temporarily leave an ezmlm list, just unsubscribe. Subscribe again later,
+when you wish to receive messages or digests again. ezmlm processes such
+requests virtually instantaneously, removing the need for a
+temporary ``hold'' command.
+<P>ezmlm is highly automated. Virtually everything can be done simply, rapidly,
+and without human intervention.
+ezmlm encodes your address and the message number in the return address to
+automatically handle <EM>bounces</EM>, i.e. messages returned to sender because
+they couldn't be delivered to the subscriber.
+This can be used to find out the message number, as well
+as the address you're subscribed under (see
+<A HREF="#unsubscribe">Unsubscribing from an ezmlm list</A>).
+<P>
+<H2><A NAME="ss1.2">1.2 Sending commands to an ezmlm/idx mailing list.</A>
+</H2>
+
+<P>ezmlm has a different address for each command. In essence, the address is
+the list name <EM>and</EM> the command.
+This is straight forward to interpret and therefore very
+fast. It also makes it very easy to send commands from the command line
+without having to worry about the subject and the
+message body (which are ignored).
+<P>Messages to the list address itself are sent to all subscribers and
+should <EM>never</EM> be used for administrative
+requests. If you have forgotten everything, send a message to
+<CODE>mailinglist-help@example.org</CODE> for the list
+<CODE>mailinglist@example.org</CODE>. If the instructions returned do not help
+you solve the problem, send a message to
+<CODE>mailinglist-owner@example.org</CODE> for human help, forwarding a message
+from the list and including any relevant information.
+<P>If you want to interact administratively with the ezmlm mailing list
+<CODE>mailinglist@example.org</CODE>, send
+an empty message (contents and subject are ignored) to
+<CODE>mailinglist-command@example.org</CODE>,
+replacing ``command'' with the desired command.
+For some commands, you can add
+arguments. Here are a few examples, which will be discussed further
+below:
+<DL>
+<DT><B><CODE>mailinglist-subscribe@example.org</CODE></B><DD><P>Subscribe me. ezmlm will send you a confirmation request, and once you reply
+to it a message confirming that you are a subscriber.
+<DT><B><CODE>mailinglist-subscribe-user=gol.com@example.org</CODE></B><DD><P>Subscribe <CODE>user@gol.com</CODE>. Here the
+default subscriber address (the one you send from) is overridden by
+an argument to the <EM>-subscribe</EM> command. To subscribe any address
+of type <CODE>user.name@host.dom</CODE> just replace the ``@'' in the
+address with ``='' and add it after a hyphen to the command. In this
+case <CODE>mailinglist-subscribe-user.name=host.dom@example.org</CODE>.
+Of course, ezmlm will ask <CODE>user.name@host.dom</CODE> to confirm the request.
+<DT><B><CODE>mailinglist-unsubscribe@example.org</CODE></B><DD><P>Unsubscribe me. ezmlm will send a confirmation request to your address
+and remove the address once you reply.
+<DT><B><CODE>mailinglist-unsubscribe-user=gol.com@example.org</CODE></B><DD><P>Unsubscribe <CODE>user@gol.com</CODE>.
+<DT><B><CODE>mailinglist-query@example.org</CODE>(*)</B><DD><P>Tell me if my address is subscribed to the list or not.
+<DT><B><CODE>mailinglist-get.123@example.org</CODE></B><DD><P>Get message 123 from the archive. If you specify a number that is larger than
+the highest message number in the archive, you'll receive the latest message.
+<DT><B><CODE>mailinglist-get@example.org</CODE>(*)</B><DD><P>Get the latest 30 messages from the archive.
+If the list has a digest, the messages
+returned are the messages received since the latest digest (the last message
+of the latest digest is returned so that there always will be at least one
+message).
+<DT><B><CODE>mailinglist-get.45_67@example.org</CODE>(*)</B><DD><P>Get messages 45-67 from the archive. No more than 100 messages can be 
+returned per request. If the first argument is larger than the highest message
+number in the archive, you'll instead receive the latest 30 or so messages
+from the archive. For a list with a digest, you'll get the messages that have
+arrived since the last digest as well as the last
+up to 30 messages of that digest.
+<DT><B><CODE>mailinglist-index@example.org</CODE>(*)</B><DD><P>Send subject and author name for the last 100-200 messages. No more than 2000
+entries are returned per request.
+<DT><B><CODE>mailinglist-index.300_399@example.org</CODE>(*)</B><DD><P>Send subject and author of messages 300-399.
+<DT><B><CODE>mailinglist-thread.45@example.org</CODE>(*)</B><DD><P>Receive an ordered set of all messages that have the same subject as message
+45. ``Re:'', etc, do not make a difference,
+so the returned set is the usually entire thread.
+<DT><B><CODE>mailinglist-info@example.org</CODE>(*)</B><DD><P>Send me some information about this list (the list owner decides how
+this command is supported).
+<DT><B><CODE>mailinglist-faq@example.org</CODE>(*)</B><DD><P>Send me the list of frequently-asked questions (and answers) for this
+list (the list owner decides how this command is supported).
+<DT><B><CODE>mailinglist-digest-subscribe@example.org</CODE>(*)</B><DD><P>You guessed it - subscribe to the digest list for
+<CODE>mailinglist@example.org</CODE>, provided there is one. Digest are usually
+sent about every other day, but this also depends on the message volume and
+settings adjusted by the list owner.
+<DT><B><CODE>mailinglist-digest-unsubscribe@example.org</CODE>(*)</B><DD><P>Yes, it's that easy!
+</DL>
+<P>
+<H2><A NAME="user_sub"></A> <A NAME="ss1.3">1.3 Subscribing to an ezmlm mailing list.</A>
+</H2>
+
+<P>As mentioned previously, ezmlm commands are put into the ADDRESS. To
+subscribe to <CODE>mailinglist@example.org</CODE>, send an (empty) message to
+<CODE>mailinglist-subscribe@example.org</CODE>.
+ezmlm will send a confirmation request
+back to you. To confirm your subscription, just reply to the ``Reply-To:''
+address. Usually, the ``reply'' function of your mail program
+will do this. When
+ezmlm receives your confirmation, it will add your address to the
+subscriber database
+and send you a message to tell you that you are a subscriber.
+If your mail program supports it, you may be able to just click on the
+address in the message.
+<P>The confirmation is used so that only you (and the list administrator)
+can add/remove your address from the list of subscribers.
+<P>Sometimes, you may want to subscribe an address other than the one
+you are sending from. Let's say you're sitting at <CODE>john@example.net</CODE> and
+that all your mail is forwarded here from <CODE>harold@example.com</CODE> (when
+you are not in the office). You'd like <CODE>harold@example.com</CODE> to be the
+subscriber (so that you get the messages at work). To do this, send mail to:
+<CODE>mailinglist-subscribe-harold=example.com@example.org</CODE>. ezmlm will send
+the confirmation request to <CODE>harold@example.com</CODE> which will be forwarded
+and reach you at <CODE>john@example.net</CODE>. When you reply,
+<CODE>harold@example.com</CODE>
+is added as a subscriber. The ezmlm verification mechanism tests the
+only relevant issue: That the person at the subscription address
+really wants to be a subscriber. After the confirmation reply is received,
+ezmlm will send a
+message to the subscription address to let the recipient know that
+s/he is a subscriber.
+<P>Some ezmlm mailing lists may use subscription moderation(*).
+Subscription to these lists is identical to the process
+described above, <EM>except</EM> that after
+confirmation the request is passed on to the list moderator(s).
+You become a subscriber
+only after one of the moderators has approved your request. If you want to send
+any additional information to the moderator, do so in your confirmation message.
+ezmlm will notify you once you are a subscriber.
+<P>
+<H2><A NAME="unsubscribe"></A> <A NAME="ss1.4">1.4 Unsubscribing from an ezmlm mailing list.</A>
+</H2>
+
+<P>You've guessed it already!
+To unsubscribe from <CODE>mailinglist@example.org</CODE>
+just send a message to <CODE>mailinglist-unsubscribe@example.org</CODE>, 
+then reply
+to the confirmation request. ezmlm will send you a message
+to let you know that you are no longer a subscriber.
+ezmlm will also let you know if the address was not in the subscriber list.
+If so, you are probably subscribed under
+another address. When this happens, construct an unsubscribe request that
+contains your subscription address.
+<P>If you message contains a ``List-Unsubscribe:'' header, just click on it if
+your mail reader supports it and send of that message. If you mail reader
+doesn't support this, copy the entire address from after ``mailto:'' until
+just before ``&gt;'', paste it into the ``To:'' field of a new message and
+press ``SEND''. Reply to the confirmation request.
+<P>Otherwise, you have to know your subscription address.
+To find it, look at the very first header of
+any message from the list. This should contain something like
+<CODE>mailinglist-return-2345-harold=example.com@example.org</CODE> which tells you
+that the message number is ``2345'' and the subscriber address is
+<CODE>harold@example.com</CODE>. Now you remember that you subscribed a
+address, and construct the appropriate command address to remove that
+address from the subscriber database: 
+<CODE>mailinglist-unsubscribe-harold=example.com@example.org</CODE>. (You can see
+that this is a normal unsubscribe request, with a ``-'' followed by
+your subscription address with the ``@'' replaced by a ``=''. If you like,
+you can just use the address in the ``Return-Path'' header, and replace
+the ``return-2345'' with ``unsubscribe''.) Replying to the
+confirmation request will return the desired acknowledgement that the address
+has been removed from the subscriber database.
+<P>You can also send <EM>-unsubscribe</EM> requests
+for each potential subscription address and reply to the confirmation
+requests. The message sent by ezmlm in response to you  <EM>-unsubscribe</EM>
+confirmations will tell you if you
+<EM>-unsubscribe</EM> attempt was successful.
+<P>With ezmlm-idx(*) you can also send mail to
+<CODE>mailinglist-query-fred=old.com@example.org</CODE>,
+<CODE>mailinglist-query-gollum=previous.edu@example.org</CODE>,
+and so on. For each message,
+the address will receive a reply telling you whether or not the address is
+subscribed or not. Construct a ``<EM>-unsubscribe</EM>'' message
+from the one that
+gave you a positive reply and you're off the list!
+<P>If you for some reason are not successful with these attempts you can as a
+last resort contact
+<CODE>mailinglist-owner@example.org</CODE>.
+Please describe your problem and include a FORWARDED message from the list
+and a list of the
+possible addresses you might be subscribed under.
+The list owner will be able to help you get off the list, and can
+usually figure out your subscription address
+from the information sent (see
+<A HREF="ezman-3.html#help_unsubscribe">Helping users to unsubscribe</A>). 
+<P>Unsubscribe from subscription moderated lists works the same way as for
+normal lists.
+You never need approval to remove your address from a moderated list.
+<P>
+<H3><A NAME="allow"></A> Posting from an alternative address when post are allowed only to subscribers.</H3>
+
+<P>When a list is set up to allow posts from subscribers only(*),
+a post from an address (<CODE>jonesj@softx.com</CODE>) may be rejected since this
+address is not a subscriber (even though mail to the subscriber
+<CODE>john@univ.edu</CODE> reaches you, ezmlm has no way of knowing this). The
+easiest way to deal with this is to unsubscribe <CODE>john@univ.edu</CODE> and
+subscribe <CODE>jonesj@softx.com</CODE>. If this is not possible/desirable,
+send the addresses in question with a note to 
+<CODE>mailinglist-owner@example.org</CODE>.
+The list owner can add your sender address (in this
+case <CODE>jonesj@softx.com</CODE>) to an extra address lists of non-subscribers
+allowed to post (and access the archive). The extra addresses are kept in
+a database much like subscriber addresses. In fact, you can add the
+address <CODE>jonesj@softx.com</CODE> as an alias for the list
+<CODE>mailinglist@example.org</CODE> by mailing
+<CODE>mailinglist-allow-subscribe-jonesj=softx.com@example.org</CODE> and replying
+to the confirmation request.
+Again, you're changing the ``target'' address of the request from the
+default (the sender address) by adding the target to the command with the ``@''
+replaced by ``=''.
+Of course, the ``allow'' list doesn't send
+out posts. It is solely a vehicle for storing ``allowed'' aliases.
+<P>
+<H2><A NAME="ss1.5">1.5 Sending messages to an ezmlm mailing list.</A>
+</H2>
+
+<P>To send messages to an ezmlm list, you must know its name. If the list
+is called <CODE>mailinglist@example.org</CODE>, just send a message to
+<CODE>mailinglist@example.org</CODE>. Any message accepted at this address is sent
+to all list subscribers.
+<P>Due to the efficiency of ezmlm, you usually get back the message you sent
+to the list within a few minutes. Of course, this is true only 
+if you are a subscriber.
+<P>Most ezmlm lists require that you specify a ``Subject'', a few words that
+give everyone an idea what your message is about. This is a good thing,
+since many subscribers automatically delete mailing list messages without
+subject. Conversely, a good subject causes those interested/able to
+help with your comment/problem to read the message. If you send a message
+without a subject, ezmlm will send it back to you with an error message.
+<P>ezmlm also rejects messages to the list if the subject is a single command
+word only, such as ``subscribe'' or ``help''. These are almost always
+misdirected commands from novice users. Instead of ``flames'' from
+many subscribers, the sender gets an informative error message. As you
+know, your should send mail to <CODE>mailinglist-unsubscribe@example.org</CODE> to
+unsubscribe from the list <CODE>mailinglist@example.org</CODE> and a message to
+<CODE>mailinglist-help@example.org</CODE> to get help and
+command information.
+<P>The list owner may place additional restrictions on messages to the
+list. ezmlm allows rejection of messages that are not from subscribers(*),
+that are too long/short(*), or that contain certain MIME parts(*). If your
+message is not acceptable by these criteria, ezmlm will send your
+message back to you and tell you why it failed. You can then
+correct the problem and try again.
+You can also mail <CODE>mailinglist-owner@example.org</CODE>
+to reach the list owner
+and ask for assistance.
+Replace ``mailinglist''
+and ``example.org'' with the real list ``local'' and ``host'' name,
+respectively.
+In all messages to the owner, please include
+a FORWARDED copy of the error/problem message (see below). <EM>Note:</EM>
+ezmlm lists handle almost everything themselves. Therefore, the list-owner
+may check the mail only infrequently. Use ezmlm if at all possible, and be
+patient when you wait for a reply from the owner.
+<P>In special cases, the list owner may set up the list to be message moderated(*).
+When you subscribe, you should be told if the list is moderated. Also,
+ezmlm adds a special ``Delivered-To: moderator for ...'' header to the
+messages. On a message moderated list,
+your message, instead of going directly to the list, is sent to one
+or more moderators. They can accept or reject, but not modify the message.
+If the message is
+accepted, it is sent to the list unmodified. If it is rejected, it is
+sent back to you, optionally with an explanation from the moderator. On
+moderated lists it may take a little longer for the message to reach all the
+subscribers, since it has to be read and approved by at least one moderator
+before being sent out to the subscribers.
+<P>Message moderation is very useful for e.g. announcement lists, or lists
+where for other reasons not all posts are accepted. ezmlm does not
+reveal the moderators' identity to you. If you feel that you
+are treated unfairly by a moderator, please state your case to the list-owner.
+<P>
+<P>
+<H2><A NAME="ss1.6">1.6 Replying to a message from an ezmlm mailing list.</A>
+</H2>
+
+<P>Messages sent via an ezmlm mailing list come ``From:'' the original
+sender. For many lists, it is appropriate to discuss privately with the
+original sender, then post a follow-up message with e.g. a solution to
+the list. In this case, just ``Reply'' to the sender. Without this 
+behavior two things may happen: First, a subscriber may intend to reply
+to the original sender only, but sends a message to the entire list. This
+can be very embarrassing. Second, misconfigured subscriber programs
+sometimes send ``John is on vacation'' messages back to the ``From:''
+address. The ezmlm setup allows these to go to the original sender
+(a minor nuisance) rather than to the list (a major nuisance with the
+potential for mail loops if the subscriber software is severely
+misconfigured).
+<P>In other cases, you may want to send the reply to all subscribers.
+The easiest is to type in the list address by hand or to use
+the ``Reply-to-all'' function of your mail reader. If you do this,
+delete your address as well as the original sender's address
+so that the message goes to the list only. Since messages reach
+subscribers within minutes, it is usually superfluous and sometimes annoying
+to also send a reply directly to the sender as well.
+<P>
+<H2><A NAME="ss1.7">1.7 Accessing the ezmlm message archive.</A>
+</H2>
+
+<P>By default, ezmlm mailing lists keep an archive of all the messages sent
+to the list. Some of them may have been removed by the list owner, but
+usually at least the last few month's message will be there. With
+ezmlm you can retrieve one message at a time with the <EM>-get</EM>
+command. With ezmlm-idx(*) you can
+access the archive in three different ways: You can get an
+``<EM>-index</EM>'' listing message
+subjects and authors only. This information is sent as sets of 100 messages 
+with up to 2000 entries per request. You can also ``<EM>-get</EM>'' a range of 
+messages(*) (up to 100 per request) which will be sorted by subject (``Re:''
+and other ``subject modifiers'' are ignored) and time received. Finally,
+you can retrieve a set of messages or a ``thread'' containing a specific
+message. This usually gives you an ordered set starting with the first
+post, and then all replies in order received.
+<P>To access the archive, again remember that commands are put into the ADDRESS.
+Here are examples of the commands:
+<P>
+<DL>
+<DT><B><CODE>mailinglist-get.123@example.org</CODE></B><DD><P>Get message 123.
+<DT><B><CODE>mailinglist-index@example.org</CODE>(*)</B><DD><P>Get the subject and author information for the last 100-200 messages.
+This also tells you the latest message number.
+<DT><B><CODE>mailinglist-index.205@example.org</CODE>(*)</B><DD><P>Get the index for messages 200-299.
+<DT><B><CODE>mailinglist-index.200_299@example.org</CODE>(*)</B><DD><P>Get the index for messages 200-299.
+<DT><B><CODE>mailinglist-get@example.org</CODE>(*)</B><DD><P>Get the messages accumulated since the latest digest (returns latest 30 messages
+if there are no digests for the list). The normal format is MIME with only
+the important headers. If you instead of the <EM>-get</EM> command use
+<EM>-getr</EM> you get the digest as a single long message without MIME. The
+<EM>-getv</EM> command gives you the MIME format, but now all the headers
+of the individual messages are returned. (Normally only the important headers
+are included to save space but other headers may sometimes be relevant for error
+tracing, etc.)
+<DT><B><CODE>mailinglist-get.123_456@example.org</CODE>(*)</B><DD><P>Get messages 123-456. Because you can only get up to 100 messages per request,
+only messages 123-222 will be send. Send new requests to get the remainder.
+<DT><B><CODE>mailinglist-thread.123@example.org</CODE>(*)</B><DD><P>Get the thread containing message 123. To change the format, use the
+<EM>-threadr</EM> or <EM>-threadv</EM> format instead. These work just like
+their <EM>-get</EM> cousins (see above).
+</DL>
+<P>If you haven't been following the list for a while,
+or you just want to see the discussion of
+a specific question, the easiest is to start with <EM>-index</EM>(*).
+If not found,
+send further <EM>-index</EM>(*) requests going backwards in the archive.
+Once you've
+found one message (e.g. ``667'') in the thread use the <EM>-thread</EM>(*)
+command:
+<CODE>mailinglist-thread.667@example.org</CODE> to get the entire set.
+<P>If you're a digest subscriber and find an interesting discussion,
+use <EM>-thread</EM>
+or the <CODE>mailinglist-get@example.org</CODE> address to catch up with
+the latest messages in that thread or on the list. The <EM>-thread</EM>(*)
+command is also useful if you catch the tail end of a discussion
+and want to read earlier messages.
+<P>Some lists may be set up to allow archive access to subscribers only(*). If
+you are not a subscriber, you can simply subscribe. If you are a subscriber,
+but are denied archive access, you are subscribed under an address different
+from the one you are sending from. Easiest is to unsubscribe (see above)
+the current subscriber address and subscribe the address you're sending from.
+Alternatively, some mail programs (e.g. Mutt) allow you to change the
+SENDER address depending on where you are sending mail. Last, if this
+address difference is necessary, you may FORWARD a list message, and a note
+with the two addresses and a request to <CODE>mailinglist-owner@example.org</CODE>.
+The owner will add your second address to
+a special address list of senders allowed to access the archive (and post)
+even though they are not subscribers. Remember to
+replace ``<CODE>mailinglist@example.org</CODE>'' with the list address. (If you
+are adventurous, see
+<A HREF="#allow">Adding an alias</A> for information on how to do this
+without the help of the owner.)
+<P>
+<H2><A NAME="ss1.8">1.8 Getting ezmlm digests a few times per week</A>
+rather than individual messages(*).</H2>
+
+<P>ezmlm list may be set up with a digest function. This is basically a second
+address database used to send out ``digests'',
+ordered collections of messages sent to the main
+list. Usually, a ``digest'' is sent out every other day. This is very
+convenient for users who want to follow a list, but not participate in
+the discussion. A digest is sorted, so it's easy to read what interests you.
+Thus, the digest for <CODE>mailinglist@example.org</CODE> would be called
+<CODE>mailinglist-digest@example.org</CODE> and you would mail
+<CODE>mailinglist-digest-subscribe@example.org</CODE>.
+<P>Simple ezmlm/idx lists test if the conditions for a digest are met whenever
+a message arrives. Thus, the digests do not arrive at a specific time, but
+rather approximately every two days, or more often if there is a lot of
+traffic.
+<P>On some mailing lists you are a subscriber, and as a subscriber, you can
+choose to receive the messages individually or as a digest. With ezmlm,
+you can subscribe to the ``list'' for individual messages, or
+to ``list-digest'' for digests. Some people prefer to subscribe to both:
+They can keep up with a discussion if they like, but if they have too little
+time they can just delete the individual messages and read the ``threads''
+that interest them. To switch from being a ``list'' subscriber to being
+a ``list-digest'' subscriber, simply subscribe to the digest and unsubscribe
+from the main list. You will still be able to post to the main list.
+<P>With some mailing list managers,
+the digest is edited by a human. ezmlm digests contain
+each message as it was sent out by the list (apart from having many less
+informative headers removed). No editorials, no missing messages. The messages
+are ordered by subject (or ``story'' or ``thread'') and within each subject
+by arrival time. First in the digest is a table of contents with subjects,
+message numbers, and authors. Messages are enclosed as attachments so that
+a MIME-capable mail reader will allow you to see them as individual messages.
+This way, you can easily follow-up on a post even from the digest. The
+owner may chose to use a non-MIME single message format instead. This is
+most often done on old lists where the subscribers are used to that format
+and unaware or due to deficient mail readers unable to appreciate the
+advantages of the MIME format (Pegasus Mail and Mutt are free programs
+that do a good job).
+<P>The digest of a list ``list'' is called ``list-digest'', and the commands
+are the same as for the main list. Thus, to subscribe to
+<CODE>mailinglist-digest@example.org</CODE> (the digest
+of <CODE>mailinglist@example.org</CODE>)
+send a message to:
+<CODE>mailinglist-digest-subscribe@example.org</CODE>, 
+or to subscribe the address <CODE>jonesj@softx.com</CODE>
+send to:
+<CODE>mailinglist-digest-subscribe-jonesj=soft.com@example.org</CODE>. 
+Of course, ezmlm will send
+a confirmation request, and then a message notifying the user that s/he is
+a subscriber. If the list owner has chosen to restrict posts
+and archive access to subscribers, digest subscribers are automatically
+given the same privilege.
+<P>
+<H2><A NAME="ss1.9">1.9 Unsubscribing from an ezmlm digest list.</A>
+</H2>
+
+<P>You unsubscribe to the digest in the same manner as you unsubscribe from
+the main list (see
+<A HREF="#unsubscribe">Unsubscribing from an ezmlm list</A>),
+but using the digest list name.
+Thus, to unsubscribe your current address from
+<CODE>mailinglist-digest@example.org</CODE>
+send mail to:
+<CODE>mailinglist-digest-unsubscribe@example.org</CODE>. Again, you can unsubscribe
+<CODE>john@example.com</CODE> by instead mailing
+<CODE>mailinglist-digest-unsubscribe-john=example.com@example.org</CODE>. 
+ezmlm confirmation works as usual.
+<P>
+<H2><A NAME="ss1.10">1.10 Temporarily halting message delivery.</A>
+</H2>
+
+<P>Just unsubscribe from the list or list-digest,
+then subscribe when you want mail to
+resume. If desired, get missed messages from the archive with <EM>-get</EM>
+or just subject/author info with <EM>-index</EM>(*).
+<P>Due to the fast replies from ezmlm this is easier and more efficient than
+having ``dormant'' subscribers.
+<P>
+<H2><A NAME="ss1.11">1.11 Contacting the list-owner.</A>
+</H2>
+
+<P>You can contact the list owner by mailing to the ``owner'' address.
+For the list <CODE>mailinglist@example.org</CODE> just send your message to
+<CODE>mailinglist-owner@example.org</CODE>. Please state your problem and FORWARD
+any error message or a list message with your request. Since ezmlm can
+take care of virtually all request without human intervention, the
+list owner may read mail only infrequently. Please be patient and 
+remember that in most cases you are asking the list owner to manually
+do what you could do yourself by e-mail via ezmlm
+with the information in the error or list message.
+<P>
+<HR>
+<A HREF="ezman-2.html">Next</A>
+Previous
+<A HREF="ezman.html#toc1">Contents</A>
+</BODY>
+</HTML>

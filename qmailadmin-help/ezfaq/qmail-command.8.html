@@ -1,0 +1,85 @@
+  <TITLE>UNIX man pages : ./qmail-command.8 ()</TITLE>
+  <hr>
+<PRE>
+
+qmail-command(8)                                 qmail-command(8)
+
+<H2>NAME</H2>
+       qmail-command - user-specified mail delivery program
+
+<H2>SYNOPSIS</H2>
+       in <b>.qmail</b><i>ext</i>: <b>|</b><i>command</i>
+
+<H2>DESCRIPTION</H2>
+       <b>qmail-local</b>  will,  upon  your request, feed each incoming
+       mail message through a program of your choice.
+
+       When a mail message arrives, <b>qmail-local</b> runs <b>sh</b>  <b>-c</b>  <i>com-</i>
+       <i>mand</i>  in your home directory.  It makes the message avail-
+       able on <i>command</i>'s standard input.
+
+       <b>WARNING:</b> The mail  message  does  not  begin  with  <b>qmail-</b>
+       <b>local</b>'s usual <b>Return-Path</b> and <b>Delivered-To</b> lines.
+
+       Note  that  <b>qmail-local</b>  uses the same file descriptor for
+       every delivery in your <b>.qmail</b> file, so it is not safe  for
+       <i>command</i>  to  fork  a  child  that reads the message in the
+       background while the parent exits.
+
+<H2>EXIT CODES</H2>
+       <i>command</i>'s exit codes are interpreted as follows:  0  means
+       that the delivery was successful; 99 means that the deliv-
+       ery was successful, but that <b>qmail-local</b> should ignore all
+       further delivery instructions; 100 means that the delivery
+       failed permanently (hard error); 111 means that the deliv-
+       ery  failed  but  should  be tried again in a little while
+       (soft error).
+
+       Currently 64, 65, 70, 76, 77, 78, and 112  are  considered
+       hard  errors,  and  all  other  codes  are considered soft
+       errors, but <i>command</i> should avoid relying on this.
+
+<H2>ENVIRONMENT VARIABLES</H2>
+       <b>qmail-local</b> supplies several useful environment  variables
+       to  <i>command</i>.  <b>WARNING:</b> These environment variables are not
+       quoted.  They may contain special  characters.   They  are
+       under the control of a possibly malicious remote user.
+
+       <b>SENDER</b>  is  the envelope sender address.  <b>NEWSENDER</b> is the
+       forwarding envelope sender address, as described  in  <b>dot-</b>
+       <b><A HREF="qmail.5.html">qmail(5)</A></b>.   <b>RECIPIENT</b>  is  the envelope recipient address,
+       <i>local@domain</i>.  <b>USER</b> is <i>user</i>.  <b>HOME</b> is your home directory,
+       <i>homedir</i>.   <b>HOST</b>  is  the  <i>domain</i>  part  of  the  recipient
+       address.  <b>LOCAL</b> is the <i>local</i> part.   <b>EXT</b>  is  the  address
+       extension, <i>ext</i>.
+
+       <b>HOST2</b> is the portion of <b>HOST</b> preceding the last dot; <b>HOST3</b>
+       is the portion of <b>HOST</b> preceding the  second-to-last  dot;
+       <b>HOST4</b>  is  the portion of <b>HOST</b> preceding the third-to-last
+       dot.
+
+                                                                1
+
+qmail-command(8)                                 qmail-command(8)
+
+       <b>EXT2</b> is the portion of <b>EXT</b> following the first dash;  <b>EXT3</b>
+       is the portion following the second dash; <b>EXT4</b> is the por-
+       tion following the third dash.   <b>DEFAULT</b>  is  the  portion
+       corresponding  to the <b>default</b> part of the <b>.qmail-</b>...  file
+       name; <b>DEFAULT</b> is not set if the file  name  does  not  end
+       with <b>default</b>.
+
+       <b>DTLINE</b>  and  <b>RPLINE</b> are the usual <b>Delivered-To</b> and <b>Return-</b>
+       <b>Path</b> lines, including newlines.  <b>UFLINE</b> is the  UUCP-style
+       <b>From</b><i>_</i> line that <b>qmail-local</b> adds to <i>mbox</i>-format files.
+
+<H2>SEE ALSO</H2>
+       <A HREF="dot-qmail.5.html">dot-qmail(5)</A>, <A HREF="envelopes.5.html">envelopes(5)</A>, <A HREF="qmail-local.8.html">qmail-local(8)</A>
+
+                                                                2
+
+</PRE>
+  <hr>
+  <ADDRESS>
+  © 1994 <A HREF="http://www.ntua.gr/~christia/man-cgi.html">Man-cgi 1.15</A>, Panagiotis Christias &lt;christia@theseas.ntua.gr&gt;
+  </ADDRESS>

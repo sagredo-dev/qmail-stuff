@@ -1,0 +1,578 @@
+  <TITLE>UNIX man pages : ./ezmlm-make.1 ()</TITLE>
+  <hr>
+<PRE>
+
+ezmlm-make(1)                                       ezmlm-make(1)
+
+<H2>NAME</H2>
+       ezmlm-make - create a new mailing list
+
+<H2>SYNOPSIS</H2>
+       <b>ezmlm-make</b>  [ <b>-+</b> ][ <b>-a..zABD..Z</b> ][ <b>-C03..9</b> <b>arg</b> ] <i>dir</i> [ <i>dot</i>
+       <i>local</i> <i>host</i> <i>[digestcode]</i> ]
+
+<H2>DESCRIPTION</H2>
+       <b>ezmlm-make</b> sets up a new mailing list,  <i>local</i><b>@</b><i>host</i>,  along
+       with  several  extra  addresses  to  handle administrative
+       requests.
+
+       All mailing list information is stored in a new directory,
+       <i>dir</i>.   <i>dir</i>  must  be an absolute pathname, starting with a
+       slash.  <i>dot</i> must be an absolute file name starting with  a
+       slash.  Arguments other than <i>dir</i> may be omitted when edit-
+       ing an existing list, using the  <b>-e</b>  or  <b>-+</b>  options  (see
+       below).
+
+       <b>ezmlm-make</b>   is   controlled   by  a  template,  <b>.ezmlmrc</b>.
+       Described here is the behavior with the  default  template
+       file.
+
+       <b>ezmlm-make</b>  <b>also</b>  <b>creates</b>  <i>dir</i><b>/config</b>, where it stores all
+       configuration information. By reading this file,  you  can
+       rapidly  get  information  about  how  the list is set up.
+       <b>ezmlm-make</b> when used with the <b>-e</b> switch will read informa-
+       tion  from  this file. Thus, when using <b>ezmlm-make</b> <b>-e</b>, you
+       only need to specify the desired switches and switch argu-
+       ments  and  <i>dir</i>.   With  the <b>-+</b> switch all switches become
+       sticky, i.e. the default for  all  switches  (and  command
+       line  arguments) becomes the switches and arguments active
+       for the list to be edited.
+
+       <b>ezmlm-make</b> sets up four <b>.qmail</b> files: <i>dot</i>, <i>dot</i><b>-owner</b>, <i>dot</i><b>-</b>
+       <b>return-default</b>,  and  <i>dot</i><b>-default</b>.   You  should make sure
+       that messages to <i>local</i><b>@</b><i>host</i>,  <i>local</i><b>-owner@</b><i>host</i>,  etc.  are
+       controlled by these <b>.qmail</b> files.
+
+       For  message moderated lists, <b>ezmlm-make</b> sets up two addi-
+       tional <b>.qmail</b> files:  <i>dot</i><b>-accept-default</b>  and  <i>dot</i><b>-reject-</b>
+       <b>default</b>.
+
+       For  digested lists, <b>ezmlm-make</b> sets up another two <b>.qmail</b>
+       file: <i>dot</i><b>-digest-return-default</b> and <i>dot</i><b>-digest-owner</b>.
+
+       If <i>digestcode</i> is  specified,  digest  creation  by  <b>ezmlm-</b>
+       <b><A HREF="get.1.html">get(1)</A></b> via trigger messages to the <i>local</i><b>/@</b><i>host</i><b>-dig.</b><i>digest-</i>
+       <i>code</i> address is enabled.
+
+       By default, <b>ezmlm-make</b> sets up  lists  to  add  a  ``X-No-
+       Archive:   yes''  header  to  outgoing  messages.   Public
+       archiving servers will interpret this header as a  request
+       not to archive messages from the list. It this in not what
+
+                                                                1
+
+ezmlm-make(1)                                       ezmlm-make(1)
+
+       you desire, remove this header  from  <b>ezmlmrc</b>  for  global
+       effects, or from <i>dir</i><b>/headeradd</b> for the specific list.
+
+       Typical use of <b>ezmlm-make</b> by a normal user:
+
+          ezmlm-make ~joe/SOS ~joe/.qmail-sos joe-sos isp.net
+
+       Typical use of <b>ezmlm-make</b> by <b>alias</b>:
+
+          ezmlm-make ~alias/SOS ~alias/.qmail-sos sos isp.net
+          chown -R alias ~alias/SOS
+
+       Typical  use of <b>ezmlm-make</b> by a normal user enabling auto-
+       matic digests:
+
+          ezmlm-make -d ~joe/SOS ~joe/.qmail-sos joe-sos isp.net
+
+       Typical use of <b>ezmlm-make</b> to change an  existing  list  in
+       ~joe/SOS  to a message moderated list with remote adminis-
+       tration,  and  enabling  the  remote  administrator(s)  to
+       retrieve  a  subscriber  list  and  to edit <i>dir</i><b>/text</b> files
+       (digest are still enabled):
+
+          ezmlm-make -emrldn ~joe/SOS
+
+       Mail can arrive at any time!  For safe  editing,  turn  on
+       the  sticky  bit  of the home directory before editing the
+       list setup, then turn it off again (see <b><A HREF="dot-qmail.5.html">dot-qmail(5)</A></b>).
+
+       Moderator addresses are added with
+
+         ezmlm-sub ~joe/SOS/mod mod1@host1 mod2@host2 ...
+
+       <b>ezmlm-make</b>  also  creates  the  necessary  text  files  in
+       <i>dir</i><b>/text/</b>.
+
+       <b>ezmlm-make</b>  has  a large number of switches to control all
+       aspects of list generation.  Only defaults or a small sub-
+       set  of switches are necessary for most list setups. Other
+       options are present primarily  to  allow  a  external  CGI
+       script or other graphical user interface to use <b>ezmlm-make</b>
+       to manipulate ezmlm list setups.
+
+<H2>VIRTUAL DOMAINS</H2>
+       For virtual domains, <b><A HREF="qmail.5.html">qmail(5)</A></b> prefixes  the  name  of  the
+       controlling  user  to  the  LOCAL  part  of  the recipient
+       address.  <b><A HREF="ezmlm.5.html">ezmlm(5)</A></b> needs to be informed of this  in  order
+       to  correctly  interpret  list  commands.  This is done by
+       adjusting <i>dir</i><b>/inlocal</b>.  This adaptation is necessary  only
+       when ezmlm is used with qmail version 1.01 or earlier.
+
+       To   create   the  list  ``tl@virtual.dom''  where  ``vir-
+       tual.dom''  is  controlled  by  ``vu''   (virtual.dom:vu),
+       change  identity  to  ``vu''  or  chown files to that user
+
+                                                                2
+
+ezmlm-make(1)                                       ezmlm-make(1)
+
+       after:
+
+            ezmlm-make ~vu/dir ~vu/.qmail-tl tl virtual.dom
+
+            echo "vu-tl" &gt; ~vu/inlocal
+
+       Thus,  create  the  list  exactly  as  for  a  list  under
+       ``alias'',  but  adjust <i>dir</i><b>/inlocal</b> to the list local name
+       prefixed with the controlling user name.
+
+<H2>OPTIONS</H2>
+       All <b>ezmlm-make</b> letter switches except <b>-v</b> and <b>-V</b> are avail-
+       able for interpretation via <i>ezmlmrc</i>.  Switches <b>-e</b>, <b>-E</b>, <b>-c</b>,
+       and <b>-C</b> have special meaning within the  program.   <i>ezmlmrc</i>
+       customization  should respect the function of the switches
+       described here.
+
+       <b>-+</b>   Switches currently active for the list will be  used,
+            as  modified  by  the current command line.  Thus, <b>-+</b>
+            makes switches ``sticky''. By default, only  switches
+            specified  on  the current command line will be used.
+            This switch implies <b>-e</b> as it is meaningless except in
+            edit mode.
+
+       <b>-a</b>   (Default.)    Archived.     <b>ezmlm-make</b>   will   touch
+            <i>dir</i><b>/archived</b>, so that <b><A HREF="ezmlm-send.1.html">ezmlm-send(1)</A></b> will archive  new
+            messages.
+
+       <b>-A</b>   Not archived.
+
+       <b>-c</b>   Config.   Use  <i>.ezmlmrc</i>  (see CONFIGURATION) from the
+            directory where <i>dot</i>  resides.   <b>ezmlm-make</b>  otherwise
+            uses   the   system   wide   ezmlmrc  file  (normally
+            /etc/ezmlmrc and if not found there, the ezmlmrc file
+            in  the  ezmlm  binary directory).  The <b>-c</b> switch may
+            cause you to execute <b>ezmlm-make</b> based on a configura-
+            tion  file  controlled  by  another user.  <b>ezmlm-make</b>
+            does not allow periods in any  tag  to  restrict  all
+            actions  to  within <i>dir</i>.  Be careful with this option
+            setting up lists for  other  users,  especially  when
+            running <b>ezmlm-make</b> as root.
+
+       <b>-C</b> <i>arg</i>
+            Like <b>-c</b>, but use file <i>arg</i> as the ezmlmrc file.
+
+       <b>-d</b>   Digest.  <b>ezmlm-make</b> will set up the <i>local</i><b>-digest@host</b>
+            digest list to disseminate digest of  the  list  mes-
+            sages.  By default, this is done when 30 messages, 48
+            hours, or 64 kbytes of message body text have accumu-
+            lated  since  the  last  digest. Use the <b>-4</b> switch to
+            override  these  defaults.  See  <b><A HREF="ezmlm-tstdig.1.html">ezmlm-tstdig(1)</A></b>  and
+            <b><A HREF="ezmlm-get.1.html">ezmlm-get(1)</A></b> for more info.
+
+       <b>-D</b>   (Default.)   No  digest.   Do  not  set up the digest
+
+                                                                3
+
+ezmlm-make(1)                                       ezmlm-make(1)
+
+            list.
+
+       <b>-e</b>   Edit.  <b>ezmlm-make</b> will remove links  before  creating
+            them  and  accept  if  directories  to be created are
+            already present.  will also (via entries in  <i>ezmlmrc</i>)
+            remove flags that are present but not desired for the
+            current list.  Thus,  this  option  can  be  used  to
+            reconfigure  existing lists without affecting modera-
+            tor and subscriber  lists  or  message  archive.  All
+            desired  <b>ezmlm-make</b> switches need to be specified. To
+            make all switches sticky, i.e. only specify the  ones
+            changed  from  the  previous  setup, use <b>-+</b>.  Command
+            line arguments other than <i>dir</i> can be omitted.  In the
+            unlikely case where <i>dot</i> is changed, you must manually
+            remove the old links.  Mail can arrive at  any  time!
+            For  safe editing, turn on the sticky bit of the home
+            directory before using the edit function,  then  turn
+            it off again (see <b><A HREF="dot-qmail.5.html">dot-qmail(5)</A></b>).
+
+       <b>-E</b>   (Default.)  No edit.  <b>ezmlm-make</b> will abort if direc-
+            tories or links to be  created  already  exist.  This
+            prevents accidental reconfiguration of a pre-existing
+            list, since the first action is to  create  the  list
+            directory.
+
+       <b>-f</b>   Prefix.   <b>ezmlm-make</b> will set up the list so that the
+            outgoing subject will be prefixed with the list name.
+
+       <b>-F</b>   (Default.)  No prefix.
+
+       <b>-g</b>   Guard archive.  Archive access requests from unrecog-
+            nized SENDERs will be rejected.  This restriction  is
+            safe, since replies are sent to the SENDER address.
+
+       <b>-G</b>   (Default.)   Do  not  guard  archive.  Archive access
+            request from any SENDER will be serviced.
+
+       <b>-i</b>   (Default.)   Indexed.     <b>ezmlm-make</b>    will    touch
+            <i>dir</i><b>/indexed</b>, so that <b><A HREF="ezmlm-send.1.html">ezmlm-send(1)</A></b> will set up a mes-
+            sage index of incoming messages.   <b><A HREF="ezmlm-get.1.html">ezmlm-get(1)</A></b>  will
+            be  set  up  in  <i>dir</i><b>/manager</b>  to process <i>digest</i>, <i>get</i>,
+            <i>index</i>, and <i>thread</i> requests.
+
+       <b>-I</b>   Not indexed.  <b><A HREF="ezmlm-get.1.html">ezmlm-get(1)</A></b> will not be used  and  <i>get</i>
+            requests will be handled by <b><A HREF="ezmlm-manage.1.html">ezmlm-manage(1)</A></b>.
+
+       <b>-k</b>   kill.   <b>ezmlm-make</b> sets up <i>dir</i><b>/deny/</b>.  It sets up the
+            list so that posts from addresses  in  <i>dir</i><b>/deny/</b>  are
+            rejected.  This  is useful in combination with the <b>-u</b>
+            switch to temporarily  restrain  offenders,  such  as
+            misconfigured  auto-responders or automatic spammers.
+            It can also be used in combination with <b>-m</b> to  filter
+            out  SENDERs  from whom the moderators do not want to
+            see posts (again, bad re-mailers and spammers come to
+
+                                                                4
+
+ezmlm-make(1)                                       ezmlm-make(1)
+
+            mind).
+
+            To add/remove blacklisted addresses:
+
+            <b>ezmlm-sub</b> <i>dir</i><b>/deny</b> <i>bad@host</i>
+
+            <b>ezmlm-unsub</b> <i>dir</i><b>/deny</b> <i>bad@host</i>
+
+       <b>-K</b>   (Default.)   Not kill.  <i>dir</i><b>/deny/</b> is not created, and
+            even if it exists, the contents will be ignored.
+
+       <b>-l</b>   List subscribers.  <b>ezmlm-make</b> sets  up  the  list  so
+            that  remote  administrators can request a subscriber
+            list, and search the subscriber log.
+
+       <b>-L</b>   (Default.)  The subscriber list cannot be obtained.
+
+       <b>-m</b>   Message moderation. (Please note that the  <b>-u</b>  <b>switch</b>
+            <b>modifies</b> the action of this switch.)  <b>ezmlm-make</b> will
+            touch   <i>dir</i><b>/modpost</b>   and   create    <i>dir</i><b>/mod/</b>    and
+            <i>dir</i><b>/mod/subscribers/</b>,  where  the moderator addresses
+            are stored.  <b>ezmlm-make</b>  also  creates  <i>dir</i><b>/mod/pend-</b>
+            <b>ing/</b>,   <i>dir</i><b>/mod/accepted/</b>,   and   <i>dir</i><b>/mod/rejected/</b>.
+            These directories are used to queue messages awaiting
+            moderation.   <i>dir</i><b>/editor</b> will be set up to run <b>ezmlm-</b>
+            <b><A HREF="store.1.html">store(1)</A></b> to store incoming messages in the moderation
+            queue and send moderation requests to the moderators.
+            <i>dir</i><b>/moderator</b> will be set up to run <b>ezmlm-moderate</b> to
+            process moderator <i>accept</i> or <i>reject</i> requests.
+
+            To add/remove moderators:
+
+            <b>ezmlm-sub</b> <i>dir</i><b>/mod</b> <i>moderator@host</i>
+
+            <b>ezmlm-unsub</b> <i>dir</i><b>/mod</b> <i>moderator@host</i>
+
+       <b>-M</b>   (Default.)  Message posting is not moderated.
+
+       <b>-n</b>   New  text file.  <b>ezmlm-make</b> sets up the list to allow
+            remote administrators to edit files in <i>dir</i><b>/text/</b>.
+
+       <b>-N</b>   (Default.)  Not new text file.  Text file editing not
+            allowed.
+
+       <b>-p</b>   (Default.) Public.  <b>ezmlm-make</b> will touch <i>dir</i><b>/public</b>,
+            so that <b><A HREF="ezmlm-manage.1.html">ezmlm-manage(1)</A></b> will respond  to  administra-
+            tive   requests  and  <b>ezmlm-get</b>  will  allow  archive
+            retrieval.
+
+       <b>-P</b>   Private.  <b><A HREF="ezmlm-manage.1.html">ezmlm-manage(1)</A></b> and <b><A HREF="ezmlm-get.1.html">ezmlm-get(1)</A></b> will allow
+            only  digest  creation,  remote  administration,  and
+            archive retrieval by remote administrators,  (if  the
+
+                                                                5
+
+ezmlm-make(1)                                       ezmlm-make(1)
+
+            list is configured with these options).
+
+       <b>-q</b>   ReQuest address is serviced.  <b>ezmlm-make</b> will config-
+            ure the list to process commands sent in the  subject
+            to  <i>local</i><b>-request@</b><i>host</i>.   This  is  done  by adding a
+            <b><A HREF="ezmlm-request.1.html">ezmlm-request(1)</A></b> line to <i>dir</i><b>/manager</b>.
+
+       <b>-Q</b>   (Default.)  Do  not  process  messages  sent  to  the
+            ``request'' address.
+
+       <b>-r</b>   Remote  admin.  <b>ezmlm-make</b> enables remote administra-
+            tion by touching <i>dir</i><b>/remote</b>.  Moderator(s) can unsub-
+            scribe  and subscribe any address.  See the <b>-m</b> option
+            on how moderator addresses  are  stored  and  manipu-
+            lated.
+
+       <b>-R</b>   (Default.) No remote administration.
+
+       <b>-s</b>   Subscription  moderation.   <b>ezmlm-make</b>  enables  sub-
+            scription moderation by  touching  <i>dir</i><b>/modsub</b>.   This
+            affects  subscriptions for both the main list and the
+            digest list.  See the  <b>-m</b>  option  on  how  moderator
+            addresses are stored and manipulated.
+
+       <b>-S</b>   (Default.) Subscriptions are not moderated.
+
+       <b>-t</b>   Trailer.   <b>ezmlm-make</b> will create <i>dir</i><b>/text/trailer</b> to
+            set up the list to add a  trailer  to  outgoing  mes-
+            sages.
+
+       <b>-T</b>   No trailer.  (Default.)
+
+       <b>-u</b>   User posts only.  <b>ezmlm-make</b> sets up the list so that
+            posts  and  archive  access  is  restricted  to  sub-
+            scribers.  These are addresses subscribed to the main
+            list, the digest, or added manually  to  the  address
+            database  in  <i>dir</i><b>/allow/</b> which accommodates addresses
+            from e.g. subscribers working from an  address  other
+            than their subscriber address.
+
+            Posts  from  unrecognized  SENDER  addresses  will be
+            rejected.  This is  relatively  easily  defeated  for
+            posts.   More  secure alternatives are message moder-
+            ated lists configured with the <b>ezmlm-make</b>  <b>-m</b>  switch
+            (without the <b>-u</b> switch).
+
+            There  is  no  reason  to combine of SENDER checks on
+            posts with message moderation. Therefore, the  combi-
+            nation  of  the  <b>-u</b> switch with the <b>-m</b> switch is used
+            for a configuration with  SENDER  restrictions  (like
+            with  <b>-u</b>  alone), with the difference that posts from
+            non-subscribers will be sent for  moderation  instead
+            of  being rejected. This allows the list admin to let
+            non-subscribers post  occasionally,  as  well  as  to
+
+                                                                6
+
+ezmlm-make(1)                                       ezmlm-make(1)
+
+            catch   subscribers   posting   from   non-subscriber
+            addresses.
+
+       <b>-U</b>   (Default.)  Do not restrict  posts  based  on  SENDER
+            address.
+
+       <b>-v</b>   Display <b>ezmlm-make</b> version information.
+
+       <b>-V</b>   Display <b>ezmlm-make</b> version information.
+
+       <b>-w</b>   Remove  the  <b><A HREF="ezmlm-warn.1.html">ezmlm-warn(1)</A></b>  invocations from the list
+            setup. It is  assumed  that  <b><A HREF="ezmlm-warn.1.html">ezmlm-warn(1)</A></b>  for  both
+            <i>local@host</i> and <i>local</i><b>-digest@</b><i>host</i> will be run by other
+            means, such as crond.  If the list is set up with SQL
+            support  (see  <b>-6</b>),  restrict the list to a subset of
+            addresses by adding the list name to  the  <i>dir</i><b>/sql</b>  <b>,</b>
+            <i>dir</i><b>/allow/sql</b> <b>,</b> <i>dir</i><b>/digest/sql</b> <b>,</b> configuration files.
+            Useful only when setting up the main list for a large
+            distributed list supported by a SQL address database.
+            Also, bounces will  be  handled  by  <b><A HREF="ezmlm-receipt.1.html">ezmlm-receipt(1)</A></b>
+            rather  than  <b><A HREF="ezmlm-return.1.html">ezmlm-return(1)</A></b>.  As the main list will
+            have only sublists as subscribers, it is desirable to
+            log  bounces  and  feedback  messages  rather than to
+            remove a bouncing subscriber.
+
+       <b>-W</b>   (Default.)  No address  restriction.  Normal  use  of
+            <b><A HREF="ezmlm-warn.1.html">ezmlm-warn(1)</A></b> and <b><A HREF="ezmlm-return.1.html">ezmlm-return(1)</A></b>.
+
+       <b>-x</b>   eXtra.  <b>ezmlm-make</b> will configure the list with a few
+            extras: <i>dir</i><b>/mimeremove</b> will be  configured  to  strip
+            annoying  mime  parts such as excel spreadsheets, rtf
+            text, html text etc from the messages. Messages  con-
+            sisting solely of this Content-type will be rejected.
+            See <b><A HREF="ezmlm-send.1.html">ezmlm-send(1)</A></b> and <b><A HREF="ezmlm-reject.1.html">ezmlm-reject(1)</A></b> for more  info.
+
+       <b>-0</b> <i>mainlist@host</i>
+            Make the list a sublist of list <i>mainlist@host</i>.
+
+       <b>-4</b> <i>tstdigopts</i>
+            <b>ezmlm-make</b> replaces the <b><A HREF="ezmlm-tstdig.1.html">ezmlm-tstdig(1)</A></b> switches used
+            for digest generation with the  text  in  <i>tstdigopts</i>.
+            This  is  part  of  a  command  line,  NOT a specific
+            switch. It should normally be  placed  within  single
+            quotes.  This  switch is mainly for programmatic use.
+            For changing list defaults, it is usually  easier  to
+            create  a  custom  <i>~/.ezmlmrc</i>  file  and edit it. The
+            default is '-t24 -m30 -k64'. (See <b><A HREF="ezmlm-tstdig.1.html">ezmlm-tstdig(1)</A></b> for
+            more info.)
+
+       <b>-5</b> <i>owner@host</i>
+            <b>ezmlm-make</b>  will  configure  the list to forward mail
+            directed to the list owner to <i>owner@host</i>.
+
+                                                                7
+
+ezmlm-make(1)                                       ezmlm-make(1)
+
+       <b>-6</b> <i>host:port:user:password:datab:table</i>
+            SQL connect info. Use the sql  <i>host</i>  (default  local-
+            host),  connecting  to  <i>port</i>  (default  port  for SQL
+            server) as <i>user</i> with <i>password</i>  using  database  <i>datab</i>
+            (default   ezmlm)  and  the  table  root  name  <i>table</i>
+            (default ezmlm) This will have no effect  unless  the
+            ezmlm programs are compiled with SQL support.
+
+       <b>-7</b> <i>/msg_mod_path</i>
+            Make  <i>/path</i> the path to the database for message mod-
+            erators, if the list is set up  for  message  modera-
+            tion.   <i>/msg_mod_path</i>  must  be an absolute pathname,
+            starting with a slash. If not, it will be ignored.
+
+       <b>-8</b> <i>/sub_mod_path</i>
+            Make <i>/sub_mod_path</i> the path to the database for  sub-
+            scription  moderators, if the list is set up for sub-
+            scription moderation.  <i>/sub_mod_path</i> must be an abso-
+            lute pathname, starting with a slash. If not, it will
+            be ignored.
+
+       <b>-9</b> <i>/rem_adm_path</i>
+            Make <i>/path</i> the path to the database for remote admin-
+            istrators,  if the list is set up for remote adminis-
+            tration.  <i>/rem_adm_path</i> must be an absolute pathname,
+            starting with a slash. If not, it will be ignored.
+
+<H2>LIST EDITING</H2>
+       When  <b>ezmlm-make</b>  is used with the <b>-e</b> switch, and the list
+       was previously created or edited with a new (ezmlm-idx  &gt;=
+       0.23)  version of <b>ezmlm-make</b>, all arguments other than <i>dir</i>
+       can be omitted. In this case, arguments will be read  from
+       <i>dir</i><b>/config</b>.   The  appropriate flags must always be speci-
+       fied. To override <i>dot</i>, <i>local</i>, <i>host</i>, or <i>code</i>, all arguments
+       must be specified.
+
+<H2>CONFIGURATION</H2>
+       This  version  of  <b>ezmlm-make</b> is template driven. The tem-
+       plate file consists of plain text with four types of tags.
+       Both  start  in  the first position of the line.  No other
+       text is allowed on the same line. For security reasons, no
+       periods  are  allowed  anywhere in a tag.  Any line with a
+       ``#'' in position 1 is ignored, as is any  text  preceding
+       the first tag.
+
+       <b>&lt;/filename#aI/&gt;</b>
+              The  following  text will be copied to <i>dir</i><b>/filename</b>
+              if  the  options  specified  after  the  ``#''  are
+              active, in this case <i>archived</i> and not <i>indexed</i>.  Any
+              number of flags can be specified. This is  used  to
+              adapt  the  files  and messages to the type of list
+              created. If no flags are used,  the  ``#''  can  be
+              omitted. If the file name is the same as the previ-
+              ous tag, or if it is  omitted,  the  text  will  be
+
+                                                                8
+
+ezmlm-make(1)                                       ezmlm-make(1)
+
+              added  to  the  previous  file.  When a new file is
+              opened the previous file is closed. Attempts to add
+              more  text  to a already closed file overwrites its
+              contents.
+
+              An alternative to specify that a flag,  e.g.  ``4''
+              should  not  be active is to prefix the switch with
+              ``^'', e.g. use ``^4''.  The ``E'' flag is  treated
+              in a special manner. When the list is being edited,
+              it evaluates to false if the file  already  exists,
+              true  if it does not. Thus, files using this condi-
+              tion are not overwritten when editing. This is use-
+              ful  for  files that you frequently customize manu-
+              ally.
+
+       <b>&lt;/-filename#eA/&gt;</b>
+              <i>dir</i><b>/filename</b> will be erased, if the  options  after
+              the ``#'' are active, in this case <i>not</i> <i>archived</i> and
+              <i>edit</i>.
+
+       <b>&lt;/+directory#aI/&gt;</b>
+              The directory ``directory'' is created if the flags
+              specified are active, in this case <i>archived</i> and not
+              <i>indexed</i>.  If no flags are specified, the ``#''  can
+              be omitted.
+
+       <b>&lt;/:link/directory#aI/&gt;</b>
+              <b>dot</b><i>-link</i> is symlinked to <i>dir/directory</i> if the flags
+              specified are active, in this case <i>archived</i> and not
+              <i>indexed</i>.   If no flags are specified, the ``#'' can
+              be omitted.
+
+       In addition, <i>local</i> is substituted for <b>&lt;#L#&gt;</b>, the  part  of
+       <i>dot</i>  between  the  first 2 hyphens (if any) for <b>&lt;#1#&gt;</b>, the
+       part of <i>dot</i> between the second and third hyphen  (if  any)
+       for  <b>&lt;#2#&gt;</b>,  <i>host</i> for <b>&lt;#H#&gt;</b>, <i>dir</i> for <b>&lt;#D#&gt;</b>, <i>dot</i> for <b>&lt;#T#&gt;</b>,
+       <i>digestcode</i> for <b>&lt;#C#&gt;</b>, the set  of  all  active  flags  for
+       <b>&lt;#F#&gt;</b>,  and  the path to the <b>ezmlm</b> binaries for <b>&lt;#B#&gt;</b> any-
+       where in the text. Other tags of this format are copied to
+       the files as is.
+
+       <b>&lt;#l#&gt;</b>, <b>&lt;#h#&gt;</b>, <b>&lt;#n#&gt;</b>, <b>&lt;#A#&gt;</b>, <b>&lt;#R#&gt;</b>, will be substituted on-
+       the-fly where appropriate for the  <i>local</i>  or  <i>local</i><b>-digest</b>
+       local  part  of the list address, the <i>host</i>, the subscriber
+       address or the moderation accept address, the message num-
+       ber,  and  the  subscription  reply  address or moderation
+       reject address, respectively.  The  use  of  <b>&lt;#l#&gt;</b>  is  to
+       allow  the same text file to be used for requests pertain-
+       ing to both the main list  and  the  digest  list.   <b>&lt;#h#&gt;</b>
+       makes  it  possible  to  share  some  files between lists.
+       <b>&lt;#n#&gt;</b> is defined only by programs where this makes  sense,
+       i.e.  <b><A HREF="ezmlm-send.1.html">ezmlm-send(1)</A></b> and <b><A HREF="ezmlm-get.1.html">ezmlm-get(1)</A></b>
+
+       In  the  absence  of  <b>-e</b>  and <b>-+</b> switches, <b>ezmlm-make</b> will
+
+                                                                9
+
+ezmlm-make(1)                                       ezmlm-make(1)
+
+       create the list directory before processing  the  template
+       file, and create <i>dir</i><b>/key</b> after all other actions.
+
+       <b>ezmlm-make</b>  will use <b>/etc/ezmlmrc</b> and if not found <b>ezmlmrc</b>
+       in the ezmlm binary directory. This can be overridden with
+       the <b>-c</b> and <b>-C</b> switches.
+
+<H2>BUGS</H2>
+       <b>ezmlm-make</b>  deals with the template file as us-ascii.  Any
+       occurrence of the characters ``&lt;/'' at the beginning of  a
+       line will disrupt <b>ezmlm-make</b> operation.  Any occurrence of
+       tags with the format ``&lt;#X#&gt;'' with  with  'X'  being  any
+       digit,  'B',  'C', 'D', 'F', 'H', 'L', or 'T' will be sub-
+       stituted by <b>ezmlm-make</b>.  Any occurrence of a tag  of  this
+       format  with  'X' being 'h', 'l', 'A', or 'R' will be sub-
+       stituted by <b>ezmlm-store</b>  and  <b>ezmlm-manage</b>  at  run  time.
+       <b>ezmlm-send</b> will substitute tags with 'h' and 'l', and tags
+       with 'n' will be replaced by the current  message  number.
+       <b>ezmlm-get</b> will substitute tags ``&lt;#h#&gt;'', ``&lt;#l#&gt;'' in the
+       same way. The tag ``&lt;#n#&gt;'' will be replaced by the digest
+       message number which is the number of the first message in
+       the digest.
+
+       In practice, these character  sequences  are  unlikely  to
+       occur in any multi-byte character set text. They also will
+       not occur by chance in single-byte  character  sets  where
+       '&lt;', '/', and '#' retain their us-ascii codes.
+
+<H2>BUGS</H2>
+       <b>ezmlm-make</b>  cannot  deal with ezmlmrc lines containing NUL
+       (they will be truncated at the  NUL).  This  needs  to  be
+       fixed to make it 8-bit clean.
+
+<H2>SEE ALSO</H2>
+       <A HREF="ezmlm-clean.1.html">ezmlm-clean(1)</A>,  <A HREF="ezmlm-get.1.html">ezmlm-get(1)</A>, <A HREF="ezmlm-manage.1.html">ezmlm-manage(1)</A>, <A HREF="ezmlm-moderate.1.html">ezmlm-moderate(1)</A>
+       ,  <A HREF="ezmlm-send.1.html">ezmlm-send(1)</A>,  <A HREF="ezmlm-store.1.html">ezmlm-store(1)</A>,   <A HREF="ezmlm-sub.1.html">ezmlm-sub(1)</A>,
+       <A HREF="ezmlm-unsub.1.html">ezmlm-unsub(1)</A>, <A HREF="ezmlm.5.html">ezmlm(5)</A>
+
+                                                               10
+
+</PRE>
+  <hr>
+  <ADDRESS>
+  © 1994 <A HREF="http://www.ntua.gr/~christia/man-cgi.html">Man-cgi 1.15</A>, Panagiotis Christias &lt;christia@theseas.ntua.gr&gt;
+  </ADDRESS>

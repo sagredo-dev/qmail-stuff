@@ -1,0 +1,180 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<HTML>
+<HEAD>
+ <META NAME="GENERATOR" CONTENT="SGML-Tools 1.0.7">
+ <TITLE>EZFAQ 0.32 - ezmlm-idx and ezmlm FAQ: Customizing digests.</TITLE>
+ <LINK HREF="FAQ-13.html" REL=next>
+ <LINK HREF="FAQ-11.html" REL=previous>
+ <LINK HREF="FAQ.html#toc12" REL=contents>
+</HEAD>
+<BODY vlink="#004400" link="#008800" bgcolor="#ffffff" alink="#ff0000"><FONT FACE="helvetica,times,arial">
+<A HREF="FAQ-13.html">Next</A>
+<A HREF="FAQ-11.html">Previous</A>
+<A HREF="FAQ.html#toc12">Contents</A>
+<HR>
+<H2><A NAME="s12">12. Customizing digests.</A></H2>
+
+<P>
+<H2><A NAME="setup_diglist"></A> <A NAME="ss12.1">12.1 Setting up a digest list.</A>
+</H2>
+
+<P>Digests are integrated with normal ezmlm lists if you use ezmlm-idx&gt;=0.30.
+Just add the <a href="ezmlm-make.1.html">ezmlm-make(1)</a> ``-d'' switch to your list setup. To add digests
+to an existing list created with ezmlm-idx&gt;=0.23 use:
+<BLOCKQUOTE><CODE>
+<PRE>
+        % ezmlm-make -+d DIR
+</PRE>
+</CODE></BLOCKQUOTE>
+
+For ezmlm-0.53 or older lists, you just need to re-specify also other switches
+and the other <a href="ezmlm-make.1.html">ezmlm-make(1)</a> arguments.
+<P>
+<H2><A NAME="daily_digests"></A> <A NAME="ss12.2">12.2 Generating daily digests.</A>
+</H2>
+
+<P>The easiest way to generate trigger messages is to use <a href="crond.8.html">crond(8)</a> and
+execute <a href="ezmlm-get.1.html">ezmlm-get(1)</a> daily. To do this, create the list with:
+<BLOCKQUOTE><CODE>
+<PRE>
+        ezmlm-make -d dir dot local host
+</PRE>
+</CODE></BLOCKQUOTE>
+
+and add a line to your crontab file:
+<BLOCKQUOTE><CODE>
+<PRE>
+        30 04 * * * ezmlm-get dir
+</PRE>
+</CODE></BLOCKQUOTE>
+
+and execute <a href="crontab.1.html">crontab(1)</a>. This will generate a digest each day at 04:30 am. In
+addition, a digest will be generated at any time when the latest post makes
+it more than 30 messages or more than 64 kbytes of
+message body since the latest digest. If you do not want these extra digests,
+edit <B>DIR/editor</B> and remove the <a href="ezmlm-tstdig.1.html">ezmlm-tstdig(1)</a> and <a href="ezmlm-get.1.html">ezmlm-get(1)</a>
+lines.
+<P>If you do not need the digests to go out at a particular time, use the standard
+setup, but edit <B>DIR/editor</B> to put ``-t 24'' on the <a href="ezmlm-tstdig.1.html">ezmlm-tstdig(1)</a>
+line instead of the default ``-t 48'' for 48 hours. This is even easier.
+You can modify all parameters by editing <B>ezmlmrc</B> or by using the
+<a href="ezmlm-make.1.html">ezmlm-make(1)</a> ``-4'' argument when creating/editing the list. This is described
+in the <a href="ezmlm-make.1.html">ezmlm-make(1)</a> man page, and the options etc, are described in the
+<a href="ezmlm-tstdig.1.html">ezmlm-tstdig(1)</a> man page.
+<P>
+<H2><A NAME="ss12.3">12.3 Generating the first digest.</A>
+</H2>
+
+<P>If you want the first digest to start with issue 1 and the
+first message in your archive, no special action is required.
+<P>If you want the first digest to start at message 123 and you
+have shell access, put '122' into <B>DIR/dignum</B>.
+<P>If you want the next digest to start at message 456, you can
+always edit <B>DIR/dignum</B> to contain '455'. If you want the next
+digest to be named issue 678, put '677' into <B>DIR/digissue</B>.
+<P>
+<H2><A NAME="ss12.4">12.4 Adding standard administrative information to digests.</A>
+</H2>
+
+<P>The text in <B>DIR/text/digest</B>
+is copied into  the ``Administrivia'' section of the digest.
+This information can be customized on a system-wide basis
+by editing <B>/etc/ezmlmrc</B>,
+on a user-wide basis by editing <B>~/.ezmlmrc</B>, or
+for the list by directly editing the <B>DIR/text/digest</B> file, or
+by a remote administrator by editing the file via e-mail, if the
+list has been set up using the <a href="ezmlm-make.1.html">ezmlm-make(1)</a> ``-nr'' switches
+(see 
+<A HREF="FAQ-4.html#how_edit">How text file editing works</A>).
+<P>
+<H2><A NAME="ss12.5">12.5 Controlling the digest format.</A>
+</H2>
+
+<P>You can control the default format that <a href="ezmlm-get.1.html">ezmlm-get(1)</a> uses for its output
+by using the ``-f x'' switch. For individual digests triggered by mail
+or other archive access, add a format specifier after the digestcode:
+<BLOCKQUOTE><CODE>
+<PRE>
+      
+list-dig.codef@host
+</PRE>
+</CODE></BLOCKQUOTE>
+
+For example:
+<BLOCKQUOTE><CODE>
+<PRE>
+      
+joe-sos-dig.gagax@id.com
+</PRE>
+</CODE></BLOCKQUOTE>
+
+where ``x'' is ``r'' for rfc1153 format, ``m'' (default) for MIME
+multipart/digest with a subset of headers, ``v'' for virgin
+MIME multipart/digest, i.e. with all headers retained from the
+archive, ``n'' produces format similar to ``v'', without threading 
+and with messages in numerical order. The ``x'' format is identical to
+the default ``m'' format, but the digest content-type
+is ``multipart/alternative'' rather than ``multipart/digest''. This
+helps with a pine bug if you are using quoted-printable/base64 encoding
+of ezmlm messages.
+<P>With digests triggered directly from <a href="crond.8.html">crond(8)</a>, just use the ``-f'' format
+specifier:
+<BLOCKQUOTE><CODE>
+<PRE>
+        ezmlm-get -fx DIR
+</PRE>
+</CODE></BLOCKQUOTE>
+
+The same switch can also be used for standard digest triggering from
+<B>DIR/editor</B>. Just add the ``-fx'' switch to the <a href="ezmlm-get.1.html">ezmlm-get(1)</a>
+command line there. Edit <B>~/ezmlmrc</B> to assure that such
+customizations will be used for future list creations/edits.
+<P>
+<H2><A NAME="cust_bounce"></A> <A NAME="ss12.6">12.6 Customizing bounce handling.</A>
+</H2>
+
+<P>The time out for bounce messages is normally 11.6 days. This means that a
+bad address will take longer that 3 weeks to be removed. Usually, this delay
+is desirable. After all, it is much worse to remove a subscriber just because
+the address had temporary problems that to send a few extra messages and
+receive a few extra bounces.
+<P>However, for large lists, bounce handling can consume a considerable amount of
+resources. To decrease the load, remove all <a href="ezmlm-warn.1.html">ezmlm-warn(1)</a> lines from the
+<B>DIR/editor</B>, and <B>DIR/manager</B> files. Instead, execute:
+<BLOCKQUOTE><CODE>
+<PRE>
+/path/ezmlm-warn DIR
+/path/ezmlm-warn -d DIR
+</PRE>
+</CODE></BLOCKQUOTE>
+
+daily during off-peak hours via a cron script. The second line can be omitted
+if you are not using the digest capability of the list.
+<P>This should not be necessary for ezmlm-idx&gt;=0.32. That version adds
+much more efficient bounce handling, making this type of modification
+usable only for extremely large lists with many bad addresses (unusual for
+ezmlm lists) and for hosts that are working near the limit of their
+capacity (where shifting some qmail load to off-peak hours is worth the effort).
+<P>In addition, you may want to reduce the time out for bounces from 11.6 to a 
+lower number of days, e.g. 5. To do so, add ``-t 5'' to the <a href="ezmlm-warn.1.html">ezmlm-warn(1)</a>
+command line.
+<P>If you start with a list from a list manager that does not have bounce handling,
+chances are that you have many bad addresses in your list. You can always
+execute:
+<BLOCKQUOTE><CODE>
+<PRE>
+/path/ezmlm-warn -t0 DIR
+/path/ezmlm-warn -d -t0 DIR
+</PRE>
+</CODE></BLOCKQUOTE>
+
+to move bounce handling one step forward per execution. Users whose mail has
+bounced will be sent a warning. Users for whom the warning message has bounced
+will be sent a probe.
+<P>
+<HR>
+<A HREF="FAQ-13.html">Next</A>
+<A HREF="FAQ-11.html">Previous</A>
+<A HREF="FAQ.html#toc12">Contents</A>
+</BODY>
+</HTML>

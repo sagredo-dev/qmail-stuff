@@ -1,0 +1,82 @@
+  <TITLE>UNIX man pages : ./ezmlm-gate.1 ()</TITLE>
+  <hr>
+<PRE>
+
+ezmlm-gate(1)                                       ezmlm-gate(1)
+
+<H2>NAME</H2>
+       ezmlm-gate - Gate posts depending on message SENDER
+
+<H2>SYNOPSIS</H2>
+       <b>ezmlm-gate</b> <b>[-cCmMpPrRsSvV]</b> <i>dir</i> <i>[moddir1]</i> <i>[moddir2</i> <i>...]</i>
+
+<H2>DESCRIPTION</H2>
+       <b>ezmlm-gate</b> checks if SENDER is in it least one of the sub-
+       scriber lists with base directory <i>moddir1</i>,  <i>moddir2</i>,  etc.
+       If it is, the message is posted via <b>ezmlm-send</b> to the list
+       in <i>dir</i>.  If not, the message is sent  for  moderation  via
+       <b>ezmlm-store</b>.
+
+       If <i>moddir1</i> is not specified, <i>dir</i> is used.
+
+<H2>OPTIONS</H2>
+       <b>-cCmMpPrRsS</b>
+              Passed on to <A HREF="ezmlm-store.1.html">ezmlm-store(1)</A> and <A HREF="ezmlm-send.1.html">ezmlm-send(1)</A>.
+
+       <b>-cCrR</b>  Passed on to <A HREF="ezmlm-send.1.html">ezmlm-send(1)</A>.
+
+       <b>-v</b>     Display version information.
+
+       <b>-V</b>     Display version information.
+
+              Other options are passed on if appropriate for exe-
+              cution of <b>ezmlm-store</b> or  <b>ezmlm-send</b>.   <b>ezmlm-store</b>
+              and <b>ezmlm-send</b> have non-overlapping options.
+
+<H2>USAGE</H2>
+       <b>ezmlm-gate</b> is best used if you want to restrict posts to a
+       set of addresses using SENDER checks. Obviously,  this  is
+       not  secure,  but  it can help quite a bit to keep garbage
+       off the list. For more secure setups, see  <b><A HREF="ezmlm-store.1.html">ezmlm-store(1)</A></b>.
+
+       Set  up  the list with a <b>ezmlm-gate</b> line in <i>dir</i><b>/editor</b> and
+       touch <i>dir</i><b>/modpost</b>.  Add the moderator(s) (usually the list
+       owner):
+
+       <b>ezmlm-sub</b> <i>dir</i><b>/mod</b> moderator@host
+
+       This  will  via  <b>ezmlm-send</b>  directly distribute all posts
+       from subscriber addresses and send out the rest for moder-
+       ation  to  the moderator(s) via <b>ezmlm-store</b>.  To test sev-
+       eral subscriber databases, e.g. the  list  and  the  list-
+       digest subscribers, add the corresponding list directories
+       to the <b>ezmlm-gate</b> command line.
+
+       This can be expanded  to  include  users  that  post  from
+       addresses  other than the one they are subscribed as: just
+       create another directory 'addl', and a 'subscribers'  sub-
+       directory  of it, and add 'addl' to the <b>ezmlm-gate</b> command
+       line. Now just add all problem  addresses  to  the  'addl'
+       address  database  using  <b>ezmlm-sub</b>.   The entire point is
+
+                                                                1
+
+ezmlm-gate(1)                                       ezmlm-gate(1)
+
+       that post  from  subscribers  of  any  union  of  list  go
+       through,  posts  from  identified 'aliases' go through and
+       all others go for approval to the list owner. Thus, legit-
+       imate users are never rejected and 'aliases' rapidly iden-
+       tified by the owner/moderator and their handling automated
+       one by one, by simply adding them to 'addl'.
+
+<H2>SEE ALSO</H2>
+       <A HREF="ezmlm.5.html">ezmlm(5)</A>, <A HREF="ezmlm-issubn.1.html">ezmlm-issubn(1)</A>, <A HREF="ezmlm-send.1.html">ezmlm-send(1)</A>, <A HREF="ezmlm-store.1.html">ezmlm-store(1)</A>
+
+                                                                2
+
+</PRE>
+  <hr>
+  <ADDRESS>
+  © 1994 <A HREF="http://www.ntua.gr/~christia/man-cgi.html">Man-cgi 1.15</A>, Panagiotis Christias &lt;christia@theseas.ntua.gr&gt;
+  </ADDRESS>

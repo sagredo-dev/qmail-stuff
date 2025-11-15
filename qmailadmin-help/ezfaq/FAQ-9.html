@@ -1,0 +1,214 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<HTML>
+<HEAD>
+ <META NAME="GENERATOR" CONTENT="SGML-Tools 1.0.7">
+ <TITLE>EZFAQ 0.32 - ezmlm-idx and ezmlm FAQ: Customizing outgoing messages.</TITLE>
+ <LINK HREF="FAQ-10.html" REL=next>
+ <LINK HREF="FAQ-8.html" REL=previous>
+ <LINK HREF="FAQ.html#toc9" REL=contents>
+</HEAD>
+<BODY vlink="#004400" link="#008800" bgcolor="#ffffff" alink="#ff0000"><FONT FACE="helvetica,times,arial">
+<A HREF="FAQ-10.html">Next</A>
+<A HREF="FAQ-8.html">Previous</A>
+<A HREF="FAQ.html#toc9">Contents</A>
+<HR>
+<H2><A NAME="s9">9. Customizing outgoing messages.</A></H2>
+
+<P>
+<H2><A NAME="ss9.1">9.1 Adding a trailer to outgoing messages.</A>
+</H2>
+
+<P>Put the text in <B>DIR/text/trailer</B>. The text is NOT copied to
+the archived version of the message. This works also for
+sublists.
+Tags ``&lt;#h#&gt;'', ``&lt;#l#&gt;'',
+and ``&lt;#n#&gt;'' are replaced by the list host, local name,
+and current message number, respectively.
+<P>
+<H2><A NAME="ss9.2">9.2 Adding a subject prefix to outgoing messages.</A>
+</H2>
+
+<P>Put the exact text in <B>DIR/prefix</B>. You can include the message number
+assigned to the post in the list archive by adding the ``#'' character in
+the text in <B>DIR/prefix</B> (example: put ``lsqb;listname-#rsqb;''
+in <B>DIR/prefix</B>).
+ezmlm does not modify the subject other than by prefixing it with the prefix.
+ezmlm knows about rfc2047 encoded subject and can detect a prefix within an
+encoded word. However, ezmlm will not modify the subject itself. It
+will add a prefix only of none has been added before. A consequence of this is
+that a message will have the message number prefix of the first message
+in the thread rather than a prefix with the number of the message itself. The
+entire thread can always be retrieved with a message to
+<CODE>list-thread-x@host</CODE>, where ``x'' is the number in the prefix.
+<P>We recommend against using the prefix feature and strongly against the
+message number prefix. If you use it, make sure you understand the drawbacks,
+of message modification and subjects that change between message and reply.
+ezmlm can deal with this, but other programs may not be able to.
+<P>Sublists ignore <B>DIR/prefix</B>.
+<P>If you add a prefix, especially if you previously added it by other
+means (procmail, etc.), use ezmlm-idx to re-index the archive. Due to the
+way <a href="ezmlm-get.1.html">ezmlm-get(1)</a> does threading from the subject, it works best if you
+use exactly the same prefix as you did before.
+<P>
+<H2><A NAME="ss9.3">9.3 Adding a header to outgoing messages.</A>
+</H2>
+
+<P>Put the exact header text as a line in <B>DIR/headeradd</B>.
+Thus, if you'd like a
+``Precedence: bulk'' header added to outgoing messages, put a line
+``Precedence: bulk'' into <B>DIR/headeradd</B>. This particular header
+is already added via the default <a href="ezmlmrc.5.html">ezmlmrc(5)</a>. Any modifications you
+wish to be active for all future lists should be made via
+modification of <a href="ezmlmrc.5.html">ezmlmrc(5)</a>
+(see 
+<A HREF="FAQ-7.html#make_cust">Customizing ezmlm-make operation</A>).
+As of ezmlm-idx-0.32, the following tags can be used in <B>DIR/headeradd</B>,
+and will be substituted: &lt;#n#&gt; for the current message
+number, &lt;#l#&gt; for the local part of the list (this will be
+the digest list for digests), &lt;#h#&gt; for the host part of the list
+name. These substitutions are done at the time of message delivery, in contrast
+to the ``capital letter'' tags substituted by <a href="ezmlm-make.1.html">ezmlm-make(1)</a> when the list is
+set up.
+<P>rfc2369 suggests putting unsubscribe and other list access information into
+special headers. This should be in the form of a URL, mainly because many
+mailing list mangers require commands in subject or body. ezmlm already
+provides the ``Mailing-List:'' header with the list -help address. A message
+to this address gives all other information on list commands.
+ezmlm-idx&gt;=0.32 adds the ``List-Help'' and ``List-Unsubscribe'' headers
+by default to stimulate MUA support for this feature.
+<P>To add your own rfc2369 headers, simply put them into <B>DIR/headeradd</B>.
+For instance:
+<BLOCKQUOTE><CODE>
+<PRE>
+        List-Post: &lt;mailto: listlocal@listhost>
+</PRE>
+</CODE></BLOCKQUOTE>
+<P>
+<H2><A NAME="ss9.4">9.4 Adding a message number header.</A>
+</H2>
+
+<P>A sequence header may be useful for users whose systems don't
+pass on the ``Return-to:'' header to the MUA.
+<P>Use <B>DIR/headeradd</B> with a header of
+the type ``X-Sequence: &lt;#n#&gt;''.
+<P>Bounced messages are identified by their
+local message numbers, i.e. when ezmlm sends you a message
+about which messages bounced, it refers to the message number
+of the sublist. To be consistent with these numbers, and a
+local sublist archive, use <B>DIR/sequence</B> on the sublist, not
+the main list. To get consistent message numbering in digests,
+digest have the message number of the first message in the digest.
+<P>ezmlm-idx tries to make message numbering problems with sublists a little
+easier: sublists use the incoming message number, but only when the
+sublist is not archived and not indexed. This restriction is necessary
+for security reasons. Otherwise, an attacker could wreak havoc in the local
+message archive by sending messages with faked message numbers in the SENDER.
+<P>
+<H2><A NAME="ss9.5">9.5 Removing headers from outgoing messages.</A>
+</H2>
+
+<P>Put the header up to, but excluding the ``:'' in
+<B>DIR/headerremove</B>.
+<P>
+<H2><A NAME="mimeremove"></A> <A NAME="ss9.6">9.6 Removing MIME parts from messages.</A>
+</H2>
+
+<P>ezmlm-idx&gt;=0.30 can strip parts from composite mime messages based on
+content type. Just put the appropriate content-types such as ``text/ms-word''
+or ``text/html'' into <B>DIR/mimeremove</B>. This is automatically configured
+when using the <a href="ezmlm-make.1.html">ezmlm-make(1)</a> ``-x'' switch.
+<P>
+<H2><A NAME="ss9.7">9.7 Limiting ``Received:'' headers in outgoing messages.</A>
+</H2>
+
+<P>Sendmail still is being used on the majority of mail hubs. Sendmail has
+very primitive loop detection,
+bouncing messages based on excessive ``hopcount''.
+The ``hopcount'' is determined by counting ``Received:'' headers. ezmlm by
+default propagates ``Received:'' headers to facilitate message tracking. Thus,
+messages, especially from a sublist, can have a number of ``Received:''
+headers that exceeds the ``hopcount'' set on poorly configured sendmail
+hosts. Subscription confirmation requests, warning, and probe messages
+have fewer ``Received:'' headers. Thus, a user may be able to receive these,
+but not (some of the) list messages. Of course, the best is to correct
+the configuration on the bouncing host, but this is often under the control
+of neither list owner nor user.
+<P>To compensate for this problem,
+<a href="ezmlm-send.1.html">ezmlm-send(1)</a> of ezmlm-idx-&gt;=0.313 by default removes all ``Received:''
+headers except the top one.
+They are still written to the
+archive, an can be retrieved from there using the ``-getv'' command.
+To cause <a href="ezmlm-send.1.html">ezmlm-send(1)</a> to pass on all the ``Received:'' headers, use the
+<a href="ezmlm-send.1.html">ezmlm-send(1)</a> ``-r'' switch.
+<P>
+<H2><A NAME="ss9.8">9.8 Setting ``Reply-To: list@host''.</A>
+</H2>
+
+<P>This is not recommended, since it leads to dissemination via
+the list of messages returned from bad auto-responders and
+MTAs. Also, it may lead to public replies to the list where personal
+replies were intended. In addition, the original ``Reply-To:''
+header is lost. If you do want to add a reply-to list header,
+put ``reply-to'' into <B>DIR/headerremove</B>, and ``Reply-To:
+<CODE>list@host.dom</CODE>'' into <B>DIR/headeradd</B>.
+<P>
+<H2><A NAME="ss9.9">9.9 Configuring the list so posts are not copied to the original sender.</A>
+</H2>
+
+<P>For most mailing lists, you want all subscribers, including the sender
+of a particular message, to get all messages. This way, the sender
+sees that the message reached the list. For small lists, such as a
+project group, it may be annoying for the members to receive their
+own posts.
+<P><a href="ezmlm-send.1.html">ezmlm-send(1)</a> can be configured to exclude the sender from the recipient
+E-mail addresses if configured with the ``-C'' switch. To add this switch, edit
+the <a href="ezmlm-send.1.html">ezmlm-send(1)</a> line of <B>DIR/editor</B>.
+<P>
+<H2><A NAME="cust_notif"></A> <A NAME="ss9.10">9.10 Customizing ezmlm notification messages.</A>
+</H2>
+
+<P>Most of ezmlm's more commonly used messages are stored in <B>DIR/text/</B>.
+These messages can be edited manually for a list once it is set up,
+or on a global basis via modification of <B><a href="ezmlmrc.5.html">ezmlmrc(5)</a></B>.
+The messages may also be
+edited via E-mail by remote administrators (remote admin must also be
+enabled - ezmlm-make switch ``-r'')
+after the list is established by creating the list
+using the <a href="ezmlm-make.1.html">ezmlm-make(1)</a> ``-n'' (new text files)
+(see 
+<A HREF="FAQ-4.html#how_edit">How text file editing works</A> and
+see 
+<A HREF="FAQ-7.html#make_cust">Customizing ezmlm-make operation</A>).
+<P>The most useful messages are <B>DIR/text/sub-ok</B> (and for subscription
+moderated lists <B>DIR/text/mod-sub</B>) for new subscriber
+information (such as the traditional ``welcome'' message, or a list
+charter or list posting rules/guidelines);
+<B>DIR/text/unsub-nop</B> is useful for messages to frustrated
+users unsuccessful in their unsubscribe attempts; <B>DIR/text/help</B> for
+general help information in reply to <CODE>list-help@host</CODE> or unrecognized
+commands, <B>DIR/text/bottom</B> for inclusion at the bottom of virtually
+all ezmlm messages; <B>DIR/text/mod-help</B> for moderator
+information; <B>DIR/text/trailer</B> for a (few) line(s) at the bottom of
+each post; <B>DIR/text/digest</B> for information in the ``Administrivia''
+section of digests.
+<P>
+<H2><A NAME="ss9.11">9.11 Specifying character set and content-transfer-encoding for outgoing ezmlm messages.</A>
+</H2>
+
+<P>All ezmlm replies, except errors handled directly by qmail, can be sent
+in any character set and optionally with quoted-printable or base64
+content-transfer-encoding. <B>DIR/text/</B> files are always 8-bit files, but
+even though qmail has no problems with 8-bit mail, other MTAs and MUAs do.
+Problems due to this can be avoided by assuring that outgoing ezmlm messages
+are 7bit by using the appropriate content-transfer-encoding.
+<P>To specify a character set, put the name in <B>DIR/charset</B> (default:
+us-ascii). To specify
+quoted-printable or base64 content-transfer-encoding, add ``:Q'' or ``:B''
+after the character set name in <B>DIR/charset</B>.
+<P>
+<HR>
+<A HREF="FAQ-10.html">Next</A>
+<A HREF="FAQ-8.html">Previous</A>
+<A HREF="FAQ.html#toc9">Contents</A>
+</BODY>
+</HTML>

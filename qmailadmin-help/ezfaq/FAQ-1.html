@@ -1,0 +1,573 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<HTML>
+<HEAD>
+ <META NAME="GENERATOR" CONTENT="SGML-Tools 1.0.7">
+ <TITLE>EZFAQ 0.32 - ezmlm-idx and ezmlm FAQ: General Information</TITLE>
+ <LINK HREF="FAQ-2.html" REL=next>
+
+ <LINK HREF="FAQ.html#toc1" REL=contents>
+</HEAD>
+<BODY vlink="#004400" link="#008800" bgcolor="#ffffff" alink="#ff0000"><FONT FACE="helvetica,times,arial">
+<A HREF="FAQ-2.html">Next</A>
+Previous
+<A HREF="FAQ.html#toc1">Contents</A>
+<HR>
+<H2><A NAME="s1">1. General Information</A></H2>
+
+<P>
+<H2><A NAME="ss1.1">1.1 Acknowledgements</A>
+</H2>
+
+<P>Many ezmlm users have contributed to improvements in ezmlm-idx. These are
+listed in the <B>README.idx</B> file in the ezmlm-idx distribution.
+Others have through questions and suggestions inspired parts in this FAQ,
+or pointed out errors or omissions. Thanks! Direct contributions are
+attributed to the respective authors in the text. Thanks again!
+<P>
+<H2><A NAME="ss1.2">1.2 What is this document?</A>
+</H2>
+
+<P>This FAQ contains answers to many questions that arise while
+installing ezmlm, ezmlm-idx, and while setting up and managing ezmlm
+mailing lists. See 
+<A HREF="#difference">difference</A>
+ for a brief summary of what is
+ezmlm and what is ezmlm-idx.
+<P>Many aspects of ezmlm are covered in several places in this FAQ. The early
+sections explain how ezmlm works. Later sections discuss how to deal with
+possible errors/problems. Subsequent sections discuss details of customization
+and list setup in a <EM>HOWTO</EM> form. Finally, there are
+sections on information philosophy for moderated lists and on
+security aspects on ezmlm lists.
+<P>This is an evolving document.
+If you find any errors, or wish to comment, please do so to the authors.
+This FAQ is currently aimed at system administrators and knowledgeable users,
+and heavily weighted towards questions
+specific to the ezmlm-idx add-on.
+<P>If you have problems with the ezmlm-idx package, please start
+by reading the ``man'' pages which come with each program, then
+this document and other ezmlm documentation which
+is identified here. If you have exhausted these resources,
+try the ezmlm and qmail mailing
+lists and their respective mailing list archives. If you have solved a
+problem not in the documentation, write it up as a proposed
+section of a FAQ and send it to the authors. This way, it can
+be added to the next version of this FAQ.
+<P>
+<H2><A NAME="terminology"></A> <A NAME="ss1.3">1.3 Terminology</A>
+</H2>
+
+<P>This document uses a number of terms. Here are the meanings ascribed to them
+by the authors.
+<DL>
+<DT><B>DIR</B><DD><P>The base directory of the list.
+<P>
+<DT><B>SENDER</B><DD><P>The envelope sender of the message, as passed to
+ezmlm by qmail via the $SENDER environment variable.
+<P>
+<DT><B>LOCAL</B><DD><P>The local part of the envelope recipient. For
+<CODE>list-get-1@host</CODE>, it is usually <EM>list-get-1</EM>. If host
+is a virtual domain, controlled by <EM>user-sub</EM>, then
+local would be <EM>user-sub-list-get-1</EM>.
+<P>
+<DT><B>moddir</B><DD><P>Base directory for moderators.
+Moderator E-mail addresses are stored in a hashed database
+in <B>moddir/subscribers/</B>. By default, ``moddir'' is
+<B>DIR/mod/</B>.
+<P>To add or remove
+moderators:
+<BLOCKQUOTE><CODE>
+<PRE>
+% ezmlm-sub DIR/moddir moderator@host.domain
+% ezmlm-unsub DIR/moddir moderator@host.domain
+</PRE>
+</CODE></BLOCKQUOTE>
+<P>
+<DT><B>dotdir</B><DD><P>
+<A NAME="dotdir"></A> 
+The second argument of ezmlm-make is the main .qmail
+file for the list. dotdir is the directory in
+which this ``dot file'' resides, i.e. the directory
+part of the ``dot'' argument. This is usually the home
+directory of the user controlling the list (but NOT
+necessarily of the one creating the list). Thus, 
+<EM>dotdir</EM> is <B>~alias/</B> if
+``root'' creates a list:
+<BLOCKQUOTE><CODE>
+<PRE>
+ # ezmlm-make ~alias/list ~alias/.qmail-list ...
+</PRE>
+</CODE></BLOCKQUOTE>
+
+<EM>dotdir</EM> is where the <B>.ezmlmrc</B>
+file is expected when the <a href="ezmlm-make.1.html">ezmlm-make(1)</a> ``-c''
+switch is used
+(see 
+<A HREF="FAQ-7.html#make_cust">Customizing ezmlm-make operation</A>).
+<P>
+<DT><B>ezmlm binary directory</B><DD><P>The directory where the ezmlm-binaries are
+normally stored, as defined at compile time in <B>conf-bin</B>.
+This is compiled into the programs and does not
+change just because you have moved the program.
+<P>
+<DT><B><a href="ezmlm-get.1.html">ezmlm-get(1)</a></B><DD><P>This is a reference to the ezmlm-get.1 man page. 
+Access it with one of the following:
+<BLOCKQUOTE><CODE>
+<PRE>
+% man ezmlm-get
+% man 1 ezmlm-get
+</PRE>
+</CODE></BLOCKQUOTE>
+
+or if you have not yet installed ezmlm-idx (replace ``xxx'' with the version
+number):
+<BLOCKQUOTE><CODE>
+<PRE>
+% cd ezmlm-idx-0.xxx
+% man ./ezmlm-get.1
+</PRE>
+</CODE></BLOCKQUOTE>
+<P>
+<DT><B>basedir</B><DD><P>The list directory when referencing the list subscriber address database. 
+For E-mail addresses stored in a set of files within <B>DIR/subscribers/</B>,
+the ``basedir''
+is ``DIR''.
+<P>
+<DT><B>address database</B><DD><P>A collection of E-mail addresses stored in a set of files within the ``subscribers''
+subdirectory of the basedir, <B>DIR/subscribers/</B>.
+<P>
+<DT><B>message moderator</B><DD><P>An address to which moderation requests for posts to the list are sent. The
+moderation requests are formatted with ``From:''-``reject'' and a
+``To:''-``accept'' default headers for moderator replies. A reply to the
+``reject'' address leads to the rejection of the post. A reply to the
+``accept'' address leads to the acceptance of the post. Any E-mail address
+can be a moderator E-mail address. Any number of moderator E-mail addresses
+can be used. If a post is sent from a moderator E-mail address, the
+moderation request is sent to that E-mail address only. If a post is sent
+from an E-mail address that is not a moderator, a moderation request is sent
+to all moderators.
+<P>The first reply to the moderation request determines the fate of the
+message. Further requests for the action already taken are silently ignored,
+while a request for the contrary action results in an error message stating
+the actual fate of the message. Thus, if you want to ``accept'' the message
+and it has already been accepted, you receive no reply, but if you attempt
+to ``reject'' it, you will receive an error message stating that the message
+already has been accepted.
+<P>Most lists are not message moderated. If they are, the owner is usually
+a ``message moderator'', sometimes together with a few other trusted users.
+<P>For an announcement list, it is common to make all the ``official announcers''
+``message moderators''. This way, they can post securely and ``accept'' their
+own posts, while posts from other users will be sent to this set of ``official
+announcers'' for approval.
+<P>
+<DT><B>subscription moderator</B><DD><P>An E-mail address where subscription moderation requests are sent. A subscription
+moderation request is sent after a user has confirmed her intention to
+subscribe. The subscription moderation request is sent to all moderators. As
+soon as a reply to this message is received, the user is subscribed
+and notified. Any E-mail address can be a subscription moderator
+and any number of subscription moderators can be used.
+<P>Unsubscribe requests are never moderated (except when the <a href="ezmlm-manage.1.html">ezmlm-manage(1)</a> ``-U''
+flag is used and the sender attempts to remove an address other than the one
+s/he is sending from). It is hard to imagine a legitimate mailing list that
+would want to prevent unsubscriptions.
+<P>
+<DT><B>remote administrator</B><DD><P>When a remote administrator subscribes or unsubscribes a list member, the
+``confirm'' request is sent back to the remote administrator, rather than
+to the subscriber's E-mail address. This allows the remote administrator to
+(un)subscribe any list member without the cooperation of the subscriber
+at that address. Any E-mail address can be a remote administrator and any number
+of E-mail addresses can be remote administrators.
+<P>The set of E-mail addresses that are ``remote administrators'' and ``subscription
+moderators'' are always the same. This set of E-mail addresses can be ``remote
+administrators'', ``subscription moderators'' or both.
+<P>For most lists, the owner would be the ``remote administrator'', if s/he
+wishes to moderate messages, the owner would be the  ``message moderator'' 
+and if s/he wishes to moderate subscriptions the owner would also be the
+``subscription moderator''.
+<P>The list's ``message moderator(s)'' can be the same, but
+can also be set up to be completely different.
+<P>
+<DT><B>Changing list ``ownership''</B><DD><P>Within this FAQ there are references to the need to check or change the list
+``ownership.'' This is not a reference to the individual user who is the
+``list-owner'', but a reference to the ownership of the files by your
+operating system which make up the list and reside in <B>DIR/</B>.
+<P>To change the ownership of <B>DIR/</B> and everything within:
+<BLOCKQUOTE><CODE>
+<PRE>
+% chown -R user DIR
+% chgrp -R group DIR
+</PRE>
+</CODE></BLOCKQUOTE>
+
+Depending on your system/shell, it may be possible to combine
+these commands into either:
+<BLOCKQUOTE><CODE>
+<PRE>
+% chown -R user.group DIR
+% chown -R user:group DIR
+</PRE>
+</CODE></BLOCKQUOTE>
+</DL>
+<P>
+<H2><A NAME="difference"></A> <A NAME="ss1.4">1.4 What is the difference between ezmlm and ezmlm-idx?</A>
+</H2>
+
+<P>ezmlm-0.53 is a qmail-based mailing list manager written by Dan J. Bernstein.
+It has all the basic functionality of a mailing list manager, such as
+subscriber address management including automated bounce handling as well as
+message distribution and archiving.
+<P>ezmlm-idx is an add-on to ezmlm. It adds multi-message threaded message
+retrieval from the archive, digests, message and subscription moderation,
+and a number of remote administration function. It modifies the configuration
+program <a href="ezmlm-make.1.html">ezmlm-make(1)</a> so that it uses a text file template rather than
+compiled-in texts in list creation. In this manner, ezmlm-idx allows
+easy setup of lists in different languages and customization of default list
+setup. ezmlm-idx also adds MIME handling, and other support to streamline
+use with languages other than English. As an ezmlm add-on, ezmlm-idx does not
+work without ezmlm and tries to be compatible with ezmlm as much as possible.
+ezmlm-idx also modifies the ezmlm subscriber database to be case insensitive
+to avoid many unsubscribe problems.
+<P>ezmlm-idx-0.32 adds improved handling of very large lists with optimized bounce
+handling, <a href="ezmlm-split.1.html">ezmlm-split(1)</a> for forwarding (un)subscribe requests to sublists
+to allow sublisting transparent to the subscriber, and SQL support to allow
+sublisting with improved message authentication and monitoring of list function,
+as well as dynamic addition/removal/reconfiguration of sublists. Also,
+subscriber ``From:'' lines are logged with support for finding a subscription
+address from a name. The qmail DEFAULT variable is used, if present. Together,
+these additions eliminate the most common problems making ezmlm use and
+administration even easier.
+<P>This document is a FAQ for ezmlm-idx. However, many of the basic items that
+are discussed also apply to ezmlm per se. Referring to the two paragraphs
+above, it should be relatively easy to figure out which features require
+ezmlm-idx.
+<P>
+<H2><A NAME="ss1.5">1.5 Where can I get all of the ezmlm-related programs?</A>
+</H2>
+
+<P>We have now registered <CODE>ezmlm.org</CODE> to make access to ezmlm-idx and
+related programs/documentation easier. <CODE>www.ezmlm.org</CODE> is currently
+an alias for Fred B. Ringel's <CODE>www.rivertown.net/~ezmlm/</CODE> and
+<CODE>ftp.ezmlm.org</CODE> an alias for Fred Lindberg's
+<CODE>ftp.id.wustl.edu</CODE>.
+<P>
+<DL>
+<DT><B>Dan J. Bernstein's ezmlm-0.53</B><DD><P>
+<UL>
+<LI>
+<A HREF="ftp://cr.yp.to/pub/software/ezmlm-0.53.tar.gz">ftp://cr.yp.to/pub/software/ezmlm-0.53.tar.gz</A></LI>
+<LI>
+<A HREF="ftp://ftp.ezmlm.org/pub/qmail/ezmlm-0.53.tar.gz">ftp://ftp.ezmlm.org/pub/qmail/ezmlm-0.53.tar.gz</A></LI>
+<LI>
+<A HREF="ftp://ftp.ntnu.no/pub/unix/mail/qmail/ezmlm-0.53.tar.gz">ftp://ftp.ntnu.no/pub/unix/mail/qmail/ezmlm-0.53.tar.gz</A></LI>
+<LI>
+<A HREF="ftp://ftp.pipex.net/mirrors/qmail/ezmlm-0.53.tar.gz">ftp://ftp.pipex.net/mirrors/qmail/ezmlm-0.53.tar.gz</A></LI>
+<LI>
+<A HREF="ftp://ftp.jp.qmail.org/qmail/ezmlm-0.53.tar.gz">ftp://ftp.jp.qmail.org/qmail/ezmlm-0.53.tar.gz</A></LI>
+<LI>
+<A HREF="ftp://ftp.rifkin.technion.ac.il/pub/qmail/ezmlm-0.53.tar.gz">ftp://ftp.rifkin.technion.ac.il/pub/qmail/ezmlm-0.53.tar.gz</A></LI>
+<LI>
+<A HREF="ftp://ftp.mira.net.au/unix/mail/qmail/ezmlm-0.53.tar.gz">ftp://ftp.mira.net.au/unix/mail/qmail/ezmlm-0.53.tar.gz</A></LI>
+<LI>
+<A HREF="http://www.qmail.org/">http://www.qmail.org/</A></LI>
+</UL>
+<DT><B>The latest version of ezmlm-idx</B><DD><P>ezmlm-idx releases are numbered ``ezmlm-idx-0.xy[z]''.
+Versions with the same ``x''
+are backwards compatible. A change in ``x'' signifies major changes, some
+of which <EM>may</EM> require list changes (see UPGRADE.idx). However,
+backwards compatibility with ezmlm-0.53 list will be maintained. Thus,
+this is an issue only if you are already using an older version of ezmlm-idx.
+<P>Addition
+of ``z'' are bug fixes only. Thus, ezmlm-idx-0.301 is ezmlm-idx-0.30 with
+known bugs fixed (but no other significant changes).
+When available, patches are
+named ``filename-0.xy[z].diff'',
+where ``0.xy[z]'' corresponds to the release
+to which they apply.
+When a number of bugs (or a significant bug) are found
+a bug-fix release is made incorporating all the patches for the previous
+version.
+<P>To get the latest features,
+look for the highest number (``e.g. ezmlm-idx-0.32''). Any bugs
+in versions with new features are expected to be limited to the new
+features.
+<P>To get the most solid version, get the highest 3-digit number, i.e. a bug
+fix. If you already run a version in that series and a new bug fix is released,
+see CHANGES.idx to determine if it is worthwhile to upgrade. Most bugs so
+far have been relevant only when using lists in very unusual ways or with
+rarely used options.
+<P>
+<UL>
+<LI>
+<A HREF="ftp://ftp.ezmlm.org/pub/patches/">ftp://ftp.ezmlm.org/pub/patches/</A></LI>
+<LI>
+<A HREF="ftp://gd.tuwien.ac.at/infosys/mail/qmail/ezmlm-patches/">ftp://gd.tuwien.ac.at/infosys/mail/qmail/ezmlm-patches/</A>
+ftp mirror in Austria.</LI>
+<LI>
+<A HREF="http://gd.tuwien.ac.at/infosys/mail/qmail/ezmlm-patches/">http://gd.tuwien.ac.at/infosys/mail/qmail/ezmlm-patches/</A>
+http access to the same mirror.</LI>
+<LI>
+<A HREF="ftp://ftp.win.or.jp/pub/network/mail/qmail/ezmlm-idx/">ftp://ftp.win.or.jp/pub/network/mail/qmail/ezmlm-idx/</A>
+ftp mirror in Japan.</LI>
+</UL>
+<DT><B><a href="ezmlmrc.5.html">ezmlmrc(5)</a> files for different languages</B><DD><P>The latest versions at the time of release of a package are included in that
+package. Thus, this directory will have a file labeled with the current
+ezmlm-idx version number only if it has been updated later than the package.
+<a href="ezmlmrc.5.html">ezmlmrc(5)</a> files are updated and new ones are added all the time, also with
+bug fix releases. Therefore, always look at the latest package.
+<P><a href="ezmlmrc.5.html">ezmlmrc(5)</a> files contain some release-specific configurations. Do not use
+a later file (other than from bug fix releases) with an earlier version
+of the programs. It is usually OK to use a version from an earlier package (see
+UPGRADE.idx), but some new functionality may nor be available.
+<P>To contribute an <a href="ezmlmrc.5.html">ezmlmrc(5)</a> file in a new language, start with the en_US
+version from the latest package, and send the gzipped file to
+<CODE>lindberg@id.wustl.edu</CODE>. Please leave comments intact and in English
+and do not change the order of items in the file. This will facilitate
+maintenance.
+<P>
+<UL>
+<LI>
+<A HREF="ftp://ftp.ezmlm.org/pub/patches/ezmlmrc/">ftp://ftp.ezmlm.org/pub/patches/ezmlmrc/</A></LI>
+<LI>
+<A HREF="ftp://gd.tuwien.ac.at/infosys/mail/qmail/ezmlm-patches/ezmlmrc/">ftp://gd.tuwien.ac.at/infosys/mail/qmail/ezmlm-patches/ezmlmrc/</A></LI>
+<LI>
+<A HREF="http://gd.tuwien.ac.at/infosys/mail/qmail/ezmlm-patches/ezmlmrc/">http://gd.tuwien.ac.at/infosys/mail/qmail/ezmlm-patches/ezmlmrc/</A></LI>
+<LI>
+<A HREF="ftp://ftp.win.or.jp/pub/network/mail/qmail/ezmlm-idx/ezmlmrc/">ftp://ftp.win.or.jp/pub/network/mail/qmail/ezmlm-idx/ezmlmrc/</A></LI>
+</UL>
+<DT><B>ezmlm-issub-0.05</B><DD><P>
+<UL>
+<LI>
+<A HREF="ftp://ftp.ezmlm.org/pub/patches/ezmlm-issub-0.05.tar.gz">ftp://ftp.ezmlm.org/pub/patches/ezmlm-issub-0.05.tar.gz</A>.
+Use ezmlm-issub only if you do not use ezmlm-idx. The same functionality is
+available in ezmlm-idx and the packages are not compatible.</LI>
+<LI>Also via mirrors mentioned above.</LI>
+</UL>
+<DT><B>RPMs and SRPMS of qmail, ezmlm and ezmlm-idx</B><DD><P>
+<UL>
+<LI>
+<A HREF="ftp://ftp.ezmlm.org/pub/patches/">ftp://ftp.ezmlm.org/pub/patches/</A></LI>
+<LI>
+<A HREF="ftp://summersoft.fay.ar.us/pub/qmail/">ftp://summersoft.fay.ar.us/pub/qmail/</A></LI>
+</UL>
+</DL>
+<P>
+<H2><A NAME="ss1.6">1.6 Where can I find documentation for ezmlm and patches?</A>
+</H2>
+
+<P>
+<DL>
+<DT><B>man pages</B><DD><P>All ezmlm component programs come with their own man pages.
+Thus, for info on <EM>ezmlm-send</EM>, type:
+<BLOCKQUOTE><CODE>
+<PRE>
+      
+% man ezmlm-send
+</PRE>
+</CODE></BLOCKQUOTE>
+
+or if you have unpacked ezmlm, but not made it or installed
+it:
+<BLOCKQUOTE><CODE>
+<PRE>
+      
+% cd ezmlm-0.53
+% man ./ezmlm-send.1
+</PRE>
+</CODE></BLOCKQUOTE>
+<P>
+<DT><B><a href="ezmlm.5.html">ezmlm(5)</a></B><DD><P>General info on ezmlm and list directories is in <B>ezmlm.5</B>:
+<BLOCKQUOTE><CODE>
+<PRE>
+      
+% man ezmlm
+</PRE>
+</CODE></BLOCKQUOTE>
+
+or
+<BLOCKQUOTE><CODE>
+<PRE>
+      
+% cd ezmlm-0.53
+% man ./ezmlm.5
+</PRE>
+</CODE></BLOCKQUOTE>
+<P><EM>NOTE:</EM> Installation of the ezmlm-idx package updates some
+existing man pages to reflect changes made by the patch (e.g.
+<a href="ezmlm-send.1.html">ezmlm-send(1)</a>, <a href="ezmlm.5.html">ezmlm(5)</a>).
+<P>
+<DT><B>Text files in the distribution</B><DD><P>ezmlm comes with a <B>README</B> file with general instructions,
+an <B>INSTALL</B> file with installation instructions, an <B>UPGRADE</B>
+file for upgrading from a previous version and a <B>CHANGES</B> file
+with information on changes from previous versions. ezmlm-idx
+comes with similar files suffixed with ``<B>.idx</B>''. Most other
+patches or add-ons contain similar files and man pages and
+should contain identifying suffixes (.iss for ezmlm-issub, for
+example).
+For a discussion of the authors' understanding of ezmlm security,
+see 
+<A HREF="FAQ-21.html#security">Ezmlm-idx security</A>.
+<P>
+<DT><B>``Ezman'', an ezmlm/idx manual</B><DD><P>The ezmlm manual is a brief manual that is meant for list subscribers,
+list moderators and remote administrators, and as an introduction for
+list owners. It is useful even if you do not use ezmlm-idx. Features
+requiring ezmlm-idx are marked as such.
+The manual is available as a set of html files, as a text file, and in
+a ``letter'' and ``A4'' postscript version:
+<UL>
+<LI>
+<A HREF="ftp://ftp.ezmlm.org/pub/patches/ezman/">ezman for download</A></LI>
+<LI>
+<A HREF="http://www.ezmlm.org/ezman">An on-line html version</A></LI>
+</UL>
+<P>
+<DT><B>This FAQ</B><DD><P>This FAQ is built from a sgml source. It is available in the following 
+formats:
+<UL>
+<LI>
+<A HREF="ftp://ftp.ezmlm.org/pub/patches/ezfaq.txt.gz">A text file</A></LI>
+<LI>
+<A HREF="http://www.ezmlm.org/">An on-line html version</A></LI>
+<LI>
+<A HREF="ftp://ftp.ezmlm.org/pub/patches/ezfaq.html.tar.gz">Html for download</A></LI>
+<LI>
+<A HREF="ftp://ftp.ezmlm.org/pub/patches/ezfaq.ps.gz">A postscript (letter) version</A></LI>
+<LI>
+<A HREF="ftp://ftp.ezmlm.org/pub/patches/ezfaq.ps4.gz">A postscript (A4) version</A></LI>
+<LI>Via mirrors mentioned for the ezmlm-idx package.</LI>
+<LI>An up-to-date
+text version,<B>FAQ.idx</B>, included with the ezmlm-idx package.</LI>
+</UL>
+<P>
+<DT><B>WWW resources</B><DD><P>
+<DL>
+<DT><B>An on-line version of this FAQ</B><DD><P>
+<A HREF="http://www.ezmlm.org/">http://www.ezmlm.org/</A>The main site with an up-to-date mirror list.
+<A HREF="http://www.de.ezmlm.org/">http://www.de.ezmlm.org/</A>German mirror.
+<A HREF="http://www.pl.ezmlm.org/www.ezmlm.org/">http://www.pl.ezmlm.org/www.ezmlm.org/</A>Polish mirror.
+<A HREF="http://www.jp.ezmlm.org/">http://www.jp.ezmlm.org/</A>Japanese mirror.
+<A HREF="http://www.pt.ezmlm.org/">http://www.pt.ezmlm.org/</A>Portuguese mirror.
+<A HREF="http://www.at.ezmlm.org/">http://www.at.ezmlm.org/</A>Austrian mirror.
+<A HREF="http://www.ca.ezmlm.org/ezmlm/">http://www.ca.ezmlm.org/ezmlm/</A>Canadian mirror.
+<DT><B>General qmail and ezmlm info</B><DD><P>
+<UL>
+<LI>
+<A HREF="http://www.pobox.com/~djb/qmail.html">Dan J. Bernstein's qmail page</A></LI>
+<LI>
+<A HREF="http://www.pobox.com/~djb/ezmlm.html">Dan J. Bernstein's ezmlm page</A></LI>
+<LI>
+<A HREF="http://www.qmail.org">Russell Nelson's qmail page</A></LI>
+<LI>
+<A HREF="http://www.ISO.qmail.org">Mirrors of www.qmail.org</A>.
+Substitute your two-letter country abbreviation for ``ISO''.</LI>
+</UL>
+<DT><B>The qmail mailing list archive</B><DD><P>
+<UL>
+<LI>
+<A HREF="http://www.ornl.gov/cts/archives/mailing-lists/qmail/">http://www.ornl.gov/cts/archives/mailing-lists/qmail/</A></LI>
+</UL>
+<DT><B>The ezmlm mailing list archive</B><DD><P>
+<UL>
+<LI>
+<A HREF="http://sunsite.auc.dk/mhonarc-archives/ezmlm/">http://sunsite.auc.dk/mhonarc-archives/ezmlm/</A>
+<A HREF="http://www.ezmlm.org/archive/">http://www.ezmlm.org/archive/</A> This archive of
+the ezmlm list is searchable from 11/97-present.</LI>
+</UL>
+</DL>
+<DT><B>Mailing lists</B><DD><P>Please read other documentation and mailing list archives
+before posting questions to the lists. It's also useful to
+``lurk'' on the list for a few days, (i.e. to subscribe and
+read without posting) before asking your questions on the
+list. 
+<P>To subscribe, send mail to the E-mail addresses listed:
+<UL>
+<LI>Dan Bernstein's ezmlm list:
+<CODE>
+<A HREF="mailto:ezmlm-subscribe@list.cr.yp.to">ezmlm-subscribe@list.cr.yp.to</A></CODE></LI>
+<LI> A digest version of the ezmlm list
+<CODE>
+<A HREF="mailto:fredr-ezmlm-digest-subscribe@rivertown.net">fredr-ezmlm-digest-subscribe@rivertown.net</A></CODE></LI>
+<LI>Dan Bernstein's qmail list:
+<CODE>
+<A HREF="mailto:qmail-subscribe@list.cr.yp.to">qmail-subscribe@list.cr.yp.to</A></CODE></LI>
+<LI>The Japanese ezmlm list:
+<CODE>
+<A HREF="mailto:ezmlm-subscribe@jp.qmail.org">ezmlm-subscribe@jp.qmail.org</A></CODE></LI>
+<LI>The Japanese qmail list:
+<CODE>
+<A HREF="mailto:qmail-subscribe@jp.qmail.org">qmail-subscribe@jp.qmail.org</A></CODE></LI>
+<LI>A ezmlm/idx digest list of djb-qmail:
+<CODE>
+<A HREF="mailto:qmail-digest-subscribe@id.wustl.edu">qmail-digest-subscribe@id.wustl.edu</A></CODE></LI>
+<LI>A ezmlm/idx sublist of djb-qmail (you can test ezmlm-idx commands):
+<CODE>
+<A HREF="mailto:qmail-index@id.wustl.edu">qmail-index@id.wustl.edu</A></CODE></LI>
+</UL>
+</DL>
+<P>
+<H2><A NAME="ss1.7">1.7 Where do I send comments on this document?</A>
+</H2>
+
+<P>To the authors via E-mail:
+<UL>
+<LI>Fred Lindberg, <CODE>
+<A HREF="mailto:lindberg@id.wustl.edu">lindberg@id.wustl.edu</A></CODE></LI>
+<LI>Fred B. Ringel, <CODE>
+<A HREF="mailto:fredr@rivertown.net">fredr@rivertown.net</A></CODE></LI>
+</UL>
+<P>
+<H2><A NAME="ss1.8">1.8 How to experiment with new versions of ezmlm-idx.</A>
+</H2>
+
+<P>ezmlm-idx&gt;=0.23 writes <B>DIR/config</B> in a standard format.
+If <a href="ezmlm-make.1.html">ezmlm-make(1)</a>
+is invoked with the ``-e'' or ``-+'' switch and the ``DIR'' argument only,
+<a href="ezmlm-make.1.html">ezmlm-make(1)</a> will read other arguments from this file. The difference between
+the switches is that with ``-e'' the options used are the ones specified
+on the command line, whereas with ``-+'' they are the ones currently active
+for the list, as overridden by any command line options.
+Thus, with just:
+<BLOCKQUOTE><CODE>
+<PRE>
+        % ezmlm-make -+ DIR
+</PRE>
+</CODE></BLOCKQUOTE>
+
+you can rebuild the list, without affecting any archives, list state
+variables, etc. You will <EM>lose manual customizations to some of your
+<B>DIR/text/</B>
+files</EM>. <B>DIR/headeradd</B>,
+<B>DIR/text/info</B>, <B>DIR/text/faq</B>, <B>DIR/text/mod-sub</B>,
+and <B>DIR/text/sub-ok</B> are protected against being overwritten, so that
+your manual customizations of these files are retained.
+<P>To test a new version of ezmlm-idx or to run several version, make the
+new version as per <B>INSTALL.idx</B> (if you haven't used ezmlm-idx before)
+or <B>UPGRADE.idx</B> (if you've got a previous version of ezmlm-idx
+installed), setting <B>conf-bin</B> to
+a new directory. You can use either the current directory or any
+other directory. If not using the current dir, you also have to:
+<BLOCKQUOTE><CODE>
+<PRE>
+        % make setup
+</PRE>
+</CODE></BLOCKQUOTE>
+
+If you now edit the list using the new ezmlm-make program, the list will
+automatically be configured to use the new binaries. To change back to
+the ``default'' installation, just edit the list again, this time with the
+old <a href="ezmlm-make.1.html">ezmlm-make(1)</a>.
+<P>If your system has an <B>/etc/ezmlmrc</B>
+file, you may need to temporarily place
+the <B><a href="ezmlmrc.5.html">ezmlmrc(5)</a></B> file for the ezmlm version you want to test in
+<B>dotdir</B>
+of the list and use the <a href="ezmlm-make.1.html">ezmlm-make(1)</a> ``-c''
+switch (see 
+<A HREF="#dotdir">Terminology: dotdir</A>).
+<P>ezmlm-idx&gt;=0.314 comes with <a href="ezmlm-test.1.html">ezmlm-test(1)</a>, a program that tests most
+functions of ezmlm+idx and can  be used before installation.
+<P>
+<HR>
+<A HREF="FAQ-2.html">Next</A>
+Previous
+<A HREF="FAQ.html#toc1">Contents</A>
+</BODY>
+</HTML>

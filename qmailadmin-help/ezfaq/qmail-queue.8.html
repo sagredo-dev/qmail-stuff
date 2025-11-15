@@ -1,0 +1,116 @@
+  <TITLE>UNIX man pages : ./qmail-queue.8 ()</TITLE>
+  <hr>
+<PRE>
+
+qmail-queue(8)                                     qmail-queue(8)
+
+<H2>NAME</H2>
+       qmail-queue - queue a mail message for delivery
+
+<H2>SYNOPSIS</H2>
+       <b>qmail-queue</b>
+
+<H2>DESCRIPTION</H2>
+       <b>qmail-queue</b>  reads  a  mail message from descriptor 0.  It
+       then reads envelope information  from  descriptor  1.   It
+       places  the  message  into  the  outgoing queue for future
+       delivery by <b>qmail-send</b>.
+
+       The envelope information is  an  envelope  sender  address
+       followed  by  a list of envelope recipient addresses.  The
+       sender address is preceded by the letter F and  terminated
+       by  a  0  byte.  Each recipient address is preceded by the
+       letter T and terminated by a 0 byte.  The list of  recipi-
+       ent addresses is terminated by an extra 0 byte.  If <b>qmail-</b>
+       <b>queue</b> sees end-of-file before the extra 0 byte, it  aborts
+       without placing the message into the queue.
+
+       Every  envelope  recipient  address should contain a user-
+       name, an @ sign, and a fully qualified domain name.
+
+       <b>qmail-queue</b> always adds a <b>Received</b> line to the top of  the
+       message.   Other  than  this, <b>qmail-queue</b> does not inspect
+       the message and does not enforce any restrictions  on  its
+       contents.   However, the recipients probably expect to see
+       a proper header, as described in <b><A HREF="qmail-header.5.html">qmail-header(5)</A></b>.
+
+<H2>FILESYSTEM RESTRICTIONS</H2>
+       <b>qmail-queue</b> imposes two constraints on  the  queue  struc-
+       ture:  each <b>mess</b> subdirectory must be in the same filesys-
+       tem as the <b>pid</b> directory; and each <b>todo</b> subdirectory  must
+       be in the same filesystem as the <b>intd</b> directory.
+
+<H2>EXIT CODES</H2>
+       <b>qmail-queue</b>  does not print diagnostics.  It exits 0 if it
+       has successfully queued the message.  It exits  between  1
+       and 99 if it has failed to queue the message.
+
+       All  <b>qmail-queue</b>  error  codes  between 11 and 40 indicate
+       permanent errors:
+
+       <b>11</b>   Address too long.
+
+       <b>31</b>   Mail server permanently refuses to send  the  message
+            to any recipients.  (Not used by <b>qmail-queue</b>, but can
+            be used by programs offering the same interface.)
+
+       All  other  <b>qmail-queue</b>  error  codes  indicate  temporary
+       errors:
+
+       <b>51</b>   Out of memory.
+
+                                                                1
+
+qmail-queue(8)                                     qmail-queue(8)
+
+       <b>52</b>   Timeout.
+
+       <b>53</b>   Write error; e.g., disk full.
+
+       <b>54</b>   Unable to read the message or envelope.
+
+       <b>55</b>   Unable  to  read  a configuration file.  (Not used by
+            <b>qmail-queue</b>.)
+
+       <b>56</b>   Problem making a network connection from  this  host.
+            (Not used by <b>qmail-queue</b>.)
+
+       <b>61</b>   Problem with the qmail home directory.
+
+       <b>62</b>   Problem with the queue directory.
+
+       <b>63</b>   Problem with queue/pid.
+
+       <b>64</b>   Problem with queue/mess.
+
+       <b>65</b>   Problem with queue/intd.
+
+       <b>66</b>   Problem with queue/todo.
+
+       <b>71</b>   Mail  server  temporarily refuses to send the message
+            to any recipients.  (Not used by <b>qmail-queue</b>.)
+
+       <b>72</b>   Connection to mail server timed out.   (Not  used  by
+            <b>qmail-queue</b>.)
+
+       <b>73</b>   Connection  to  mail  server  rejected.  (Not used by
+            <b>qmail-queue</b>.)
+
+       <b>74</b>   Connection to mail server succeeded,  but  communica-
+            tion failed.  (Not used by <b>qmail-queue</b>.)
+
+       <b>81</b>   Internal bug; e.g., segmentation fault.
+
+       <b>91</b>   Envelope format error.
+
+<H2>SEE ALSO</H2>
+       <A HREF="addresses.5.html">addresses(5)</A>,    <A HREF="envelopes.5.html">envelopes(5)</A>,   <A HREF="qmail-header.5.html">qmail-header(5)</A>,   <A HREF="qmailinject.8.html">qmailinject(8)</A>
+       , <A HREF="qmail-qmqpc.8.html">qmail-qmqpc(8)</A>, <A HREF="qmail-send.8.html">qmail-send(8)</A>, <A HREF="qmail-smtpd.8.html">qmail-smtpd(8)</A>
+
+                                                                2
+
+</PRE>
+  <hr>
+  <ADDRESS>
+  © 1994 <A HREF="http://www.ntua.gr/~christia/man-cgi.html">Man-cgi 1.15</A>, Panagiotis Christias &lt;christia@theseas.ntua.gr&gt;
+  </ADDRESS>

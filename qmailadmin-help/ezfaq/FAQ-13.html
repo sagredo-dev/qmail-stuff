@@ -1,0 +1,346 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<HTML>
+<HEAD>
+ <META NAME="GENERATOR" CONTENT="SGML-Tools 1.0.7">
+ <TITLE>EZFAQ 0.32 - ezmlm-idx and ezmlm FAQ: Remote administration.</TITLE>
+ <LINK HREF="FAQ-14.html" REL=next>
+ <LINK HREF="FAQ-12.html" REL=previous>
+ <LINK HREF="FAQ.html#toc13" REL=contents>
+</HEAD>
+<BODY vlink="#004400" link="#008800" bgcolor="#ffffff" alink="#ff0000"><FONT FACE="helvetica,times,arial">
+<A HREF="FAQ-14.html">Next</A>
+<A HREF="FAQ-12.html">Previous</A>
+<A HREF="FAQ.html#toc13">Contents</A>
+<HR>
+<H2><A NAME="s13">13. Remote administration.</A></H2>
+
+<P>
+<H2><A NAME="add_extra"></A> <A NAME="ss13.1">13.1 How can I remotely add moderators, subscriber aliases, etc?</A>
+</H2>
+
+<P>On any list, the <B>DIR/allow/</B> database can be manipulated remotely
+via mail to <CODE>list-allow-subscribe@listhost</CODE>, etc. The rules for
+adding/removing/listing addresses to this database are the same as for the
+main list. Thus, if a user on an open list wants to be able to post from
+<CODE>alias@al.host.com</CODE> s/he can send a message to
+<CODE>list-allow-subscribe-alias=al.host.com@listhost</CODE> and reply to the
+confirmation request. Now, s/he can post from this address even on a
+subscriber-only list and even though the address is not a real subscriber.
+<P>It can be confusing to some users that you use ``subscribe'' here, but you
+don't get any messages. If you explain to them that this is just another
+collection of addresses they will understand. You can also send the initial
+message on their behalf. If you are a remote admin, you can even complete
+the transaction adding the alias without subscriber participation.
+<P>Addresses can also be unsubscribed from the ``allow'' database. However,
+there is usually no good reason to do so.
+<P>If configured, the <B>DIR/deny/</B> database can be manipulated, but
+only by remote administrators, by mail to e.g.
+<CODE>list-deny-baduser=badhost@listhost</CODE>. Normal users cannot access
+this database.
+<P>To remotely administrate the <B>DIR/mod/</B>
+databases (i.e., without
+shell access), you need to set up a non-public, remotely administered list
+which ``resides'' within the
+<B>DIR/mod</B>. <EM>Please carefully consider the implications of making
+it possible to remotely add, remove, and list moderators. In many circumstances,
+this is dangerous.</EM>
+<P>After setting up your list with the specific functionality you need, use the
+following command for <B>DIR/mod/</B>:
+<BLOCKQUOTE><CODE>
+<PRE>
+        % ezmlm-make -ePrIAl ~/list/mod ~/.qmail-list-mod joe-list-mod host 
+</PRE>
+</CODE></BLOCKQUOTE>
+
+The '-l' flag is not necessary, but makes it easier to administrate your
+moderator database by permitting the ``supermoderator'' to see
+who is on the list.
+<P>The new list does not have a key. Using the key from the main list is
+inadvisable. Instead, create a dummy list, copy the key from this list to
+your ``moderator'' list:
+<BLOCKQUOTE><CODE>
+<PRE>
+        % cp ~/DUMMY/key ~/DIR/mod/key
+</PRE>
+</CODE></BLOCKQUOTE>
+
+Erase the dummy list. Also, posts to this list should not be allowed. Erase
+the <B>~/.qmail-list-mod</B> and <B>~/DIR/mod/editor</B>.
+Then add the remote administrator of the ``moderator'' list:
+<BLOCKQUOTE><CODE>
+<PRE>
+        % ezmlm-sub ~/list/mod/mod supermod@superhost 
+</PRE>
+</CODE></BLOCKQUOTE>
+<P>The ``supermoderator'' can now remotely administrate the moderators of the main
+list.
+<P>
+<H2><A NAME="ss13.2">13.2 Moderating posts from a secondary account.</A>
+</H2>
+
+<P>Request for moderation of posts can be forwarded to any
+address and acted on from that address. By default, all post moderation
+requests have subjects starting with ``MODERATE for'' followed
+by the list name.
+<P>
+<H2><A NAME="ss13.3">13.3 Moderating subscription from a secondary account.</A>
+</H2>
+
+<P>Requests for moderator approval of user subscribe requests can
+be forwarded to any address and acted on from that address.
+All subscription moderation requests have subjects starting
+with ``CONFIRM'' (or ``CONFIRM subscribe to listname'', since
+``CONFIRM unsubscribe from listname'' is sent to the moderator
+only in reply to a moderator-initiated request on a list with
+remote admin).
+<P>Remote administration (initiation by the moderator of
+(un)subscribe requests on behalf of a user) CANNOT be
+initiated from an account that is not listed in the moderator
+database. If such attempts are made, these will be treated as
+regular requests, resulting in a confirm request to the user
+(which includes a copy of the initial request, revealing the
+moderator's address to the user). The user reply to a confirm
+request will on a non-moderated list result in the addition of
+the user address to the subscriber list, and in a moderated
+list a CONFIRM request to all the moderators. Replies to
+unsubscribe confirm requests always result in the removal of
+the address, without moderator intervention (except in some
+cases when the ezmlm-manage -U switch is used (see below)).
+With this caveat, moderation and remote administration can be
+done from a secondary address.
+<P>For the subscription moderator to temporarily use a different address, s/he
+needs to forward all ``CONFIRM'' messages to the new
+address. For a permanent move, it is better to remove the old
+moderator address and add the new SENDER address to allow
+moderator-initiated (un)subscribes without user intervention
+from the new address (of course, the list has to be configured for
+remote administration with <B>DIR/remote</B>).
+<P>
+<H2><A NAME="ss13.4">13.4 Automatically approving posts or subscriptions.</A>
+</H2>
+
+<P>Sometimes, it may be desirable for the moderator to
+automatically approve all moderation requests. This may be
+appropriate for a single moderator of a ``civilized'' list when
+away for the week.
+<P>Set up your client to auto-reply to the ``Reply-To:'' address
+for all messages with subjects ``CONFIRM subscribe to listname''
+or ``MODERATE for listname''. Beware that this can be used by
+malicious people to trick your account to send mail anywhere.
+In practice, this should not be a problem.
+If you are worried, forward the messages to a (trusted) friend
+and ask him/her to appropriately reply to the requests.
+<P>
+<H2><A NAME="ss13.5">13.5 Allowing remote administrators to get a subscriber list.</A>
+</H2>
+
+<P>Access to the subscriber list is sensitive. Thus, this option
+is disabled by default. The <a href="ezmlm-manage.1.html">ezmlm-manage(1)</a> ``-l'' command line
+switch enables this option, but will send a subscriber list
+only to a moderator's address. This allows a moderator to also initiate
+a subscriber list retrieval from a secondary account (i.e.
+one to which the moderator's mail is delivered, but for which
+SENDER is not a moderator). The latter option does not
+decrease security, as it is trivial to fake SENDER
+(see 
+<A HREF="FAQ-21.html#security">Ezmlm-idx security</A>
+for a discussion of ezmlm-idx
+security aspects).
+<P>For maximum subscriber list security, do not enable this
+feature. To enable this feature by default, just modify <B><a href="ezmlmrc.5.html">ezmlmrc(5)</a></B>
+(see 
+<A HREF="FAQ-7.html#make_cust">Customizing ezmlm-make operation</A>).
+<P>
+<H2><A NAME="ss13.6">13.6 Allowing remote administrators to retrieve or search a subscription log.</A>
+</H2>
+
+<P>This is restricted and works as the subscriber list, since it contains
+information of equal sensitivity. To receive the entire log, mail
+<CODE>list-log@listhost</CODE>.
+See 
+<A HREF="FAQ-4.html#subscription_log">Howto get a subscription log</A> for more details on the reply format.
+As of ezmlm-idx-0.32, the subscription log also contains the
+From: line contents from the user's subscribe confirmation. This usually
+contains the user's name and can be helpful if the user cannot recall or
+determine the subscription address. To make life easier for the remote admin,
+ezmlm-idx-0.32 also supports searching the log, using exact matches for
+alphanumerics and ``_'' as a wild card character. Thus, to find records
+matching ``Keith John*'',
+the remote admin can mail <CODE>list-log.Keith_John</CODE>. 
+See 
+<A HREF="FAQ-4.html#subscription_log">Howto get a subscription log</A> for more
+information.
+<P>
+<H2><A NAME="ss13.7">13.7 Allowing users to get a subscriber list.</A>
+</H2>
+
+<P>If you want any user to be able to get a subscriber list, you
+can set up a separate link to <B>DIR/list</B> and then put in a
+script using ezmlm-list (See
+<A HREF="FAQ-4.html#add_command">adding your own commands</A> for more info.)
+. The authors strongly urge against
+this, since a common method for spammers to get valid
+E-mail addresses from mailing lists is to exploit unrestricted -list commands.
+A subscriber with questions
+about who is on the list should contact the <CODE>list-owner@host</CODE>. A
+subscriber wishing to confirm that they are still on the list
+can just send a message to <CODE>list-subscribe@listhost</CODE>, and
+reply to the confirm request. The following message will be a
+``ezmlm response'' if the user was already a subscriber, and a
+``WELCOME to listname'' if s/he was not.
+<P>
+<H2><A NAME="ss13.8">13.8 Changing the timeout for messages in the moderation queue.</A>
+</H2>
+
+<P>Put the time, in hours, into <B>DIR/modtime</B>. This value may not exceed the
+range of 24-120 h set at compile time by the defines in <B>idx.h</B>.
+<P>
+<H2><A NAME="ss13.9">13.9 Finding out how many messages are waiting for moderation.</A>
+</H2>
+
+<P>
+<BLOCKQUOTE><CODE>
+<PRE>
+% ls -l DIR/mod/pending
+</PRE>
+</CODE></BLOCKQUOTE>
+<P>and count lines with the owner execute bit set (rwx------).
+Others are remnants from failed ezmlm-store runs (ignore -
+<a href="ezmlm-clean.1.html">ezmlm-clean(1)</a> will remove them).
+<P>There is currently no way to see this remotely, although you
+could easily install a script mailing the 'ls' output in
+response to a message to e.g. <B>list-chkqueue@host</B>.
+(See <a href="ezmlm-check.1.html">ezmlm-check(1)</a>
+and
+<A HREF="FAQ-4.html#add_command">adding your own commands</A> for examples.)
+<P>
+<H2><A NAME="ss13.10">13.10 Using the same moderators for multiple lists.</A>
+</H2>
+
+<P>Set up a moderator dir:
+<BLOCKQUOTE><CODE>
+<PRE>
+      
+% mkdir /path/moddir /path/moddir/subscribers
+% touch /path/moddir/lock
+% chown -R user /path/moddir
+</PRE>
+</CODE></BLOCKQUOTE>
+<P>For alias:
+<BLOCKQUOTE><CODE>
+<PRE>
+      
+ # chown -R alias /path/moddir
+</PRE>
+</CODE></BLOCKQUOTE>
+<P>For example:
+<BLOCKQUOTE><CODE>
+<PRE>
+      
+% mkdir ~joe/mods ~joe/mods/subscribers
+% touch ~joe/mods/lock
+</PRE>
+</CODE></BLOCKQUOTE>
+<P>Then for the lists, put <B>/path/moddir</B> into <B>DIR/modsub</B> (for
+moderation of subscribes), <B>DIR/remote</B> (for remote admin if
+<B>DIR/modsub</B> does not exist), and <B>DIR/modpost</B> (for moderation of
+messages).
+<P>For example:
+<P>
+<BLOCKQUOTE><CODE>
+<PRE>
+% echo "/home/joe/mods" > ~joe/DIR/modsub
+</PRE>
+</CODE></BLOCKQUOTE>
+
+<EM>NOTE:</EM> The path must start with a '/'.
+<P>
+<H2><A NAME="ss13.11">13.11 Using different moderators for message and subscription moderation.</A>
+</H2>
+
+<P>Proceed as in the previous point, but set up two different
+moddirs. Naturally, one of these can be <B>DIR/mod/</B> (preferably the
+one for posts, to keep it cleaner). Then modify the
+appropriate files (<B>DIR/modpost</B> and <B>DIR/modsub</B>)
+to contain absolute paths to the correct moddir.
+<P>
+<H2><A NAME="ss13.12">13.12 Setting up moderated lists with the list owner as</A>
+the ``super moderator'' able to add/remove moderators remotely.</H2>
+
+<P>This is done by crating a list that has <B>DIR/mod/</B> as it's main
+list directory, then adding the ``super moderator'' to <B>DIR/mod/mod/</B>
+(see 
+<A HREF="#add_extra">remotely adding moderators</A>).
+<P>If this is a common setup for you, you can write a simple
+script creating both lists (plus a digest list, if desired)
+with one simple action (see <a href="ezmlm-both.1.html">ezmlm-both(1)</a> for an example).
+<P>
+<H2><A NAME="ss13.13">13.13 Customizing ezmlm administrative messages.</A>
+</H2>
+
+<P>Subject lines, and other ezmlm output for moderation are
+controlled by defines in <B>idx.h</B> and by files in <B>DIR/text</B>. To
+customize these, change <B>idx.h</B> and recompile or for <B>DIR/text</B>
+files, edit <B><a href="ezmlmrc.5.html">ezmlmrc(5)</a></B>
+(see 
+<A HREF="FAQ-7.html#make_cust">Customizing ezmlm-make operation</A>).
+<P>You can also configure the list to allow remote administrators to
+edit files in <B>DIR/text/</B> via E-mail
+(see 
+<A HREF="FAQ-4.html#how_edit">How text file editing works</A>).
+<P>
+<H2><A NAME="ss13.14">13.14 Manually approving a message awaiting moderation.</A>
+</H2>
+
+<P>All you have to do is to pipe the corresponding message to
+``ezmlm-send DIR''. Messages awaiting moderation are kept in
+<B>DIR/mod/pending/</B>. To find a particular file, grep the contents.
+Thus, to find a file from <CODE>user@host.dom</CODE>, try:
+<BLOCKQUOTE><CODE>
+<PRE>
+     
+% grep 'user@host\.dom' DIR/mod/pending/*
+</PRE>
+</CODE></BLOCKQUOTE>
+<P>(Depending on your setup, you may not have to escape the
+period.) Check the files for the owner execute (``x'') bit. It
+is set on all messages queued successfully. Ignore other
+files!
+<P>To then accept the message (change the <a href="ezmlm-send.1.html">ezmlm-send(1)</a> path if you've installed
+in a non-default directory):
+<BLOCKQUOTE><CODE>
+<PRE>
+     
+% cat DIR/mod/pending/filename \
+% /usr/local/bin/ezmlm/ezmlm-send DIR
+</PRE>
+</CODE></BLOCKQUOTE>
+<P>Alternatively, use <a href="ezmlm-accept.1.html">ezmlm-accept(1)</a>.
+It checks the 'x' bit, <a href="ezmlm-send.1.html">ezmlm-send(1)</a> return codes,
+removes the file, etc.
+<P>For example:
+<BLOCKQUOTE><CODE>
+<PRE>
+     
+% ezmlm-accept ~joe/SOS ~joe/SOS/pending/*
+</PRE>
+</CODE></BLOCKQUOTE>
+
+will accept all messages in the queue of the list in <B>~joe/SOS/</B>.
+<P>
+<H2><A NAME="ss13.15">13.15 Manually rejecting a message awaiting moderation.</A>
+</H2>
+
+<P>Simply deleting the file from <B>DIR/mod/pending/</B> will do it. If
+you want to notify the sender, just send him/her an E-mail.
+There is an easy way to get ezmlm-idx programs to do it for
+you: just wait and let <a href="ezmlm-clean.1.html">ezmlm-clean(1)</a> take care of it for you,
+once the message has timed out (number of hours settable
+within 24-240 in <B>DIR/modtime</B>; default 120).
+<P>
+<HR>
+<A HREF="FAQ-14.html">Next</A>
+<A HREF="FAQ-12.html">Previous</A>
+<A HREF="FAQ.html#toc13">Contents</A>
+</BODY>
+</HTML>

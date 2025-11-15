@@ -1,0 +1,657 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<HTML>
+<HEAD>
+ <META NAME="GENERATOR" CONTENT="SGML-Tools 1.0.7">
+ <TITLE>EZMLM/IDX MANUAL, Version 0.32: EZMLM/IDX OWNER'S INTRODUCTION</TITLE>
+ <LINK HREF="ezman-4.html" REL=next>
+ <LINK HREF="ezman-2.html" REL=previous>
+ <LINK HREF="ezman.html#toc3" REL=contents>
+</HEAD>
+<BODY vlink="#004400" link="#008800" bgcolor="#ffffff" alink="#ff0000"><FONT FACE="helvetica,times,arial">
+<A HREF="ezman-4.html">Next</A>
+<A HREF="ezman-2.html">Previous</A>
+<A HREF="ezman.html#toc3">Contents</A>
+<HR>
+<H2><A NAME="s3">3. EZMLM/IDX OWNER'S INTRODUCTION</A></H2>
+
+<P>
+<H2><A NAME="ss3.1">3.1 Introduction.</A>
+</H2>
+
+<P>This chapter tells you how to deal with common problems and introduces
+you to the power and technical aspects of ezmlm/idx. If you want to
+customize your list, please use the man pages and FAQ included in the
+ezmlm and ezmlm-idx packages (see
+<A HREF="ezman-4.html#more_info">More information</A>).
+<P>As the owner of an ezmlm list you will appreciate the high degree
+of speed and automation of ezmlm. 
+Even with large numbers of subscribers, the parallelism of ezmlm/qmail
+results in rapid delivery of the message to the subscribers. This makes
+it easy to have discussions among list members. With slower list managers
+the discussion is often limited to a small set of users who send mail
+on the topic to each other, ``Cc:ing'' the message to the list. When the 
+other subscribers receive the message, the discussion is way past this
+point
+<BLOCKQUOTE>Features available only if ezmlm-idx is used are marked ``(*)''.</BLOCKQUOTE>
+
+.
+<P>ezmlm <EM>-subscribe</EM> and <EM>-unsubscribe</EM>
+commands result in a handshake which essentially eliminates the possibility
+of people other than the user (and possibly remote administrators)
+adding or removing the user's address from the list.
+<P>For the list <CODE>mailinglist@example.org</CODE>,
+mail to the <CODE>mailinglist-help@example.org</CODE> address returns a message
+with all the relevant ezmlm commands for subscription and message archive
+related functions. Archive access is simple and powerful.
+<P>Together these features make it very easy to set up and manage an ezmlm
+mailing list. The rare messages to the list-owner address
+(<CODE>mailinglist-owner@example.org</CODE>, in the example) are usually due to
+subscribers who have subscribed under one address, and now use another.
+Even they can (un)subscribe without owner intervention, but some
+subscribers may be unable/unwilling to read the ezmlm help message and
+follow the instructions therein.
+<P>
+<H2><A NAME="own_allow"></A> <A NAME="ss3.2">3.2 Using auxiliary address databases(*).</A>
+</H2>
+
+<P>In addition to the regular subscriber address databases for the list
+and list-digest, ezmlm may use up to three other address databases.
+One of these the ``allow'' database is housed in <B>DIR/allow/</B>
+<BLOCKQUOTE>File names are shown in <B>boldface</B>.
+Directories end with a slash. ``<B>DIR/</B>'' is the list directory.</BLOCKQUOTE>
+
+.  In case posts or access 
+to the archive is restricted to subscribers, addresses present in 
+<B>DIR/allow/</B> are also accepted.
+If the subscriber <CODE>jonesj@softx.com</CODE>
+sometimes posts from <CODE>john@example.net</CODE>, you can just add the second
+address to <B>DIR/allow/</B> to permit this. The previous chapter describes
+how to do this via the ``allow'' command extension (see
+<A HREF="ezman-1.html#allow">Adding subscriber aliases</A>).
+If you have shell access, you can simply:
+<BLOCKQUOTE><CODE>
+<PRE>
+        % ezmlm-sub ~/listDIR/allow john@example.net
+</PRE>
+</CODE></BLOCKQUOTE>
+
+To list all the addresses in <B>DIR/allow/</B>:
+<BLOCKQUOTE><CODE>
+<PRE>
+        % ezmlm-list ~/listDIR/allow
+</PRE>
+</CODE></BLOCKQUOTE>
+
+Similarly, you can use ezmlm-unsub(1) and ezmlm-list(1) to remove and
+list addresses, respectively.
+<P>Another address database is <B>DIR/deny/</B>. If the list was
+configured with the ezmlm-make(1) ``-k'' switch, posts from addresses
+in this database are rejected. This is easy to circumvent, but very handy
+if a subscriber creates a mail loop (ezmlm/qmail has excellent loop detection,
+but some subscriber vacation programs generate a new message to the list
+for every message received and ezmlm has no way of knowing that this is 
+not a legitimate post). For such a subscriber address, you can just
+temporarily add the sending address
+to <B>DIR/deny/</B>, which is some cases is
+preferable to simply unsubscribing the user. If this database is configured,
+remote administrators can access it via the ``deny'' command
+extension (see 
+<A HREF="ezman-2.html#deny">Preventing an address from posting</A>).
+<P>The final database is <B>DIR/mod/</B> in which moderator and remote
+administrator addresses are stored. Remote administrators may themselves
+(un)subscribe any address. Remote administration (see
+<A HREF="ezman-2.html#remote_admin">Remote administration</A>)
+is configured with the
+ezmlm-make(1) ``-r'' switch. The same addresses may also be subscription
+moderators. If configured (``-s'' switch) a user can subscribe only if
+one or more of the moderators approve.
+Messages to the list can also be moderated.
+This is configured with the ``-m'' switch. Again, the moderators are
+stored in <B>DIR/mod/</B>, although it is possible to configure the list
+so that message and subscription moderators are different sets of addresses
+(see 
+<A HREF="ezman-4.html#more_info">More information</A>).
+<P>To add a moderator/administrator:
+<BLOCKQUOTE><CODE>
+<PRE>
+ezmlm-sub ~/DIR/mod john@example.net
+</PRE>
+</CODE></BLOCKQUOTE>
+
+ezmlm-list(1) and ezmlm-unsub(1) are used to list and remove
+moderators. Normally, the moderator database cannot be accessed remotely.
+However, remote access can be arranged (see
+<A HREF="ezman-4.html#more_info">More information</A>).
+<P>
+<H2><A NAME="ss3.3">3.3 How ezmlm list setup is controlled.</A>
+</H2>
+
+<P>ezmlm lists are set up with a one line ezmlm-make(1) command. Existing
+lists can be modified using the ezmlm-make ``-e'' or ``-+'' (*) switches,
+without loss of archive, subscriber database, or other state information.
+<P>The operation
+of ezmlm-make is controlled by ezmlmrc(*). To customize ezmlm list
+setup on a host-wide
+or user (virtual domain)-wide basis, copy this file from the ezmlm binary
+directory to <B>/etc/ezmlmrc</B> of <B>~user/.ezmlmrc</B> and
+edit it.
+(See 
+<A HREF="ezman-4.html#more_info">More information</A>.)
+<P>
+<H2><A NAME="ss3.4">3.4 Basic list types.</A>
+</H2>
+
+<P>ezmlm offers virtually infinite possibilities for customization. The more
+common types of lists can be created and configured with a single ezmlm-make(1)
+command. For more complicated lists and a discussion of how ezmlm works,
+see 
+<A HREF="ezman-4.html#more_info">More information</A>).
+<P>
+<H3>Public vs. non-public lists.</H3>
+
+<P>Normal mailing lists are <EM>public</EM>,
+i.e. anyone can subscribe/unsubscribe, and
+access the list archive. Occasionally, you may want to set up a non-public
+list, where (un)subscribe actions are possible only from the command line
+or remotely by the administrator(s). This is controlled by the
+ezmlm-make(1) ``-P'' switch.
+<P>
+<H3>Adding a digest list to your ezmlm list(*).</H3>
+
+<P>The digest is a collection of messages, produced about every two days.
+If more than 30 messages or 64 kbytes of ``message body'' have
+arrived since the latest digest, the digest is sent earlier. All
+these criteria can be changed (see
+<A HREF="ezman-4.html#more_info">More information</A>).
+Also, lists can be set up
+to produce digests at a specific time each day, every other day,
+etc (see 
+<A HREF="ezman-4.html#more_info">More information</A>).
+<P>Some users do not get involved in discussions on the list
+but rather want to read messages on a specific topic. For these
+users, a digest with sorted messages is much preferable to receiving the
+messages one at a time. These users would subscribe to the digest list,
+rather than to the list itself.
+<P>To set up a digest list with the list, all you need to do is to
+use the ezmlm-make ``-d'' switch. The digest of the list <CODE>list@host</CODE>
+is always called <CODE>list-digest@host</CODE>. Thus for the list
+<CODE>mailinglist@example.org</CODE>, the digest list would be
+<CODE>mailinglist-digest@example.org</CODE>.
+<P>The digest can be sent in several formats. The default, MIME with
+removal of ``non-essential'' headers is virtually always the best.
+A ``format-specifier'' can be used with the ezmlm-get(1) ``-f'' switch
+to override this. ``v'' returns MIME with all headers, and ``r'' a
+rfc1153-like non-MIME format (see 
+<A HREF="ezman-4.html#more_info">More information</A>).
+You can use
+<B>DIR/digheaders</B> to specify the message headers included for archive
+excerpts when using the ``m'' (default) format.
+<P>
+<H2><A NAME="ss3.5">3.5 The ezmlm archive.</A>
+</H2>
+
+<P>ezmlm mailing lists are by default set up to keep an archive of all
+the messages sent to the list. This archive is used to create digests.
+Users can also access messages in the archive, 
+using the <EM>-get</EM>, <EM>-thread</EM>(*),
+and <EM>-index</EM>(*) addresses (see above).
+If the users
+would like to receive messages in a non-default format, they may
+do so by adding a <EM>format specifier</EM>(*) to the command address name.
+Thus, to receive messages 45-65 from <CODE>mailinglist@example.org</CODE> in
+the ``v'' (virgin - MIME with all headers) format, the user would send
+a message to <CODE>mailinglist-getv45-65@example.org</CODE>(*).
+<P>
+<H2><A NAME="ss3.6">3.6 Restricting list usage.</A>
+</H2>
+
+<P>ezmlm mailing lists can be set up with many restrictions, both for posts
+and archive access. Through customization of ezmlm, there are
+many variations. The more common ones are accessible through ezmlm-make(1)
+switches when the list is created or modified (see
+<A HREF="ezman-4.html#more_info">More information</A>).
+<P>
+<H3>Placing restrictions on messages to the list.</H3>
+
+<P>By default, ezmlm rejects all messages that have an empty subject
+or a subject consisting of a command name (such as ``subscribe'') only.
+The lists will also reject messages that do not have the list address
+in the ``To:'' or ``Cc:'' header(*). This removes the majority of spam without
+affecting normal posts.
+In addition, lists may be configured to reject messages below or
+above a certain size(*), measured on the message body. ezmlm can also
+reject messages containing
+certain MIME content types(*). It may make sense to reject messages
+consisting only of ``text/rtf'' on lists with users on multiple platforms,
+many of which would be unable to read the message. Similarly, restricting
+the maximal size of messages to e.g. 20000 bytes may save inexperienced
+users from quoting entire digests or sending large programs or such as an
+attachment. All these restrictions are handled by ezmlm-reject(1)
+in the <B>DIR/editor</B> file in the list directory (see
+<A HREF="ezman-4.html#more_info">More information</A>).
+<P>
+<H3><A NAME="sender_only"></A> Placing restrictions on who can subscribe(*).</H3>
+
+<P>To set up lists with subscription moderation so that each <EM>-subscribe</EM>
+request must be approved by a moderator, use the ezmlm-make(1) ``-s''
+switch.
+<P>Lists set up with the
+ezmlm-make(1) ``-u'' switch allow posts only from subscribers of
+the list or list-digest. Use of the ``-m'' switch makes all posts
+moderated (see below). A combination of these switches (``-um'')
+has a special meaning: posts from subscribers go directly
+to the list, whereas posts from others are sent out for moderation.
+Also, messages that are ignored (neither accepted nor rejected) by
+the moderators, usually result in an informative error message to
+the sender after about 5 days. However, for ``-um'' lists, such
+posts are ignored. This gives the moderator the choice of accepting
+the message, rejecting it with the accompanying notification of
+the sender, and silently ignoring it (most appropriate for e.g.
+junkmail/spam).
+<P>Like normal subscribers, digest subscribers are allowed to post.
+<P>
+<H3>Placing restrictions on archive access(*).</H3>
+
+<P>For some lists, you may not want non-subscribers to be able to read archived
+messages. This restriction can be placed on a list with the
+ezmlm-make(1) ``-g'' switch. Since ezmlm always sends archive
+excerpts to the sender of the request this ensures that only
+persons able to read mail to a subscriber address can receive
+archive excerpts. All such persons can already read the list traffic. The same
+is true for digest subscribers who also have access to the digest.
+<P>The <B>DIR/allow/</B> directory holding the ``allow'' addresses can be
+useful to give archive access to addresses not in the list or list-digest
+subscriber databases. Addresses in this database are treated as subscribers,
+both for archive access and posts, but of course they will not receive
+list messages.
+<P>You can also make the list non-public. This can be done by removing
+<B>DIR/public</B> or by using the ezmlm-make ``-P'' switch (see
+<A HREF="ezman-4.html#more_info">More information</A>).
+This results in
+a list where only remote administrators can access the archive. You
+can eliminate the archive altogether, but it may be required for
+other purposes (such as digest generation).
+<P>
+<H2><A NAME="ss3.7">3.7 Modifying messages sent by ezmlm.</A>
+</H2>
+
+<P>All these additions can be made default for all lists by modifying
+<B>ezmlmrc</B> (see
+<A HREF="ezman-4.html#more_info">More information</A>).
+<P>
+<H3><A NAME="trailer"></A> Adding a trailer to each message(*).</H3>
+
+<P>You can add small ``trailer'' to each message. This usually would
+contain information on how to unsubscribe from the list, or where
+the list <EM>html</EM> archive is kept. To add a trailer, simply
+put the text in the file <B>text/trailer</B> in the list directory.
+You can use the ezmlm-make(1) ``-t'' switch to set up the list with
+a simple trailer that gives ``unsubscribe'' instructions.
+ezmlm will substitute the tags
+&lt;#h#&gt;,
+&lt;#l#&gt;, and
+&lt;#n#&gt; with the list host name, local name, and the current
+message number, respectively.
+The current message number for digests is the number of the first message
+in the digest.
+You can use this to e.g. add a
+line ``to get this thread, mail &lt;#l#&gt;-thread&lt;#&gt;@&lt;#h#&gt;''. 
+This will always point to the archive of the current list with the current
+message number, and thus retrieve the thread containing the current message.
+<P>
+<H3>Removing certain headers from messages.</H3>
+
+<P><B>DIR/headerremove</B> contains headers that are removed from all
+messages before they are sent to the subscribers. Some of these must be
+removed in order for the list to function. You can add others (see
+<A HREF="ezman-4.html#more_info">More information</A>). If you add a header that
+should not occur multiple times, it is good to add the same header here to
+have it removed from incoming messages, if it exists.
+<P>
+<H3><A NAME="headeradd"></A> Adding headers to list messages.</H3>
+
+<P>Headers in <B>DIR/headeradd</B> are added to posts before they are sent
+to subscribers. They are also added to the archived version of the message.
+<P>ezmlm will substitute the tags
+&lt;#h#&gt;,
+&lt;#l#&gt;, and
+&lt;#n#&gt; with the list host name, local name, and the current
+message number, respectively.
+For the digest of the list
+<CODE>mailinglist@example.org</CODE> the local name is ``mailinglist-digest''.
+The current message number for digests is the number of the first message
+in the digest.
+You can use this to e.g. add a sequence number header by
+putting ``X-Seq: &lt;#n#&gt;'' into <B>DIR/headeradd</B>.
+<P>
+<H3>Stripping certain MIME parts from multipart messages(*).</H3>
+
+<P>ezmlm can strip out MIME parts from multipart MIME messages. Some
+mail clients use ``multipart/alternative'' to send both plain text
+and html versions of the same message. On many lists this is considered
+annoying and wasteful (messages are usually 2-3 times as large). You
+can have ezmlm remove the html part from such messages by adding the
+line ``text/html'' to <B>DIR/mimeremove</B>.
+<P>
+<H3>Adding a subject prefix to messages(*).</H3>
+
+<P>ezmlm can also add a ``prefix'' to the subject line of each message
+that does not already contain it. This was common on old lists, when
+mail readers were unable to sort mail, except by subject. It still
+popular for historical reasons, even though it violates mail standards.
+Use this only if you feel that it is necessary, and for novice users
+where ``look'' is more important than correctness. If you do use this
+make it the list name and short, e.g. ``[mailinglist]'' (well, that's
+from the example, in real life this is too long and too long a name
+for a mailinglist as well. <CODE>ml@example.org</CODE> with ''<CODE>ml</CODE>''
+would be better).
+The prefix with the list name can be configured with the 
+ezmlm-make(1) ``-f'' switch. Alternatively, just place the text in
+the file <B>DIR/prefix</B>.
+<P>For a real thrill, you can use ``[ml-#]''.
+Here, ``#'' will be
+replaced by the message number, labelling all messages with the
+message number of the first message in the thread. This is not only
+a mail standard violation, but will inconvenience many users and
+html archiving programs. Still, it may be useful and help novice
+users use the archive efficiently (mail <CODE>ml-thread-#@example.org</CODE>)
+where ``#'' is the number in the prefix of the message to get 
+the entire thread from the archive). This works also with partially
+rfc2047-encoded subjects. (See the ezmlm-send(1) man page for more info.)
+See 
+<A HREF="#trailer">Adding a trailer to posts</A> for a better
+way to point the recipients to the thread retrieval function.
+<P>
+<H2><A NAME="enable_list"></A> <A NAME="ss3.8">3.8 Allow remote administrators to list subscriber addresses(*).</A>
+</H2>
+
+<P>Many old mailing list managers allow users to list the addresses of
+all subscribers. This used to be OK, but has lately become a means
+for junkmailers/spammers to acquire large collections of addresses.
+Consequently, ezmlm does not allow this. Still, it may be useful for
+the list owner to be able to get such a list to help a user unsubscribe
+or to remotely backup the subscriber list.
+ezmlm will supply such a list if the
+list was set up with the ezmlm-make(1) ``-r'' and ``-l'' switches
+<EM>and</EM> the recipient of the list is a ``remote administrator'' (see
+<A HREF="ezman-2.html#remote_admin">Remote administration</A>). The command
+is <EM>-list</EM>. Thus, for the digest of <CODE>mailinglist@example.org</CODE>
+a message to <CODE>mailinglist-digest-list@example.org</CODE> would return the
+list of subscribers, but only if the sender is a remote administrator
+and the <EM>-list</EM> function is enabled.
+<P>The remote administrator right apply to all address databases of the list
+(subscribers of list and list-digest, ``allow'' and ``deny''), except
+the moderator addresses. Moderators' addresses cannot be accessed remotely.
+<P>
+<H2><A NAME="ss3.9">3.9 Allow remote administrators to access the subscription log(*).</A>
+</H2>
+
+<P>The subscription log is stored in <B>DIR/Log</B>. An entry is made for each
+modification made to the subscriber database. For subscription by E-mail, the
+subscribers ``From:'' line is logged. In contrast to the subscriber database,
+the log is not written in a crash-proof manner. Thus, information might be lost
+if the system crashes while the log is being updated.
+<P>Remote administrators can list this log with the <EM>-log</EM> command or
+search it for specific entries with the <EM>-log.xxx</EM> command,
+where ``xxx'' are letters or numbers to be matched exactly, or an
+underscore (``_'') to match any character. Since the information is highly
+overlapping with the subscriber list, it is enabled by the same commands,
+i.e. the ezmlm-make ``-l'' switch. In addition, it requires remote
+administration to be enabled (``-r'').
+See 
+<A HREF="#enable_list">Allowing remote admins to get a subscriber list</A> for more info.
+<P>
+<H2><A NAME="remote_edit"></A> <A NAME="ss3.10">3.10 Allowing remote administrators to edit ezmlm text files(*).</A>
+</H2>
+
+<P>Use the ezmlm-make(1) ``-n'' switch to allow remote editing of text files
+to remote administrators. Editing is allowed for all <EM>existing</EM>
+text files. Thus, in order to allow editing of the <B>DIR/text/info</B>
+file (sent in response to the <EM>-info</EM> command), you must at least
+have created such a file from the shell command line, or via
+ezmlmrc (default for new lists). See 
+<A HREF="ezman-4.html#more_info">More information</A> for more information.
+<P>A list of editable files is contained in the <B>DIR/text/edit-list</B>
+file. This file itself for the list <CODE>mailinglist@example.org</CODE>
+is editable via
+<CODE>mailinglist-edit.edit_list@example.org</CODE>.
+This file has no effect on which
+files can be edited, but it useful since it contains the instructions
+returned in reply to the <EM>-edit</EM> command. Hyphens in file names
+need to be replaced by underscores in the edit commands.
+See 
+<A HREF="ezman-4.html#more_info">More information</A> for more information.
+<P>
+<H2><A NAME="ss3.11">3.11 ezmlm handling of undeliverable/bounced messages.</A>
+</H2>
+
+<P>Qmail/mail systems
+are fault tolerant by virtue of a queuing mechanism where
+a message is removed from the queue only when the recipient mail
+transfer agent (MTA) has acknowledged receipt of the message. With this,
+the responsibility for the message has been transferred from the sending
+MTA to the receiving MTA. For messages that remain in the queue, the
+sending MTA will retry the transmission. After a set period of time, the
+message will be bounced, i.e. returned as ``undeliverable''. If the
+recipient does not exist (which may be caused by a misconfiguration of
+e.g. the domain naming service) the message is returned immediately
+as ``recipient unknown''.
+<P>ezmlm uses the subscriber address and message number encoded within
+the sender address to keep track of which message have ``bounced''
+for which recipient. Since messages can bounce for a variety of reasons,
+ezmlm doesn't remove a subscriber from the list after a single bounce.
+Rather, it waits about 12 days after the first bounce, then sends
+a ``warning'' message to the subscriber. The warning message lists the
+numbers of the messages missed.
+The user can retrieve these from the archive. If this warning message bounces
+as well, ezmlm waits another 12 days, then sends a ``probe''. First
+when this message bounces is the subscriber removed from the subscriber
+database. This mechanism
+guarantees that a subscriber won't be removed due to a temporary
+error, while assuring that all non-existent or permanently failing
+addresses will be removed eventually.
+<P>
+<H2><A NAME="help_unsubscribe"></A> <A NAME="ss3.12">3.12 Helping users unsubscribe.</A>
+</H2>
+
+<P>Some users never learn and don't want to spend the time to figure out how
+to unsubscribe. As a remote administrator(*), you can unsubscribe them entirely
+on your own (see 
+<A HREF="ezman-2.html#remote_admin">Remote administration</A>).
+You can also do this from the command line. Alternatively, you can as a normal
+user send a <EM>-unsubscribe</EM> request for the subscriber address and
+let the subscriber confirm. Another alternative is to tell the user to send
+a message to <CODE>listname-help@listhost</CODE> and ask the user to follow the
+instructions, which are very explicit.
+<P>Other users have attempted to unsubscribe, but failed. They usually will tell
+you what they've tried, and forward a list message to you. 
+Most likely, they are subscribed with an address other than their
+normal sender address. If you're lucky, the subscriber address is in the users
+E-mail to you. If not, you  can ask the user to give you a list of possible
+addresses. You can then send mail to <CODE>listname-list@listhost</CODE>(*) (if
+enabled) and use ``find'' or ``grep'' to search through the list for parts
+of the users addresses. If remote subscriber listing is not available, try:
+<BLOCKQUOTE><CODE>
+<PRE>
+        % ezmlm-list DIR | grep -i 'part_of_user_address'
+</PRE>
+</CODE></BLOCKQUOTE>
+
+Then send an unsubscribe for the address(es). The user will usually receive
+a confirmation request (if you found the correct address), and can reply
+to it to get off the list.
+<P>Another possibility is to search the subscription
+log for a part of the subscribers
+name, usually shown in the ``From:'' header (see
+<A HREF="ezman-2.html#log">Searching and listing the subscription log</A>).
+<P>
+<H2><A NAME="ss3.13">3.13 Helping subscribers post and access the archive on subscriber-only lists(*).</A>
+</H2>
+
+<P>Subscriber-only lists allow posts and archive access only to subscribers of the
+main list or the digest list. If a subscriber's posts or archive access
+attempts are rejected, the subscriber is working with a sender address that 
+is not the one s/he is subscribed under. Usually, the user's sender address
+will be in the E-mail to you. ezmlm-idx keeps a database of ``allow'' addresses
+which are treated like subscribers for the purpose of subscriber-only
+restrictions, but <EM>are not</EM> sent posts. To add an address, send mail to
+<CODE>listname-allow-subscribe-user=userhost@listhost</CODE>. If you're a remote
+administrator the confirmation request will come to you, otherwise to
+<CODE>user@userhost</CODE>. Replying to the request will add the address. The
+user should now be able to post and access the archive. To remove an address,
+user the same procedure, but with the <EM>-unsubscribe</EM> command. Users
+can manipulate the database themselves, but this may be too complicated for
+all but advanced users.
+<P>If you set up the list with ezmlm-make ``-umr'' messages from addresses that
+are not subscribers will be sent for moderation. This allows you to ignore
+junk mail and approve other posts, as well as add the address to the ``allow''
+address database, all without the subscriber noticing (see
+<A HREF="#sender_only">Placing restrictions on subscribers</A>
+for more info).
+<P>
+<H2><A NAME="ss3.14">3.14 Stopping mail loops.</A>
+</H2>
+
+<P>Qmail and ezmlm have built-in advanced mail loop prevention. However, some
+auto-responders are misconfigured and create a new message to the list for
+every message received. Since this is a completely new message, ezmlm has
+no way of knowing that it is not a post. This is very rare, but may happen.
+The symptom is that a ``John is on vacation'' messages will arrive at the list,
+go out to subscribers, only to be followed by another ``John is on vacation''
+message, and so on.
+<P>To stop this, look at the sender of the ``vacation'' message. Unsubscribe the
+address.
+<P>Even rarer is that there is a mail loop somewhere on the Internet, and that
+it sends of messages to your list. Unsubscribing doesn't help. Your only
+recourse is to block the sender of the message from posting. Easiest is
+to use the ``deny''(*) function with the ezmlm-make(1) ``-k'' switch,
+then add the sender address:
+<BLOCKQUOTE><CODE>
+<PRE>
+        % ezmlm-sub DIR/blacklist badname@badhost
+</PRE>
+</CODE></BLOCKQUOTE>
+
+or if configured, send mail as a remote administrator to
+<CODE>listname-deny-subscribe-badname=badhost@listhost</CODE>. You could also
+add a line:
+<BLOCKQUOTE><CODE>
+<PRE>
+  |/bin/echo -- "$SENDER" |/usr/bin/grep -iv '^badname@badhost$' || exit 99
+</PRE>
+</CODE></BLOCKQUOTE>
+
+to <B>DIR/editor</B> of the list.
+<P>
+<H2><A NAME="ss3.15">3.15 Dealing with SPAM.</A>
+</H2>
+
+<P>ezmlm/idx lists by default(*) reject messages that do not have the list address
+in the ``To:'' or ``Cc:'' headers. Most ``bulk E-mail'' does not pass this
+test. If you still receive too much junk mail to your list, you can set up
+your list as a subscriber-only(*) list. This creates a small overhead of
+users who try to post from addresses that are not their subscriber address.
+See above on how to deal with this.
+<P>Since the message sender is easy to fake, this is not secure. A determined
+SPAMMER can subscribe to the list or just send mail ``From:'' a subscriber
+address. The next level of countermeasure is to have a message moderated(*) (and
+possibly subscription moderated(*)) list. The overhead is higher - someone
+has to approve each message - but it is much more secure. ezmlm-idx has
+support for multiple moderators making it easy to set up a list with
+fast and efficient moderation, which is a very reliable way to keep junk mail
+off a list.
+<P>
+<H2><A NAME="ss3.16">3.16 Dealing with archiving servers.</A>
+</H2>
+
+<P>Several sites on the Internet subscribe to mailing lists, archive the messages,
+and make them publicly available. This may not be desirable, as the
+this often exposes the addresses of the subscribers. The subscribers, while
+happy to discuss their work on a peer list, may not appreciate messages
+from the general public asking for follow-ups to messages posted to the list.
+<P>ezmlm lists, by default(*), are set up with a ``X-No-Archive: yes'' header.
+For older lists or lists using ezmlm alone, just add this header to
+<B>DIR/headeradd</B>.
+Well-behaved archiving servers respect this. If you want to maintain full
+control, the only recourse is to make the list subscription moderated(*).
+Of course, the messages are no more ``secure'' than the least reliable
+subscriber. Remove the ``X-No-Archive: yes'' header for <B>DIR/headeradd</B>
+if you want to allow well-behaved archivers to collect your messages.
+<P>
+<H2><A NAME="ss3.17">3.17 Making an existing list message or subscription moderated(*).</A>
+</H2>
+
+<P>Like other list changes, you can use ezmlm-make with the ``-e'' edit switch
+together with other desired switches and arguments. An existing list can be
+made message moderated with:
+<BLOCKQUOTE><CODE>
+<PRE>
+        % ezmlm-make -em DIR
+</PRE>
+</CODE></BLOCKQUOTE>
+
+To add remote administration, add the ``-r'' switch. To add subscription
+moderation, add the ``-s'' switch.
+<P>
+<H2><A NAME="ss3.18">3.18 Backing up and removing parts of the archive.</A>
+</H2>
+
+<P>The archive is a set of files, one per message, kept in the <B>archive</B>
+subdirectory of the list directory. The directory <B>archive/0/</B>
+contains messages 1-99, <B>archive/1/</B> messages 100-199, etc. The files
+within the directories are named by the last 2 digits of the message
+number, ``01-99'' for <B>archive/0/</B> and ``00-99'' for others. In
+addition, each set of messages is indexed(*) in the file <B>index</B>
+stored with the corresponding message files.
+<P>With time, the archive grows and it may become necessary to remove
+some messages. When the list is at message ``12301'' one may wish to
+remove messages 1-9999 from the archive. Easiest is to remove messages
+as entire subdirectories. For the above, do:
+<BLOCKQUOTE><CODE>
+<PRE>
+        % cd ~/
+        % tar -cvf listarch1_9999.tar DIR/archive/? DIR/archive/1?
+        % gzip listarch1_9999.tar
+        % rm -rf ~/DIR/archive/? ~/DIR/archive/1?
+</PRE>
+</CODE></BLOCKQUOTE>
+
+The ``dir'' here is the list directory. (You may be able to combine
+the ``gzip'' action with the ``tar'' command by  adding the ``z'' switch.)
+<P>Save <B>listarch1_9999.tar.gz</B> in a safe place. (Usually, you would
+choose a better name for the backup ``tar'' file).
+Nothing else needs to be done. If
+instead you remove individual messages and use ezmlm-idx, it is useful, but not
+necessary to do:
+<BLOCKQUOTE><CODE>
+<PRE>
+        % ezmlm-idx ~/dir
+</PRE>
+</CODE></BLOCKQUOTE>
+
+to re-index the archive. (For a large archive on a slow machine, this command
+may take a few minutes.)
+<P>
+<H2><A NAME="ss3.19">3.19 Restoring parts of the archive.</A>
+</H2>
+
+<P>To restore the messages saved in the example above to the archive, simply:
+<BLOCKQUOTE><CODE>
+<PRE>
+        % cd ~/
+        % gunzip listarch1_9999.tar.gz
+        % tar -xvf listarcg1_9999.tar.gz
+        % ezmlm-idx ~/dir
+</PRE>
+</CODE></BLOCKQUOTE>
+
+Re-indexing the archive (as shown) is recommended, since the format
+for the <B>index</B> file may have been changed if ezmlm was upgraded
+since the backup.
+<P>
+<HR>
+<A HREF="ezman-4.html">Next</A>
+<A HREF="ezman-2.html">Previous</A>
+<A HREF="ezman.html#toc3">Contents</A>
+</BODY>
+</HTML>

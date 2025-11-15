@@ -1,0 +1,14 @@
+Quick Install:
+mkdir /var/www/html/images/qmailadmin/help
+cp -rp * /var/www/html/images/qmailadmin/help
+
+note: ./configure option --enable-htmldir=/var/www/html
+
+Longer Install:
+The files in this directory should be copied to 
+where your qmailadmin image files live. Normally
+this is under --enable-htmldir /images/qmailadmin/help
+
+Good Luck
+Ken Jones
+inter7.com

@@ -1,0 +1,332 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<HTML>
+<HEAD>
+ <META NAME="GENERATOR" CONTENT="SGML-Tools 1.0.7">
+ <TITLE>EZFAQ 0.32 - ezmlm-idx and ezmlm FAQ</TITLE>
+ <LINK HREF="FAQ-1.html" REL=next>
+
+
+</HEAD>
+<BODY vlink="#004400" link="#008800" bgcolor="#ffffff" alink="#ff0000"><FONT FACE="helvetica,times,arial">
+<A HREF="FAQ-1.html">Next</A>
+Previous
+Contents
+<HR>
+<H1>EZFAQ 0.32 - ezmlm-idx and ezmlm FAQ</H1>
+
+<H2>Fred Lindberg, <CODE>lindberg@id.wustl.edu</CODE> &amp; Fred B. Ringel, <CODE>fredr@rivertown.net</CODE></H2>22-MAR-1999 
+<P><HR>
+<EM>This document is a collection of frequently asked questions about
+ezmlm-idx. Where applicable, ezmlm itself
+is also covered. This FAQ presumes familiarity with
+Unix, and with the basic concepts of E-mail and mailing lists.
+This FAQ is updated for ezmlm-0.53 and ezmlm-idx-0.32.</EM>
+<HR>
+<P>
+<H2><A NAME="toc1">1.</A> <A HREF="FAQ-1.html">General Information</A></H2>
+
+<UL>
+<LI><A HREF="FAQ-1.html#ss1.1">1.1 Acknowledgements</A>
+<LI><A HREF="FAQ-1.html#ss1.2">1.2 What is this document?</A>
+<LI><A HREF="FAQ-1.html#ss1.3">1.3 Terminology</A>
+<LI><A HREF="FAQ-1.html#ss1.4">1.4 What is the difference between ezmlm and ezmlm-idx?</A>
+<LI><A HREF="FAQ-1.html#ss1.5">1.5 Where can I get all of the ezmlm-related programs?</A>
+<LI><A HREF="FAQ-1.html#ss1.6">1.6 Where can I find documentation for ezmlm and patches?</A>
+<LI><A HREF="FAQ-1.html#ss1.7">1.7 Where do I send comments on this document?</A>
+<LI><A HREF="FAQ-1.html#ss1.8">1.8 How to experiment with new versions of ezmlm-idx.</A>
+</UL>
+<P>
+<H2><A NAME="toc2">2.</A> <A HREF="FAQ-2.html">Quick start</A></H2>
+
+<P>
+<H2><A NAME="toc3">3.</A> <A HREF="FAQ-3.html">Overview of mailing list management and mailing list managers</A></H2>
+
+<P>
+<H2><A NAME="toc4">4.</A> <A HREF="FAQ-4.html">Overview of ezmlm function</A></H2>
+
+<UL>
+<LI><A HREF="FAQ-4.html#ss4.1">4.1 The basic setup.</A>
+<LI><A HREF="FAQ-4.html#ss4.2">4.2 Inventions in ezmlm.</A>
+<LI><A HREF="FAQ-4.html#ss4.3">4.3 The qmail delivery mechanism.</A>
+<LI><A HREF="FAQ-4.html#ss4.4">4.4 What the different programs do.</A>
+<LI><A HREF="FAQ-4.html#ss4.5">4.5 What the different files in the list directory do.</A>
+<LI><A HREF="FAQ-4.html#ss4.6">4.6 The paper path for posts.</A>
+<LI><A HREF="FAQ-4.html#ss4.7">4.7 The ezmlm path for moderation messages.</A>
+<LI><A HREF="FAQ-4.html#ss4.8">4.8 The ezmlm path for administrative messages.</A>
+<LI><A HREF="FAQ-4.html#ss4.9">4.9 The ezmlm path for bounces.</A>
+<LI><A HREF="FAQ-4.html#ss4.10">4.10 Messages to list-owner and list-digest-owner.</A>
+<LI><A HREF="FAQ-4.html#ss4.11">4.11 Structure of subscriber databases.</A>
+<LI><A HREF="FAQ-4.html#ss4.12">4.12 Local case in E-mail addresses.</A>
+<LI><A HREF="FAQ-4.html#ss4.13">4.13 Testing SENDER to allow posts only from list subscribers.</A>
+<LI><A HREF="FAQ-4.html#ss4.14">4.14 How cookies work.</A>
+<LI><A HREF="FAQ-4.html#ss4.15">4.15 How moderator E-mail addresses are stored.</A>
+<LI><A HREF="FAQ-4.html#ss4.16">4.16 How subscription moderation works.</A>
+<LI><A HREF="FAQ-4.html#ss4.17">4.17 How remote administration works.</A>
+<LI><A HREF="FAQ-4.html#ss4.18">4.18 How message moderation works.</A>
+<LI><A HREF="FAQ-4.html#ss4.19">4.19 How messages are stored in the archive.</A>
+<LI><A HREF="FAQ-4.html#ss4.20">4.20 How the message index works.</A>
+<LI><A HREF="FAQ-4.html#ss4.21">4.21 How threading works.</A>
+<LI><A HREF="FAQ-4.html#ss4.22">4.22 How digests work.</A>
+<LI><A HREF="FAQ-4.html#ss4.23">4.23 How ezmlm-tstdig works.</A>
+<LI><A HREF="FAQ-4.html#ss4.24">4.24 How sublists work.</A>
+<LI><A HREF="FAQ-4.html#ss4.25">4.25 How sublisting can be made transparent to the user.</A>
+<LI><A HREF="FAQ-4.html#ss4.26">4.26 How to service commands in the subject line.</A>
+<LI><A HREF="FAQ-4.html#ss4.27">4.27 How to support alternative command names.</A>
+<LI><A HREF="FAQ-4.html#ss4.28">4.28 How to add your own commands.</A>
+<LI><A HREF="FAQ-4.html#ss4.29">4.29 How remote administrators can retrieve a subscriber list</A>
+<LI><A HREF="FAQ-4.html#ss4.30">4.30 How remote administrators can search the subscription log</A>
+<LI><A HREF="FAQ-4.html#ss4.31">4.31 How text file editing works.</A>
+<LI><A HREF="FAQ-4.html#ss4.32">4.32 How subject line prefixes work.</A>
+<LI><A HREF="FAQ-4.html#ss4.33">4.33 How bounces are handled.</A>
+<LI><A HREF="FAQ-4.html#ss4.34">4.34 How the info and faq commands work.</A>
+<LI><A HREF="FAQ-4.html#ss4.35">4.35 How the global ezmlm list address works.</A>
+<LI><A HREF="FAQ-4.html#ss4.36">4.36 How ezmlm-cron works.</A>
+<LI><A HREF="FAQ-4.html#ss4.37">4.37 How ezmlm-make works.</A>
+<LI><A HREF="FAQ-4.html#ss4.38">4.38 What names can I use for my lists?</A>
+<LI><A HREF="FAQ-4.html#ss4.39">4.39 Lists in virtual domains</A>
+<LI><A HREF="FAQ-4.html#ss4.40">4.40 How do I make customization simple for me/my users?</A>
+</UL>
+<P>
+<H2><A NAME="toc5">5.</A> <A HREF="FAQ-5.html">ezmlm support for SQL databases.</A></H2>
+
+<UL>
+<LI><A HREF="FAQ-5.html#ss5.1">5.1 Why use an SQL database with ezmlm?</A>
+<LI><A HREF="FAQ-5.html#ss5.2">5.2 Why not to use an SQL database with ezmlm.</A>
+<LI><A HREF="FAQ-5.html#ss5.3">5.3 Tables used for (My)SQL support.</A>
+<LI><A HREF="FAQ-5.html#ss5.4">5.4 How addresses are distributed among sublists.</A>
+<LI><A HREF="FAQ-5.html#ss5.5">5.5 How to set up a simple list with SQL support.</A>
+<LI><A HREF="FAQ-5.html#ss5.6">5.6 Manually manipulating the subscribers of a SQL-enabled list.</A>
+<LI><A HREF="FAQ-5.html#ss5.7">5.7 Converting to and from and SQL database.</A>
+<LI><A HREF="FAQ-5.html#ss5.8">5.8 Implementation of sublisting with SQL-enabled lists.</A>
+<LI><A HREF="FAQ-5.html#ss5.9">5.9 Interpreting the message log.</A>
+<LI><A HREF="FAQ-5.html#ss5.10">5.10 Optimizing MySQL for ezmlm.</A>
+<LI><A HREF="FAQ-5.html#ss5.11">5.11 Maintenance of the MySQL database.</A>
+</UL>
+<P>
+<H2><A NAME="toc6">6.</A> <A HREF="FAQ-6.html">Possible error conditions in ezmlm lists.</A></H2>
+
+<UL>
+<LI><A HREF="FAQ-6.html#ss6.1">6.1 What do I do if ezmlm doesn't work?</A>
+<LI><A HREF="FAQ-6.html#ss6.2">6.2 How do I report ezmlm bugs?</A>
+<LI><A HREF="FAQ-6.html#ss6.3">6.3 Where do I send suggestions for ezmlm-idx improvements?</A>
+<LI><A HREF="FAQ-6.html#ss6.4">6.4 Using ezmlm-test to check the ezmlm(-idx) programs.</A>
+<LI><A HREF="FAQ-6.html#ss6.5">6.5 Using ezmlm-check to find setup errors.</A>
+<LI><A HREF="FAQ-6.html#ss6.6">6.6 Posts are rejected: Sorry, no mailbox here by that name (#5.1.1).</A>
+<LI><A HREF="FAQ-6.html#ss6.7">6.7 Post are not sent to subscribers.</A>
+<LI><A HREF="FAQ-6.html#ss6.8">6.8 ezmlm-make fails: usage: ezmlm-make ...</A>
+<LI><A HREF="FAQ-6.html#ss6.9">6.9 ezmlm-make fails: Unable to create ...</A>
+<LI><A HREF="FAQ-6.html#ss6.10">6.10 ezmlm-make fails: ... ezmlmrc does not exist</A>
+<LI><A HREF="FAQ-6.html#ss6.11">6.11 Index/get/thread requests fail quietly or with errors from ezmlm-manage.</A>
+<LI><A HREF="FAQ-6.html#ss6.12">6.12 Digest triggering requests fail.</A>
+<LI><A HREF="FAQ-6.html#ss6.13">6.13 Remote administration (un)subscribe confirm requests go to the user, not the moderator.</A>
+<LI><A HREF="FAQ-6.html#ss6.14">6.14 (Un)subscribers does not receive a (un)subscribe acknowledgement</A>
+<LI><A HREF="FAQ-6.html#ss6.15">6.15 Messages posted to a moderated list are sent out without moderation.</A>
+<LI><A HREF="FAQ-6.html#ss6.16">6.16 Messages posted to a moderated list do not result in moderation requests.</A>
+<LI><A HREF="FAQ-6.html#ss6.17">6.17 Moderation request replies do not result in the appropriate action.</A>
+<LI><A HREF="FAQ-6.html#ss6.18">6.18 Moderator comments with moderation request replies are not added to the post/sent to the poster.</A>
+<LI><A HREF="FAQ-6.html#ss6.19">6.19 Some headers are missing from messages in the digest.</A>
+<LI><A HREF="FAQ-6.html#ss6.20">6.20 Some Received: headers are missing from messages.</A>
+<LI><A HREF="FAQ-6.html#ss6.21">6.21 My Mutt users cannot thread their digest messages.</A>
+<LI><A HREF="FAQ-6.html#ss6.22">6.22 Posts fail: Message already has Mailing-List (#5.7.2).</A>
+<LI><A HREF="FAQ-6.html#ss6.23">6.23 The last line of a <B>DIR/text/</B> file is ignored.</A>
+<LI><A HREF="FAQ-6.html#ss6.24">6.24 No CONFIRM requests are sent to moderators.</A>
+<LI><A HREF="FAQ-6.html#ss6.25">6.25 Deliveries fail ``temporary qmail-queue error''</A>
+<LI><A HREF="FAQ-6.html#ss6.26">6.26 How to deal with corrupted subscriber lists</A>
+<LI><A HREF="FAQ-6.html#ss6.27">6.27 Vacation program replies are treated as bounces by ezmlm.</A>
+<LI><A HREF="FAQ-6.html#ss6.28">6.28 Digests do not come at regular hours.</A>
+<LI><A HREF="FAQ-6.html#ss6.29">6.29 Preventing loops from misconfigured subscriber addresses.</A>
+<LI><A HREF="FAQ-6.html#ss6.30">6.30 A user can subscribe and receives warning and probe messages, but no messages from the list.</A>
+</UL>
+<P>
+<H2><A NAME="toc7">7.</A> <A HREF="FAQ-7.html">Customizing ezmlm-make operation via ezmlmrc</A></H2>
+
+<UL>
+<LI><A HREF="FAQ-7.html#ss7.1">7.1 Using ezmlm-make to edit existing lists.</A>
+<LI><A HREF="FAQ-7.html#ss7.2">7.2 What is ezmlmrc?</A>
+<LI><A HREF="FAQ-7.html#ss7.3">7.3 Changing defaults for <B>DIR/text/</B> files.</A>
+<LI><A HREF="FAQ-7.html#ss7.4">7.4 Changing default moderator directories.</A>
+<LI><A HREF="FAQ-7.html#ss7.5">7.5 Adapting ezmlm-make for virtual domains.</A>
+<LI><A HREF="FAQ-7.html#ss7.6">7.6 Setting up ezmlm-make for special situations.</A>
+</UL>
+<P>
+<H2><A NAME="toc8">8.</A> <A HREF="FAQ-8.html">Restricting message posting to the list.</A></H2>
+
+<UL>
+<LI><A HREF="FAQ-8.html#ss8.1">8.1 Requiring the list address in To:/Cc: headers.</A>
+<LI><A HREF="FAQ-8.html#ss8.2">8.2 Rejecting messages sent from other mailing lists.</A>
+<LI><A HREF="FAQ-8.html#ss8.3">8.3 Restricting posts based on the Subject line.</A>
+<LI><A HREF="FAQ-8.html#ss8.4">8.4 Restricting the size of posts.</A>
+<LI><A HREF="FAQ-8.html#ss8.5">8.5 Restricting posts based on MIME content-type.</A>
+<LI><A HREF="FAQ-8.html#ss8.6">8.6 Restricting posts to list subscribers.</A>
+<LI><A HREF="FAQ-8.html#ss8.7">8.7 Restricting posts to an arbitrary set of E-mail addresses (higher security option).</A>
+<LI><A HREF="FAQ-8.html#ss8.8">8.8 Completely restricting posts.</A>
+<LI><A HREF="FAQ-8.html#ss8.9">8.9 A general solution to restricting posts based on SENDER.</A>
+</UL>
+<P>
+<H2><A NAME="toc9">9.</A> <A HREF="FAQ-9.html">Customizing outgoing messages.</A></H2>
+
+<UL>
+<LI><A HREF="FAQ-9.html#ss9.1">9.1 Adding a trailer to outgoing messages.</A>
+<LI><A HREF="FAQ-9.html#ss9.2">9.2 Adding a subject prefix to outgoing messages.</A>
+<LI><A HREF="FAQ-9.html#ss9.3">9.3 Adding a header to outgoing messages.</A>
+<LI><A HREF="FAQ-9.html#ss9.4">9.4 Adding a message number header.</A>
+<LI><A HREF="FAQ-9.html#ss9.5">9.5 Removing headers from outgoing messages.</A>
+<LI><A HREF="FAQ-9.html#ss9.6">9.6 Removing MIME parts from messages.</A>
+<LI><A HREF="FAQ-9.html#ss9.7">9.7 Limiting ``Received:'' headers in outgoing messages.</A>
+<LI><A HREF="FAQ-9.html#ss9.8">9.8 Setting ``Reply-To: list@host''.</A>
+<LI><A HREF="FAQ-9.html#ss9.9">9.9 Configuring the list so posts are not copied to the original sender.</A>
+<LI><A HREF="FAQ-9.html#ss9.10">9.10 Customizing ezmlm notification messages.</A>
+<LI><A HREF="FAQ-9.html#ss9.11">9.11 Specifying character set and content-transfer-encoding for outgoing ezmlm messages.</A>
+</UL>
+<P>
+<H2><A NAME="toc10">10.</A> <A HREF="FAQ-10.html">Customizing archive retrieval.</A></H2>
+
+<UL>
+<LI><A HREF="FAQ-10.html#ss10.1">10.1 Specifying the format for retrieved messages.</A>
+<LI><A HREF="FAQ-10.html#ss10.2">10.2 Specifying the default format for digests and archive retrieval.</A>
+<LI><A HREF="FAQ-10.html#ss10.3">10.3 Limiting the number of messages per -get/-index request.</A>
+</UL>
+<P>
+<H2><A NAME="toc11">11.</A> <A HREF="FAQ-11.html">Restricting archive retrieval.</A></H2>
+
+<UL>
+<LI><A HREF="FAQ-11.html#ss11.1">11.1 Restricting archive access to subscribers.</A>
+<LI><A HREF="FAQ-11.html#ss11.2">11.2 Restricting available archive retrieval commands.</A>
+<LI><A HREF="FAQ-11.html#ss11.3">11.3 Restricting archive retrieval to moderators.</A>
+<LI><A HREF="FAQ-11.html#ss11.4">11.4 Allowing archive retrieval from a non-public list.</A>
+</UL>
+<P>
+<H2><A NAME="toc12">12.</A> <A HREF="FAQ-12.html">Customizing digests.</A></H2>
+
+<UL>
+<LI><A HREF="FAQ-12.html#ss12.1">12.1 Setting up a digest list.</A>
+<LI><A HREF="FAQ-12.html#ss12.2">12.2 Generating daily digests.</A>
+<LI><A HREF="FAQ-12.html#ss12.3">12.3 Generating the first digest.</A>
+<LI><A HREF="FAQ-12.html#ss12.4">12.4 Adding standard administrative information to digests.</A>
+<LI><A HREF="FAQ-12.html#ss12.5">12.5 Controlling the digest format.</A>
+<LI><A HREF="FAQ-12.html#ss12.6">12.6 Customizing bounce handling.</A>
+</UL>
+<P>
+<H2><A NAME="toc13">13.</A> <A HREF="FAQ-13.html">Remote administration.</A></H2>
+
+<UL>
+<LI><A HREF="FAQ-13.html#ss13.1">13.1 How can I remotely add moderators, subscriber aliases, etc?</A>
+<LI><A HREF="FAQ-13.html#ss13.2">13.2 Moderating posts from a secondary account.</A>
+<LI><A HREF="FAQ-13.html#ss13.3">13.3 Moderating subscription from a secondary account.</A>
+<LI><A HREF="FAQ-13.html#ss13.4">13.4 Automatically approving posts or subscriptions.</A>
+<LI><A HREF="FAQ-13.html#ss13.5">13.5 Allowing remote administrators to get a subscriber list.</A>
+<LI><A HREF="FAQ-13.html#ss13.6">13.6 Allowing remote administrators to retrieve or search a subscription log.</A>
+<LI><A HREF="FAQ-13.html#ss13.7">13.7 Allowing users to get a subscriber list.</A>
+<LI><A HREF="FAQ-13.html#ss13.8">13.8 Changing the timeout for messages in the moderation queue.</A>
+<LI><A HREF="FAQ-13.html#ss13.9">13.9 Finding out how many messages are waiting for moderation.</A>
+<LI><A HREF="FAQ-13.html#ss13.10">13.10 Using the same moderators for multiple lists.</A>
+<LI><A HREF="FAQ-13.html#ss13.11">13.11 Using different moderators for message and subscription moderation.</A>
+<LI><A HREF="FAQ-13.html#ss13.12">13.12 Setting up moderated lists with the list owner as</A>
+<LI><A HREF="FAQ-13.html#ss13.13">13.13 Customizing ezmlm administrative messages.</A>
+<LI><A HREF="FAQ-13.html#ss13.14">13.14 Manually approving a message awaiting moderation.</A>
+<LI><A HREF="FAQ-13.html#ss13.15">13.15 Manually rejecting a message awaiting moderation.</A>
+</UL>
+<P>
+<H2><A NAME="toc14">14.</A> <A HREF="FAQ-14.html">Sublists.</A></H2>
+
+<UL>
+<LI><A HREF="FAQ-14.html#ss14.1">14.1 Sublists of ezmlm lists.</A>
+<LI><A HREF="FAQ-14.html#ss14.2">14.2 Sublists of non-ezmlm lists.</A>
+<LI><A HREF="FAQ-14.html#ss14.3">14.3 How to set up a cluster of list and sublists with standard databases.</A>
+<LI><A HREF="FAQ-14.html#ss14.4">14.4 Setting up an ezmlm list ``cluster'' of main list and sublists using a central SQL server.</A>
+</UL>
+<P>
+<H2><A NAME="toc15">15.</A> <A HREF="FAQ-15.html">Migration to Ezmlm from other Mailing List Managers.</A></H2>
+
+<UL>
+<LI><A HREF="FAQ-15.html#ss15.1">15.1 Basic Concepts.</A>
+<LI><A HREF="FAQ-15.html#ss15.2">15.2 Setting up ezmlm to respond to host-centric commands.</A>
+<LI><A HREF="FAQ-15.html#ss15.3">15.3 Commands of other mailinglist managers recognized by ezmlm.</A>
+</UL>
+<P>
+<H2><A NAME="toc16">16.</A> <A HREF="FAQ-16.html">Optimizing list performance.</A></H2>
+
+<UL>
+<LI><A HREF="FAQ-16.html#ss16.1">16.1 Crond-generated digests for better performance.</A>
+<LI><A HREF="FAQ-16.html#ss16.2">16.2 Optimizing execution of <a href="ezmlm-warn.1.html">ezmlm-warn(1)</a>.</A>
+<LI><A HREF="FAQ-16.html#ss16.3">16.3 Decreasing ezmlm-warn time out to increase performance.</A>
+<LI><A HREF="FAQ-16.html#ss16.4">16.4 Use ezmlm without ezmlm-idx for maximum performance.</A>
+<LI><A HREF="FAQ-16.html#ss16.5">16.5 Not archiving to maximize performance.</A>
+<LI><A HREF="FAQ-16.html#ss16.6">16.6 Sublists to maximize performance.</A>
+</UL>
+<P>
+<H2><A NAME="toc17">17.</A> <A HREF="FAQ-17.html">Miscellaneous.</A></H2>
+
+<UL>
+<LI><A HREF="FAQ-17.html#ss17.1">17.1 How do I quickly change the properties of my list?</A>
+<LI><A HREF="FAQ-17.html#ss17.2">17.2 Open archived list with daily digests.</A>
+<LI><A HREF="FAQ-17.html#ss17.3">17.3 Variations in moderation</A>
+<LI><A HREF="FAQ-17.html#ss17.4">17.4 Lists that allow remote admin, but not user initiated subscription or archive retrieval.</A>
+<LI><A HREF="FAQ-17.html#ss17.5">17.5 Lists that allow remote admin, user archive retrieval, but not user-initiated subscription.</A>
+<LI><A HREF="FAQ-17.html#ss17.6">17.6 Lists that restrict archive retrieval to subscribers.</A>
+<LI><A HREF="FAQ-17.html#ss17.7">17.7 Lists that do not allow archive retrieval at all.</A>
+<LI><A HREF="FAQ-17.html#ss17.8">17.8 Lists that do not allow archive retrieval and do not allow digest triggering per mail.</A>
+<LI><A HREF="FAQ-17.html#ss17.9">17.9 Lists that allow archive retrieval only to moderators, but allow user-initiated subscription.</A>
+<LI><A HREF="FAQ-17.html#ss17.10">17.10 Lists that do not require user confirmation for (un)subscription.</A>
+<LI><A HREF="FAQ-17.html#ss17.11">17.11 Announcement lists for a small set of trusted posters</A>
+<LI><A HREF="FAQ-17.html#ss17.12">17.12 Announcement lists allowing moderated posts from anyone.</A>
+<LI><A HREF="FAQ-17.html#ss17.13">17.13 Announcement lists with less security and more convenience.</A>
+</UL>
+<P>
+<H2><A NAME="toc18">18.</A> <A HREF="FAQ-18.html">Ezmlm-idx compile time options.</A></H2>
+
+<UL>
+<LI><A HREF="FAQ-18.html#ss18.1">18.1 Location of binaries.</A>
+<LI><A HREF="FAQ-18.html#ss18.2">18.2 Location of man pages.</A>
+<LI><A HREF="FAQ-18.html#ss18.3">18.3 Base directory of qmail-installation.</A>
+<LI><A HREF="FAQ-18.html#ss18.4">18.4 Short header texts, etc.</A>
+<LI><A HREF="FAQ-18.html#ss18.5">18.5 Arbitrary limits.</A>
+<LI><A HREF="FAQ-18.html#ss18.6">18.6 Command names.</A>
+<LI><A HREF="FAQ-18.html#ss18.7">18.7 Error messages.</A>
+<LI><A HREF="FAQ-18.html#ss18.8">18.8 Paths and other odd configuration items.</A>
+</UL>
+<P>
+<H2><A NAME="toc19">19.</A> <A HREF="FAQ-19.html">Multiple language support.</A></H2>
+
+<UL>
+<LI><A HREF="FAQ-19.html#ss19.1">19.1 Command names.</A>
+<LI><A HREF="FAQ-19.html#ss19.2">19.2 Text files.</A>
+<LI><A HREF="FAQ-19.html#ss19.3">19.3 Multi-byte character code support.</A>
+</UL>
+<P>
+<H2><A NAME="toc20">20.</A> <A HREF="FAQ-20.html">Subscriber notification of moderation events.</A></H2>
+
+<UL>
+<LI><A HREF="FAQ-20.html#ss20.1">20.1 General opinions.</A>
+<LI><A HREF="FAQ-20.html#ss20.2">20.2 Users should know that the list is subscription moderated.</A>
+<LI><A HREF="FAQ-20.html#ss20.3">20.3 Subscribers should know that posts are moderated.</A>
+<LI><A HREF="FAQ-20.html#ss20.4">20.4 Senders of posts should be notified of rejections.</A>
+</UL>
+<P>
+<H2><A NAME="toc21">21.</A> <A HREF="FAQ-21.html">Ezmlm-idx security.</A></H2>
+
+<UL>
+<LI><A HREF="FAQ-21.html#ss21.1">21.1 General assumptions.</A>
+<LI><A HREF="FAQ-21.html#ss21.2">21.2 SENDER manipulation.</A>
+<LI><A HREF="FAQ-21.html#ss21.3">21.3 ezmlm cookies.</A>
+<LI><A HREF="FAQ-21.html#ss21.4">21.4 Lists without remote admin/subscription moderation.</A>
+<LI><A HREF="FAQ-21.html#ss21.5">21.5 Message moderation.</A>
+<LI><A HREF="FAQ-21.html#ss21.6">21.6 Subscription moderation.</A>
+<LI><A HREF="FAQ-21.html#ss21.7">21.7 Remote administration.</A>
+<LI><A HREF="FAQ-21.html#ss21.8">21.8 Remote editing of ezmlm text files.</A>
+<LI><A HREF="FAQ-21.html#ss21.9">21.9 Digest generation and archive retrieval.</A>
+<LI><A HREF="FAQ-21.html#ss21.10">21.10 Convenience for security: the ezmlm-manage ``-S'' and ``-U'' switches.</A>
+<LI><A HREF="FAQ-21.html#ss21.11">21.11 Denial of service.</A>
+<LI><A HREF="FAQ-21.html#ss21.12">21.12 Moderator anonymity.</A>
+<LI><A HREF="FAQ-21.html#ss21.13">21.13 Confidentiality of subscriber E-mail addresses.</A>
+<LI><A HREF="FAQ-21.html#ss21.14">21.14 Help message for moderators.</A>
+<LI><A HREF="FAQ-21.html#ss21.15">21.15 Sublists.</A>
+<LI><A HREF="FAQ-21.html#ss21.16">21.16 SQL databases.</A>
+<LI><A HREF="FAQ-21.html#ss21.17">21.17 Reporting security problems.</A>
+</UL>
+<HR>
+<A HREF="FAQ-1.html">Next</A>
+Previous
+Contents
+</BODY>
+</HTML>

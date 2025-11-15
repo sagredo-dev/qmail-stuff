@@ -1,0 +1,61 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<HTML>
+<HEAD>
+ <META NAME="GENERATOR" CONTENT="SGML-Tools 1.0.7">
+ <TITLE>EZMLM/IDX MANUAL, Version 0.32: Emulating other mailing list managers(*).</TITLE>
+ <LINK HREF="ezman-5.html" REL=previous>
+ <LINK HREF="ezman.html#toc6" REL=contents>
+</HEAD>
+<BODY vlink="#004400" link="#008800" bgcolor="#ffffff" alink="#ff0000"><FONT FACE="helvetica,times,arial">
+Next
+<A HREF="ezman-5.html">Previous</A>
+<A HREF="ezman.html#toc6">Contents</A>
+<HR>
+<H2><A NAME="s6">6. Emulating other mailing list managers(*).</A></H2>
+
+<H2><A NAME="ss6.1">6.1 Global ezmlm commands (majordomo, listserv, listproc).</A>
+</H2>
+
+<P>These mailing list managers use a central address. The command is in the
+message body.
+The ezmlm-reject(1) (*)
+program can be configured to answer request at a standard
+address of a computer.
+Usually, ''<CODE>listserv@host</CODE>'' or ''<CODE>majordomo@host</CODE>''
+will be used. Here, ezmlm-request
+understands most basic commands of other mailing list
+managers, as long as the functionality is relevant to ezmlm.
+<P>ezmlm will interpret
+the first line of the message body
+as a command (to emulate other mailing list managers). You need to
+send one message per command.
+The command ``<EM>lists</EM>'' will give you a list of available mailing lists
+with a short description. The command ``<EM>which</EM>'' will tell you which
+lists you are subscribed to. This will work <B>only</B> for list configured
+by the system administrator. Naturally, you can use the ``ezmlm way'' to
+put the commands into the address with a message to e.g.
+<CODE>listserv-lists@host</CODE>.
+<P>You can send basic commands for most mailing list managers to this address.
+ezmlm will translate them into command messages to the individual lists.
+If only the local name
+of the list is specified, ezmlm will find the host part in its configured list.
+For instance ``<EM>subscribe fishing</EM>''
+will subscribe you to the <CODE>fishing@wildlife.org</CODE> list, assuming that
+that list was in the reply to the ``<EM>lists</EM>'' command.
+<P>Please see the ezmlm FAQ and ezmlm-request(1) and ezmlmglrc(5)
+man pages for more information
+on how to set up and use this interface.
+<P>
+<H2><A NAME="ss6.2">6.2 Commands at the <CODE>list-request</CODE> address (smartlist).</A>
+</H2>
+
+<P>If the ezmlm-make ``-q'' switch is used to set up/edit the list, ezmlm-make
+configures ezmlm-request(1) to answer the <CODE>list-request@host</CODE>
+address. If a subject is given, it will be interpreted as a command. See
+FAQ and the ezmlm-request(1) man page for more info.
+<HR>
+Next
+<A HREF="ezman-5.html">Previous</A>
+<A HREF="ezman.html#toc6">Contents</A>
+</BODY>
+</HTML>

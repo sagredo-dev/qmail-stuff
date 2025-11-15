@@ -1,0 +1,88 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<HTML>
+<HEAD>
+ <META NAME="GENERATOR" CONTENT="SGML-Tools 1.0.7">
+ <TITLE>EZFAQ 0.32 - ezmlm-idx and ezmlm FAQ: Ezmlm-idx compile time options.</TITLE>
+ <LINK HREF="FAQ-19.html" REL=next>
+ <LINK HREF="FAQ-17.html" REL=previous>
+ <LINK HREF="FAQ.html#toc18" REL=contents>
+</HEAD>
+<BODY vlink="#004400" link="#008800" bgcolor="#ffffff" alink="#ff0000"><FONT FACE="helvetica,times,arial">
+<A HREF="FAQ-19.html">Next</A>
+<A HREF="FAQ-17.html">Previous</A>
+<A HREF="FAQ.html#toc18">Contents</A>
+<HR>
+<H2><A NAME="s18">18. Ezmlm-idx compile time options.</A></H2>
+
+<P>
+<H2><A NAME="ss18.1">18.1 Location of binaries.</A>
+</H2>
+
+<P>This is configured via <B>conf-bin</B> as for other ezmlm programs.
+The default is <B>/usr/local/bin/ezmlm</B>.
+<P>
+<H2><A NAME="ss18.2">18.2 Location of man pages.</A>
+</H2>
+
+<P>This is configured via <B>conf-man</B> as for other ezmlm programs.
+The default is <B>/usr/local/man</B>.
+<P>
+<H2><A NAME="ss18.3">18.3 Base directory of qmail-installation.</A>
+</H2>
+
+<P>This is configured via <B>conf-qmail</B> as for other ezmlm programs.
+The default is <B>/var/qmail</B>.
+<P>
+<H2><A NAME="ss18.4">18.4 Short header texts, etc.</A>
+</H2>
+
+<P>Ezmlm-idx text (short lines, such as ``Administrivia'' for
+digests), command names, etc, are defined in <B>idx.h</B>, used at
+compile time. You can change them by changing the defines in
+this file.
+<P>
+<H2><A NAME="ss18.5">18.5 Arbitrary limits.</A>
+</H2>
+
+<P><B>idx.h</B> contains defines for some ezmlm-idx arbitrary limits,
+such as the maximum number of messages per ``-get'' request. They
+can be changed here.
+<P>
+<H2><A NAME="ss18.6">18.6 Command names.</A>
+</H2>
+
+<P>There is support for one alias per user command for internationalization.
+(See 
+<A HREF="FAQ-19.html#language">Multiple language support</A>.)
+<P>
+<H2><A NAME="ss18.7">18.7 Error messages.</A>
+</H2>
+
+<P>All ezmlm-idx error messages are defines in <B>errtxt.h</B>, used at
+compile time. These can be changed for special situations, but
+we would advise against doing so. If you do for some reason
+produce such a translated file, we would appreciate if you
+sent a copy to the authors. NOTE: These do not affect error
+messages from programs that are not part of the ezmlm-idx
+package, nor of some subroutines used by
+ezmlm-idx programs (getconf_line.c comes to mind).
+<P>Hopefully, the error messages for all parts will be
+synchronized in later versions of ezmlm, and possibly handled
+from a run-time changeable separate file (maybe as a .cdb
+database).
+<P>
+<H2><A NAME="ss18.8">18.8 Paths and other odd configuration items.</A>
+</H2>
+
+<P>idx.h also has defines for <B>/etc/ezmlmrc</B>, default formats for
+moderation enclosures, default character set, default digest
+format, etc. Since most of these items are easily changed at
+run time, there is usually no need to change the compiled-in
+defaults. If you do need to, this is where they are.
+<P>
+<HR>
+<A HREF="FAQ-19.html">Next</A>
+<A HREF="FAQ-17.html">Previous</A>
+<A HREF="FAQ.html#toc18">Contents</A>
+</BODY>
+</HTML>

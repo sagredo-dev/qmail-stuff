@@ -1,0 +1,43 @@
+  <TITLE>UNIX man pages : ./condredirect.1 ()</TITLE>
+  <hr>
+<PRE>
+
+condredirect(1)                                   condredirect(1)
+
+<H2>NAME</H2>
+       condredirect - perhaps redirect mail to another address
+
+<H2>SYNOPSIS</H2>
+       in <b>.qmail</b>: <b>|condredirect</b> <i>newaddress</i> <i>program</i> [ <i>arg</i> <i>...</i>  ]
+
+<H2>DESCRIPTION</H2>
+       <b>condredirect</b>  feeds  each new mail message to <i>program</i> with
+       the given arguments.  If  <i>program</i>  exits  0,  <b>condredirect</b>
+       forwards  the  mail  message to <i>newaddress</i>, and then exits
+       99, so further commands in <b>.qmail</b> are ignored.
+
+       If <i>program</i> exits 111, <b>condredirect</b> exits 111, so  delivery
+       will be retried later.
+
+       If  <i>program</i>  exits anything else (or does not exist), <b>con-</b>
+       <b>dredirect</b> exits 0, so the rest of <b>.qmail</b> will be processed
+       as usual.
+
+       Note  that it is not safe for <i>program</i> to fork a child that
+       reads the message in the background.
+
+       <b>WARNING:</b> If you create a <b>.qmail</b> file to  enable  <b>condredi-</b>
+       <b>rect</b>,  make sure to also add a line specifying delivery to
+       your normal mailbox.
+
+<H2>SEE ALSO</H2>
+       <A HREF="bouncesaying.1.html">bouncesaying(1)</A>,   <A HREF="except.1.html">except(1)</A>,   <A HREF="dot-qmail.5.html">dot-qmail(5)</A>,   <A HREF="qmail-command.8.html">qmail-command(8)</A>
+       , <A HREF="qmail-queue.8.html">qmail-queue(8)</A>
+
+                                                                1
+
+</PRE>
+  <hr>
+  <ADDRESS>
+  © 1994 <A HREF="http://www.ntua.gr/~christia/man-cgi.html">Man-cgi 1.15</A>, Panagiotis Christias &lt;christia@theseas.ntua.gr&gt;
+  </ADDRESS>

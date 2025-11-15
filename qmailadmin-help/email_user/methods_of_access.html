@@ -1,0 +1,89 @@
+<!-- $Header: /home/cvsroot/admin_cfes_ca/email_user/methods_of_access.html,v 1.1 2001/08/17 05:32:52 tdrennan Exp $ -->
+<html><!-- #BeginTemplate "/Templates/Email_User.dwt" -->
+<head>
+<!-- #BeginEditable "doctitle" --> 
+<title>Email Users Guide - Methods of Access</title>
+<!-- #EndEditable -->
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<link rel="stylesheet" href="../admin.css" type="text/css">
+</head>
+
+<body bgcolor="#FFFFFF" text="#000000">
+<table width="100%" border="0" bgcolor="#999999">
+  <tr> 
+    <td class="Template_Header">&gt;<a href="../index.html">Main Admin Page</a> 
+      &gt;<a href="index.html">Email Users Guide Index</a> </td>
+  </tr>
+</table>
+<!-- #BeginEditable "main" --> 
+<h2><a name="methods_of_access"></a>Methods of Access</h2>
+<p>There are three possible ways to access you email: Webmail, POP and IMAP. All 
+  three of these methods can be used at the same time and you can switch back 
+  and further between them if you so choose.<br>
+</p>
+<h3><a name="pop3"></a>POP3</h3>
+<p>POP was designed to support &quot;offline&quot; mail processing. In the offline 
+  paradigm, mail is delivered to a (usually shared) server, and a personal computer 
+  user periodically invokes a mail &quot;client&quot; program that connects to 
+  the server and downloads all of the pending mail to the user's own machine. 
+  Thereafter, all mail processing is local to the client machine. Think of the 
+  offline access mode as a kind of store-and-forward service, intended to move 
+  mail (on demand) from the mail server (drop point) to a single destination machine, 
+  usually a PC or Mac. Once delivered to the PC or Mac, the messages are then 
+  deleted from the mail server. Although the limitations of offline access have 
+  triggered interest in using POP in online mode, POP simply doesn't have some 
+  of the functionality needed for high-quality online (or disconnected) operation. 
+  Indeed, POP's &quot;pseudo online&quot; mode of operation, wherein client programs 
+  leave mail on the server, often depends on pervasive availability of a remote 
+  file system protocol in order for the mail client to access or update saved-message 
+  folders or message state information such as status flags.</p>
+<p>POP is the older standard for downloading mail and our mail server supports 
+  it. It should be noted that if mail is download and removed from the server 
+  it will not be present when checked again using IMAP or Webmail.</p>
+<p>When configuring you email client on your computer to check your email on the 
+  server you need to use the following settings:</p>
+<p><span class="reference">username:</span> &lt;full_email_address@including_domain&gt;<br>
+  <span class="reference">password: </span>&lt;as given&gt;<br>
+  <span class="reference">hostname: &lt;domain&gt;</span></p>
+<p>Note that the username used to access your email is your full email address 
+  as given to you by the administrator.<br>
+</p>
+<h3><a name="imap"></a>IMAP</h3>
+<p>IMAP can also do offline processing, but its special strength is in online 
+  and disconnected operation. In online mode, mail is again delivered to a shared 
+  server, but the mail client does not copy it all at once and then delete it 
+  from the server. It's more of an interactive client-server model, where the 
+  client can ask the server for headers, or the bodies of specified messages, 
+  or to search for messages meeting certain criteria. Messages in the mail repository 
+  can be marked with various status flags (e.g. &quot;deleted&quot; or &quot;answered&quot;) 
+  and they stay in the repository until explicitly removed by the user --which 
+  may not be until a later session. In short: IMAP is designed to permit manipulation 
+  of remote mailboxes as if they were local. Depending on the IMAP client implementation 
+  and the mail architecture desired by the system manager, the user may save messages 
+  directly on the client machine, or save them on the server, or be given the 
+  choice of doing either.</p>
+<p>IMAP is a more flexible mail protocol in that is allows the user to maintain 
+  their email on the server. This means that a user who uses IMAP to look at their 
+  email from their mail client may then use the Webmail tool to access that same 
+  email when they are not at their computer.</p>
+<p>When configuring you email client on your computer to check your email on the 
+  server you need to use the following settings:</p>
+<p><span class="reference">username:</span> &lt;full_email_address@including_domain&gt;<br>
+  <span class="reference">password: </span>&lt;as given&gt;<br>
+  <span class="reference">hostname: &lt;domain&gt;</span></p>
+<p>Note that the username used to access your email is your full email address 
+  as given to you by the administrator.<br>
+  If prompted for a root directory name use INBOX.</p>
+<h3><a name="webmail"></a>Webmail (Squirrelmail)</h3>
+<p>More information is given on Squirrelmai <a href="squirrelmail.html">later</a> 
+  in the guide.{main}</p>
+<!-- #EndEditable --> 
+<table width="100%" border="0" bgcolor="#999999">
+  <tr> 
+    <td class="Template_Header">&gt;<a href="../index.html">Main Admin Page</a> 
+      <span class="Template_Header">&gt;</span><a href="index.html">Email 
+      Users Guide Index</a></td>
+  </tr>
+</table>
+</body>
+<!-- #EndTemplate --></html>

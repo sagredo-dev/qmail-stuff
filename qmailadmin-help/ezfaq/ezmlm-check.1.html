@@ -1,0 +1,45 @@
+  <TITLE>UNIX man pages : ./ezmlm-check.1 ()</TITLE>
+  <hr>
+<PRE>
+
+ezmlm-check(1)                                     ezmlm-check(1)
+
+<H2>NAME</H2>
+       ezmlm-check - Mails back results of ezmlm list check
+
+<H2>SYNOPSIS</H2>
+       <b>ezmlm-check</b> [ <b>-sS</b> ] <i>[dir]</i>
+
+<H2>DESCRIPTION</H2>
+       <b>ezmlm-check</b>  mails  useful environment variables to SENDER
+       via <b>qmail-inject</b>.  It is  usually  invoked  for  debugging
+       purposes  in a <i>.qmail</i> file to determine the value of rele-
+       vant environment variables.  If <i>dir</i> is  specified,  <b>ezmlm-</b>
+       <b>check</b>  attempts  to evaluate the <i>ezmlm</i> mailing list set up
+       in <i>dir</i> and return information about the setup as  well  as
+       possible errors.
+
+       <b>ezmlm-check</b>  will  flag  errors with <b>``???</b> <b>ERROR''</b>, likely
+       errors with <b>``???''</b>, and  potential  errors/problems  with
+       <b>``!!!''</b>.
+
+       If <b>ezmlm-check</b> is invoked from the shell, it will print to
+       stdout.  In this case, diagnostics are more limited, since
+       important environment variables normally supplied by qmail
+       are not available.
+
+<H2>OPTIONS</H2>
+       <b>-s</b>   (Default.) List subscribers.
+
+       <b>-S</b>   Do not list subscribers.
+
+<H2>SEE ALSO</H2>
+       <A HREF="ezmlm.5.html">ezmlm(5)</A>, <A HREF="qmail.7.html">qmail(7)</A>, <A HREF="qmail-inject.8.html">qmail-inject(8)</A>
+
+                                                                1
+
+</PRE>
+  <hr>
+  <ADDRESS>
+  © 1994 <A HREF="http://www.ntua.gr/~christia/man-cgi.html">Man-cgi 1.15</A>, Panagiotis Christias &lt;christia@theseas.ntua.gr&gt;
+  </ADDRESS>

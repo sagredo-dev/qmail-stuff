@@ -1,0 +1,140 @@
+  <TITLE>UNIX man pages : ./ezmlm-moderate.1 ()</TITLE>
+  <hr>
+<PRE>
+
+ezmlm-moderate(1)                               ezmlm-moderate(1)
+
+<H2>NAME</H2>
+       ezmlm-moderate  -  process  moderator  actions for message
+       acceptance and rejection
+
+<H2>SYNOPSIS</H2>
+       <b>ezmlm-moderate</b>   <b>[-cCmMrRvV]</b>   <b>[-t</b>   <i>reply-to@host</i><b>]</b>    <i>dir</i>
+       <i>['/path/program</i> <i>args']</i>
+
+<H2>DESCRIPTION</H2>
+       <b>ezmlm-moderate</b>  reads a mail message, expecting it to con-
+       tain an <i>-accept</i> or <i>-reject</i> action request for the  mailing
+       list stored in <i>dir.</i>
+
+       <b>ezmlm-moderate</b>  verifies  the  cookie  sent as part of the
+       action request, and if correct attempts to find the corre-
+       sponding  message  in <i>dir</i><b>/mod/pending/</b>.  If the message is
+       found, it is  either  rejected  or  posted  to  the  list,
+       depending on the action request.
+
+       Posts  to  the  list  are handled by piping the message to
+       <b><A HREF="ezmlm-send.1.html">ezmlm-send(1)</A></b> located in the ezmlm  binary  directory,  as
+       set  at  compile  time. This is usually the directory that
+       ezmlm-moderate resides in.  <b><A HREF="ezmlm-send.1.html">ezmlm-send(1)</A></b> is provided with
+       <i>dir</i> as the first argument.
+
+       If  the  optional second argument is given, <b>ezmlm-moderate</b>
+       pipes the message to that program, as executed by sh.   No
+       parameters are supplied.
+
+       <i>dir</i>  is passed as an argument to <b><A HREF="ezmlm-send.1.html">ezmlm-send(1)</A></b>, but NOT to
+       any program specified as the optional <b>ezmlm-moderate</b>  com-
+       mand line argument.
+
+       <b>ezmlm-moderate</b>  does  not  bother to correctly set sender.
+       <b><A HREF="ezmlm-send.1.html">ezmlm-send(1)</A></b> doesn't care, and  any  other  program  that
+       might  be used can parse the sender from the first line of
+       the    message,    which    is     always     <i>Return-Path:</i>
+       <i>&lt;address@host.domain&gt;</i>  as  build  from  SENDER  originally
+       passed to <b><A HREF="ezmlm-store.1.html">ezmlm-store(1)</A></b>.
+
+       If the message is rejected, an optional moderator  comment
+       is  copied into the notification to the message sender.  A
+       moderator comment is any text in the <i>-reject</i> request found
+       between  two  lines  with  ``%%%''  starting in one of the
+       first 5 positions of the line. The easiest is to use lines
+       consisting  of  ``%%%'' only. If the characters preceeding
+       the ``%%%'' are found at the beginning of any lines within
+       the comment, the characters are removed. This is to appro-
+       priately ignore any ``quote marks'' that you mail  program
+       might place at the beginning of lines in a reply.
+
+       <b>ezmlm-moderate</b>   messages   are   sent   ``From:''   <i>list-</i>
+       <i>owner@listhost</i>.  This allows the poster to easily complain
+
+                                                                1
+
+ezmlm-moderate(1)                               ezmlm-moderate(1)
+
+       to  the  owner  of  the  list,  in  case  s/he objects. An
+       optional  ``Reply-To:''  header  can  be  added  via   the
+       <b>-r</b> <i>reply-to@host</i>.
+
+       Once   the  message  has  been  successfully  accepted  or
+       rejected, it is removed from <i>dir</i><b>/mod/pending/</b> and  a  stub
+       is  created  in  <i>dir</i><b>/mod/accepted/</b>  or  <i>dir</i><b>/mod/rejected/</b>,
+       respectively.  This is done in order to be able to  notify
+       the senders of later moderation requests about the fate of
+       the message.
+
+       A failure to find the message in <i>dir</i><b>/mod/pending/</b> is  most
+       often  caused  by the message already having been accepted
+       or rejected by another moderator. Therefore,  <b>ezmlm-moder-</b>
+       <b>ate</b> looks in <i>dir</i><b>/mod/accepted/</b> and <i>dir</i><b>/mod/rejected/</b> for a
+       message stub. If found, <b>ezmlm-moderate</b> notifies the sender
+       in  the  form  of a fatal error if the fate of the message
+       was different from that intended  by  the  current  action
+       request.   Otherwise,  the fate of the message is silently
+       logged.
+
+       If the message is not found, it has timed out and the mes-
+       sage  or  the  message  stub  has  been  removed by <b>ezmlm-</b>
+       <b><A HREF="clean.1.html">clean(1)</A></b>.  In this case, <b>ezmlm-moderate</b> notifies the  mod-
+       erator  of the failure, but can no longer discern the fate
+       of the original message. Again,  notification  is  in  the
+       form of a fatal error from qmail.
+
+       At  the  beginning of the message, <b>ezmlm-moderate</b> prints a
+       new <b>Mailing-List</b> field  with  the  contents  of  <i>dir</i><b>/mail-</b>
+       <b>inglist</b>.   It  rejects  the  message if there is already a
+       <b>Mailing-List</b> field.
+
+       <b>ezmlm-moderate</b> does not distribute bounce messages: if the
+       environment variable <b>SENDER</b> is set, and is either empty or
+       <b>#@[]</b>, <b>ezmlm-moderate</b> rejects the message.
+
+<H2>OPTIONS</H2>
+       <b>-cCrR</b>  Passed on to  <A HREF="ezmlm-send.1.html">ezmlm-send(1)</A>.   <b>-m</b>  (Default.)   The
+              rejected post is sent as a MIME enclosure.
+
+       <b>-M</b>     The rejected post is appended to the message.
+
+       <b>-t</b> <i>reply-to@host</i>
+              A  ``Reply-To: <i>reply-to@host</i>'' header will be added
+              to the moderation request.
+
+       <b>-v</b>     Display <b>ezmlm-moderate</b> version information.
+
+       <b>-V</b>     Display <b>ezmlm-moderate</b> version information.
+
+<H2>CHARACTER SETS</H2>
+       If  <i>dir</i><b>/charset</b>  exists,  <b>ezmlm-moderate</b>  will   use   the
+
+                                                                2
+
+ezmlm-moderate(1)                               ezmlm-moderate(1)
+
+       character  set  listed  for  all  messages. Otherwise, the
+       default ``us-ascii'' will be used. The character  set  can
+       be  suffixed  by  ``:'' followed by a code. If the code is
+       ``Q'', outgoing messages are sent as ``Quoted-Printable'',
+       if  it  is ``B'' they are sent ``base64'' encoded.  Other-
+       wise, text is sent as is.
+
+<H2>SEE ALSO</H2>
+       <A HREF="ezmlm-clean.1.html">ezmlm-clean(1)</A>,   <A HREF="ezmlm-make.1.html">ezmlm-make(1)</A>,   <A HREF="ezmlm-send.1.html">ezmlm-send(1)</A>,   <A HREF="ezmlmstore.1.html">ezmlmstore(1)</A>
+       , <A HREF="ezmlm.5.html">ezmlm(5)</A>
+
+                                                                3
+
+</PRE>
+  <hr>
+  <ADDRESS>
+  © 1994 <A HREF="http://www.ntua.gr/~christia/man-cgi.html">Man-cgi 1.15</A>, Panagiotis Christias &lt;christia@theseas.ntua.gr&gt;
+  </ADDRESS>

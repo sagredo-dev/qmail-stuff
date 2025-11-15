@@ -1,0 +1,49 @@
+  <TITLE>UNIX man pages : ./ezmlm-glconf.1 ()</TITLE>
+  <hr>
+<PRE>
+
+ezmlm-glconf(1)                                   ezmlm-glconf(1)
+
+<H2>NAME</H2>
+       ezmlm-glconf - create config file for global ezmlm-request
+       address
+
+<H2>SYNOPSIS</H2>
+       <b>ezmlm-glconf</b> [ <b>-n</b> ] <i>dotdir</i>[dotdir1<i>...]</i>&gt; <i>config_file</i>
+
+<H2>DESCRIPTION</H2>
+       <b>ezmlm-glconf</b> scans <i>dotdir</i>, usually the users  home  direc-
+       tory, for files of type <b>.qmail-return-*-default</b>.  For nor-
+       mal ezmlm-lists, these are links to <b>bouncer</b>  files,  which
+       on  their  last  line  have  a  call to <b><A HREF="ezmlm-return.1.html">ezmlm-return(1)</A></b> or
+       <b><A HREF="ezmlm-warn.1.html">ezmlm-warn(1)</A>.</b>  <b>ezmlm-glconf</b> extracts the  list  directory
+       from  these,  and  builds  a line for <i>config_file</i> from the
+       information in the list directory. The first line  of  the
+       <b>/text/info</b>  file of the list is assumed to contain a brief
+       description of the list. If  not  found  ``no  information
+       available'' is used.
+
+       <b>ezmlm-glconf</b>  output is sorted alphabetically by list name
+       and if a digest list exists, the digest list entry immedi-
+       ately follows the list entry.
+
+<H2>OPTIONS</H2>
+       <b>-n</b>     Add  information  on  the  current  number  of sub-
+              scribers to the list information.
+
+<H2>CONFIGURATION</H2>
+       The descriptive text <b>ezmlm-glconf</b> uses  for  digest  lists
+       and  the text used if <b>/text/info</b> is not readable/available
+       can be changed by editing the script.
+
+<H2>SEE ALSO</H2>
+       <A HREF="ezmlm-glmake.1.html">ezmlm-glmake(1)</A>, <A HREF="ezmlm-request.1.html">ezmlm-request(1)</A>, <A HREF="ezmlm-return.1.html">ezmlm-return(1)</A>, <A HREF="ezmlmwarn.1.html">ezmlmwarn(1)</A>
+       , <A HREF="ezmlm.5.html">ezmlm(5)</A>
+
+                                                                1
+
+</PRE>
+  <hr>
+  <ADDRESS>
+  © 1994 <A HREF="http://www.ntua.gr/~christia/man-cgi.html">Man-cgi 1.15</A>, Panagiotis Christias &lt;christia@theseas.ntua.gr&gt;
+  </ADDRESS>

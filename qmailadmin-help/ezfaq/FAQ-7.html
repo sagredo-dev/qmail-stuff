@@ -1,0 +1,189 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<HTML>
+<HEAD>
+ <META NAME="GENERATOR" CONTENT="SGML-Tools 1.0.7">
+ <TITLE>EZFAQ 0.32 - ezmlm-idx and ezmlm FAQ: Customizing ezmlm-make operation via ezmlmrc</TITLE>
+ <LINK HREF="FAQ-8.html" REL=next>
+ <LINK HREF="FAQ-6.html" REL=previous>
+ <LINK HREF="FAQ.html#toc7" REL=contents>
+</HEAD>
+<BODY vlink="#004400" link="#008800" bgcolor="#ffffff" alink="#ff0000"><FONT FACE="helvetica,times,arial">
+<A HREF="FAQ-8.html">Next</A>
+<A HREF="FAQ-6.html">Previous</A>
+<A HREF="FAQ.html#toc7">Contents</A>
+<HR>
+<H2><A NAME="make_cust"></A> <A NAME="s7">7. Customizing ezmlm-make operation via ezmlmrc</A></H2>
+
+<P>
+<H2><A NAME="ss7.1">7.1 Using ezmlm-make to edit existing lists.</A>
+</H2>
+
+<P>With <a href="ezmlm-make.1.html">ezmlm-make(1)</a> (from ezmlm-idx &gt;=0.21) you can use the ``-e'' switch to
+edit existing lists.
+Invoke the <a href="ezmlm-make.1.html">ezmlm-make(1)</a> command just as you would to create
+the list anew, but change the switches to reflect the desired change, and add
+the ``-e'' switch. ezmlm-make will accept preexisting directories and 
+overwrite or remove files to change the setup.
+The message counter (<B>DIR/num</B>),
+digest counters (<B>DIR/dignum</B> and <B>DIR/digissue</B>),
+the key (<B>DIR/key</B>) and the
+message archive will not be affected.
+<P>If the list has been created or previously edited with <a href="ezmlm-make.1.html">ezmlm-make(1)</a> from
+ezmlm-idx&gt;=0.23, the list remembers (via <B>DIR/config</B>)
+the arguments and the
+switches. All you have to do is to use the <a href="ezmlm-make.1.html">ezmlm-make(1)</a> ``-+'' switch
+and specify options you wish to change, or use the ``-e'' switch and
+specify all non-default options you'd like to use.
+<P><EM>NOTE:</EM> <a href="ezmlm-make.1.html">ezmlm-make(1)</a> ``-e'' will OVERWRITE any manual
+customizations you have made to text files other than
+<B>DIR/headeradd</B>,
+<B>DIR/mod-sub</B>,
+<B>DIR/sub-ok</B>,
+<B>DIR/info</B>,
+and <B>DIR/faq</B>.
+To make general customizations, please
+change <B><a href="ezmlmrc.5.html">ezmlmrc(5)</a></B>
+(see 
+<A HREF="#ezmlmrc">What is ezmlmrc?</A>
+or read on) instead and use the ``-c'' switch as well. DO NOT use
+this option to change production lists without testing it on other lists first.
+Also, for some changes, removing or adding a flag is sufficient
+(see 
+<A HREF="FAQ-17.html#quick_change">How do I quickly change properties of my list</A>).
+<P>
+<H2><A NAME="ezmlmrc"></A> <A NAME="ss7.2">7.2 What is ezmlmrc?</A>
+</H2>
+
+<P><a href="ezmlm-make.1.html">ezmlm-make(1)</a> has a number of default switches that through
+<B><a href="ezmlmrc.5.html">ezmlmrc(5)</a></B> have defined functions. These allow
+creation of many standard lists.
+<P>In addition, <a href="ezmlm-make.1.html">ezmlm-make(1)</a> operation is fully customizable via
+modification of the template file, <a href="ezmlmrc.5.html">ezmlmrc(5)</a> or .ezmlmrc. A
+default <a href="ezmlmrc.5.html">ezmlmrc(5)</a> is installed in the ezmlm binary directory.
+The system administrator can install a system-wide default
+<B><a href="ezmlmrc.5.html">ezmlmrc(5)</a></B> file in <B>/etc/ezmlmrc</B> (or symlinked from there)
+which
+overrides the file in the ezmlm binary directory. If the
+<a href="ezmlm-make.1.html">ezmlm-make(1)</a> ``-c'' (custom) switch is used, <a href="ezmlm-make.1.html">ezmlm-make(1)</a> will look
+for <B>.ezmlmrc</B> in the ``dotdir'', i.e. the directory in which
+the <B>.qmail-list</B> links are placed. This is usually a set directory
+for a given user/virtual domain
+(usually, the home directory for the user controlling the lists).
+<P><B><a href="ezmlmrc.5.html">ezmlmrc(5)</a></B> controls everything
+except creation of the list directory itself and the key used
+for cookie generation. The syntax of <B><a href="ezmlmrc.5.html">ezmlmrc(5)</a></B> is documented in
+<a href="ezmlm-make.1.html">ezmlm-make(1)</a>, the <a href="ezmlmrc.5.html">ezmlmrc(5)</a> man page, and in the <a href="ezmlmrc.5.html">ezmlmrc(5)</a> file
+installed in the ezmlm
+binary directory. ezmlm-make limits its effects to within the
+list ``dot'' and ``DIR'' directories. In the ``dotdir'', only links
+to within ``DIR'' can be created.
+<P>
+<H2><A NAME="ss7.3">7.3 Changing defaults for <B>DIR/text/</B> files.</A>
+</H2>
+
+<P>Copy the <a href="ezmlmrc.5.html">ezmlmrc(5)</a> file from the ezmlm bin directory to <B>.ezmlmrc</B>
+in your <B>.qmail</B> file base directory (usually your home
+directory):
+<BLOCKQUOTE><CODE>
+<PRE>
+% cp /usr/local/bin/ezmlm/ezmlmrc ~/.ezmlmrc
+</PRE>
+</CODE></BLOCKQUOTE>
+<P>The base
+<B><a href="ezmlmrc.5.html">ezmlmrc(5)</a></B> file lives in the ezmlm binary directory,
+which may differ from ``<B>/usr/local/bin/ezmlm/ezmlmrc</B>''
+if you do not have a default setup.
+If your system administrator has placed a <a href="ezmlmrc.5.html">ezmlmrc(5)</a> file into
+the <B>/etc</B> directory, start with that one instead, as it is
+likely to already contain some useful local customization and
+comments.
+<P>Now edit <B>~/.ezmlmrc</B>. Find the tag corresponding to the text
+file you want to change, e.g. ``&lt;/text/mod-request/&gt;'', and modify
+it appropriately. Some tags have conditional flags, so that
+succeeding text is copied only if specific switches are
+on/off. Thus, text succeeding ``&lt;/text/file#rms/&gt;'' is copied into
+<B>DIR/text/file</B> if and only if the <a href="ezmlm-make.1.html">ezmlm-make(1)</a> ``-rms'' switches are
+all used. For more info, see documentation in <B><a href="ezmlmrc.5.html">ezmlmrc(5)</a></B> and the
+<a href="ezmlm-make.1.html">ezmlm-make(1)</a> man page. To invoke a custom <B>.ezmlmrc</B> file, use
+the <a href="ezmlm-make.1.html">ezmlm-make(1)</a> ``-c'' (custom) switch.
+<P>
+<H2><A NAME="ss7.4">7.4 Changing default moderator directories.</A>
+</H2>
+
+<P>See above. Edit the <B>.ezmlmrc</B> file to add a directory name to
+e.g. ``&lt;/modsub/#s&gt;''. Also, you need to create that directory,
+and the subscribers subdirectory under it. NOTE: <B>DIR/mod/</B> is
+still required as the base directory for the message
+moderation queue.
+<P>
+<H2><A NAME="make_virt"></A> <A NAME="ss7.5">7.5 Adapting ezmlm-make for virtual domains.</A>
+</H2>
+
+<P>This is not necessary if you use qmail&gt;=1.02 and ezmlm-idx&gt;=0.32.
+<P>The problem with virtual domains is that <a href="ezmlm-make.1.html">ezmlm-make(1)</a> by default
+puts the list name in <B>DIR/inlocal</B>. However, if the domain
+<CODE>host1.dom.com</CODE> is controlled by the user ``virt'', then the
+local part of the address for the list <CODE>list@host.dom.com</CODE>
+will be ``virt-list'', not ``list''. This is easily accommodated
+by putting a <B>.ezmlmrc</B> file in <B>~virt/</B>.
+In the ``&lt;/inlocal/&gt;''
+section of this file, enter ``virt-&lt;#L#&gt;''
+instead of ``&lt;#L#&gt;''.
+Now, all lists created
+under <B>~virt</B> will be automatically set up correctly.
+<P>Similarly, if <CODE>host1.dom.com</CODE> is controlled by virt-dom1 and
+<CODE>host2.dom.com</CODE> by ``virt-dom2'', inlocal for list
+<CODE>list@host1.dom.com</CODE> should be ``virt-dom1-list'' and for
+<CODE>list@host2.dom.com</CODE> should be ``virt-dom2-list''. To
+accommodate this, put ``virt-&lt;#1#&gt;-&lt;#L#&gt;'' 
+in ``&lt;/inlocal/&gt;''.
+<P>Running:
+<BLOCKQUOTE><CODE>
+<PRE>
+% ezmlm-make -c ~virt/LIST ~virt/.qmail-dom1-list \
+           list host1.dom.com
+</PRE>
+</CODE></BLOCKQUOTE>
+<P>will produce a <B>LIST/inlocal</B> of <CODE>virt-dom1-list</CODE> by
+substituting the first part between two ``-'' (dom1)
+for ``&lt;#1#&gt;''. Two
+levels of dashes are accommodated, i.e. ``&lt;#2#&gt;'' will be replaced
+by the second part between two ``-'' (in this case empty (<EM>Sic!</EM>)).
+For more info, see <a href="ezmlm-make.1.html">ezmlm-make(1)</a> and comments in <B>ezmlmrc</B>.
+<P>
+<H2><A NAME="ss7.6">7.6 Setting up ezmlm-make for special situations.</A>
+</H2>
+
+<P>Ezmlm-make is very flexible. There are only three sets of
+special command line switches: ``-vV'' for version info, ``-cC'' controlling the
+use of a custom file <B>.ezmlmrc</B> in the ``dot'' directory, and ``-eE''
+for edit mode (i.e. reconfiguration of existing list setups).
+All other switches are soft, i.e. controlled through <B><a href="ezmlmrc.5.html">ezmlmrc(5)</a></B>.
+Many switches, have special meanings via <B><a href="ezmlmrc.5.html">ezmlmrc(5)</a></B> and are
+documented in the man page. Any other switches can be used for
+customization (<EM>NOTE: we may use switches other than ``-xyz'' for
+specific purposes in future versions.</EM>)
+The ``-xyz'' switches will always be available for your use, with the ``-x''
+switch being configured for some demo/special features in the distributed
+<B><a href="ezmlmrc.5.html">ezmlmrc(5)</a></B>.
+You can use them for anything you like. They are by default
+off=false. The complement of these switches is ``-XYZ'' (by
+default on=true). You can use these to cause specific changes
+in the list setup if a given switch is used. For an example,
+see the ``-x'' switch as used and documented in the default
+<B><a href="ezmlmrc.5.html">ezmlmrc(5)</a></B> file.
+The switches ``-aip'' are set by default to be backwards compatible
+with ezmlm-0.53. Other switches are ``off'' by default.
+<P>Switches ``-a-z'' and ``-A-Z'' take no arguments.
+Switches ``-0'' and
+and ``-3-9'' take arguments.
+When the <a href="ezmlm-make.1.html">ezmlm-make(1)</a> ``-+'' switch is used, the current settings
+for all these switches are read from the list's
+<B>DIR/config</B> (if available).
+<P>
+<HR>
+<A HREF="FAQ-8.html">Next</A>
+<A HREF="FAQ-6.html">Previous</A>
+<A HREF="FAQ.html#toc7">Contents</A>
+</BODY>
+</HTML>

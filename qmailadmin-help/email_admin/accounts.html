@@ -1,0 +1,52 @@
+<!-- $Header: /home/cvsroot/admin_cfes_ca/email_admin/accounts.html,v 1.5 2001/08/17 05:32:52 tdrennan Exp $ -->
+<html><!-- #BeginTemplate "/Templates/Admin_Documents.dwt" -->
+<head>
+<!-- #BeginEditable "doctitle" --> 
+<title>Email Administration Guide - Accounts</title>
+<!-- #EndEditable -->
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<link rel="stylesheet" href="../admin.css" type="text/css">
+</head>
+
+<body bgcolor="#FFFFFF" text="#000000">
+<table width="100%" border="0" bgcolor="#999999">
+  <tr> 
+    <td class="Template_Header">&gt;<a href="../index.html">Main Admin Page</a> 
+      &gt;<a href="index.html">Email Administration Guide Index</a> 
+    </td>
+  </tr>
+</table>
+<!-- #BeginEditable "main" --> 
+<h2><a name="accounts"></a>Accounts </h2>
+<p>This are some basic comments on accounts and some special notes on certan accounts.</p>
+<h3><a name="postmaster_account"></a>The Postmaster Account</h3>
+<p>The postmaster account is used as the account for administering the domain 
+  using QmailAdmin. It is suggested that if you are not going to be using the 
+  postmaster account as a regular account you create and alias or forward to a 
+  valid account. This account is used by other administrators to get in touch 
+  with the domain admin if there are any problems. The system administrator may 
+  also use this account to get in touch with you so it should be valid and working.</p>
+<h3><a name="special_accounts"></a>Other Special Accounts</h3>
+<p>There are a number of other account that could also be creates as needed these 
+  include accounts such as the webmaster (for listing on webpages).</p>
+<h3><a name="sub_accounts"></a>Sub Accounts</h3>
+<p>One excellent feature of our mail system is that it support sub accounts. This 
+  means that if you are user bob@smith.com and you want to give out different 
+  email addresses for different things (websites, other mailing lists, etc.) you 
+  can give out bob-anythingyoucanthinkof@smith.com or bob-anything-you-can-think-of@smith.com 
+  and they will be delivered to andbob@smith.com. This is an excellent feature 
+  if used with a system list spamcop. This way a user can give out an account 
+  like user-spam@domain.com when reporting spam via <a href="http://www.spamcop.net/">spamcop.net</a> 
+  and if this account gets added to a number of mailing lists the user can contact 
+  the system administrator and they can have the -spam subaccount blocked and 
+  they user can change subaccounts.</p>
+<!-- #EndEditable --> 
+<table width="100%" border="0" bgcolor="#999999">
+  <tr> 
+    <td class="Template_Header">&gt;<a href="../index.html">Main Admin Page</a> 
+      <span class="Template_Header">&gt;</span><a href="index.html">Email 
+      Administration Guide Index</a></td>
+  </tr>
+</table>
+</body>
+<!-- #EndTemplate --></html>

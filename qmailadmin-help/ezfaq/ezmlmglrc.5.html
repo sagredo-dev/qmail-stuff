@@ -1,0 +1,51 @@
+  <TITLE>UNIX man pages : ./ezmlmglrc.5 ()</TITLE>
+  <hr>
+<PRE>
+
+ezmlmglrc(5)                                         ezmlmglrc(5)
+
+<H2>NAME</H2>
+       ezmlmglrc - set up the global ezmlm interface
+
+<H2>SYNOPSIS</H2>
+       <b>ezmlm-make</b> <b>-C</b> <b>ezmlmglrc</b> <i>dir</i> <i>dot</i> <i>local</i> <i>host</i>
+
+<H2>DESCRIPTION</H2>
+       <b>ezmlmglrc</b>  instructs <b><A HREF="ezmlm-make.1.html">ezmlm-make(1)</A></b> to create <i>dir</i> and files
+       within it to support the <i>local</i><b>@</b><i>host</i> address  as  a  global
+       ezmlm  interface.   <i>dot</i>  and  <i>dot</i><b>-default</b>  are  linked  to
+       <i>dir</i><b>/ezdomo</b> which uses <b><A HREF="ezmlm-request.1.html">ezmlm-request(1)</A></b> to handle  requests
+       as  well  as bounces and ezmlm-style command addresses for
+       the global interface.   The  configuration  file  <i>dir</i><b>/con-</b>
+       <b>fig.cf</b>  should be created separately with <b><A HREF="ezmlm-glconf.1.html">ezmlm-glconf(1)</A></b>.
+
+<H2>USAGE</H2>
+       Typical use by ``joe'' to set up <b>joe-</b><i>majordomo</i><b>@</b><i>this.com:</i>
+
+       ezmlm-make  -Cezmlmglrc  ~/domo  ~/.qmail-majordomo   joe-
+       majordomo this.com
+
+       Typical use by ``alias'' to set up <i>majordomo</i><b>@</b><i>this.com:</i>
+
+       ezmlm-make -Cezmlmglrc ~/domo ~/.qmail-majordomo majordomo
+       this.com
+
+       Typical use by ``virt''  controlling  the  virtual  domain
+       <i>lists.com</i> to set up <i>majordomo</i><b>@</b><i>list.com:</i>
+
+       ezmlm-make -Cezmlmglrc ~/domo ~/.qmail-majordomo majordomo
+       list.com
+
+       echo "virt-majordomo" &gt; ~/domo/inlocal The  ``echo''  line
+       is required only if used with qmail&lt;1.02.
+
+<H2>SEE ALSO</H2>
+       <A HREF="ezmlm-glconf.1.html">ezmlm-glconf(1)</A>, <A HREF="ezmlm-make.1.html">ezmlm-make(1)</A>, <A HREF="ezmlm-request.1.html">ezmlm-request(1)</A>, <A HREF="ezmlm.5.html">ezmlm(5)</A>
+
+                                                                1
+
+</PRE>
+  <hr>
+  <ADDRESS>
+  © 1994 <A HREF="http://www.ntua.gr/~christia/man-cgi.html">Man-cgi 1.15</A>, Panagiotis Christias &lt;christia@theseas.ntua.gr&gt;
+  </ADDRESS>

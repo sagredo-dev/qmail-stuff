@@ -1,0 +1,339 @@
+  <TITLE>UNIX man pages : ./ezmlm-manage.1 ()</TITLE>
+  <hr>
+<PRE>
+
+ezmlm-manage(1)                                   ezmlm-manage(1)
+
+<H2>NAME</H2>
+       ezmlm-manage - automatically manage a mailing list
+
+<H2>SYNOPSIS</H2>
+       <b>ezmlm-manage</b> <b>[-bBcCdDeEfFlLmMsSuUvV]</b> <i>dir</i>
+
+<H2>DESCRIPTION</H2>
+       <b>ezmlm-manage</b> handles administrative requests for the mail-
+       ing list stored in <i>dir</i>, as  well  as  for  the  associated
+       digest list.
+
+       <b>ezmlm-manage</b>  is  normally invoked from a <b>.qmail</b> file.  It
+       reads a mail message from its standard input, and  a  mail
+       envelope  from  the  <b>SENDER</b>,  <b>LOCAL</b>,  and <b>HOST</b> environment
+       variables.
+
+       <b>ezmlm-manage</b> expects <b>LOCAL</b> to be of the form  <i>list</i><b>-</b><i>action</i><b>-</b>
+       <i>box</i><b>=</b><i>domain</i>.   Here  <i>list</i> is the first line of <i>dir</i><b>/inlocal</b>,
+       <i>action</i> is a request, and <i>box</i><b>@</b><i>domain</i> is the target  of  the
+       request.  <b>ezmlm-manage</b> sends a response to the target.  It
+       attaches the original message to the end of its  response.
+
+       <b>LOCAL</b>  may  instead  be of the form <i>list</i><b>-</b><i>action</i>.  Then the
+       envelope sender is used as the target.
+
+       <b>ezmlm-manage</b> expects <b>HOST</b>  to  match  the  first  line  of
+       <i>dir</i><b>/inhost</b>.
+
+       If  <i>list</i>  is  the  first  line  of <i>dir</i><b>/inlocal</b> followed by
+       ``-digest'', the request is assumed to be for the  associ-
+       ated  digest  list.   <b>ezmlm-manage</b>  handles these requests
+       similarly, except that digest  list  subscriber  addresses
+       are  stored  in  <i>dir</i><b>/digest/subscribers</b>,  rather  than  in
+       <i>dir</i><b>/subscribers</b>.
+
+       If <i>list</i> <i>dir</i><b>/inlocal</b> followed by ``-allow'', the request is
+       assumed to be for the associated <i>dir</i><b>/allow/</b> database. This
+       database is used to store aliases of subscribers for lists
+       allowing  only posts only if the envelope sender is a sub-
+       scriber.  Actions on the <i>dir</i><b>/allow/</b>  database  follow  the
+       same  rules  as  for the main list. The ezmlm messages are
+       the same as those used for normal subscription, but  refer
+       to  the  <i>list</i><b>-allow@</b><i>host</i> list. As this feature is designed
+       for advanced uses and remote administrators only, this  is
+       not  a  problem.   <b>NOTE:</b> No message is sent out to confirm
+       additions to or removals from this database. However,  the
+       user  can  verify  the change using the <i>query</i> action.  The
+       <i>list</i><b>-deny</b> addresses similarly controls <i>dir</i><b>/deny/</b>  database
+       for  blocking  posts  with certain envelope senders.  This
+       database is available to remote administrators  only,  and
+       only  if  the  list has been set up with this feature (see
+       <b><A HREF="ezmlm-manage.1.html">ezmlm-manage(1)</A></b>).  <b>NOTE:</b> No message is sent out to confirm
+       additions to or removals from this database.  However, the
+       remote admin can verify the change using the <i>query</i> action.
+
+                                                                1
+
+ezmlm-manage(1)                                   ezmlm-manage(1)
+
+       <b>ezmlm-manage</b>  copies  <i>dir</i><b>/mailinglist</b>  into a <b>Mailing-List</b>
+       field in its response.  If  the  incoming  message  has  a
+       <b>Mailing-List</b>   field,  <b>ezmlm-manage</b>  refuses  to  respond.
+       <b>ezmlm-manage</b> also refuses to respond to bounce messages.
+
+<H2>OPTIONS</H2>
+       <b>-b</b>   (Default.)  <b>ezmlm-manage</b> will  add  general  instruc-
+            tions and the request to the outgoing message.
+
+       <b>-B</b>   <b>ezmlm-manage</b>  will  not  add general instructions and
+            the request to the outgoing message.   This  informa-
+            tion  gives  the  recipient of a confirmation request
+            some information about the inciting message.  Use  of
+            this switch will deny the recipient that information.
+
+       <b>-c</b>   (Default.)  <b>ezmlm-manage</b> will reply to <i>-get</i> commands.
+
+       <b>-C</b>   <b>ezmlm-manage</b> will not reply to <i>-get</i> commands. This is
+            useful for closed lists, where  the  owner  for  some
+            reason  wants  to  keep an archive, without making it
+            available.
+
+       <b>-d</b>   Alias for the <b>-e</b> switch for backwards  compatibility.
+
+       <b>-D</b>   Alias  for the <b>-E</b> switch for backwards compatibility.
+
+       <b>-e</b>   <b>ezmlm-manage</b> allows  remote  administrators  to  edit
+            files in <i>dir</i><b>/text/</b> via E-mail.
+
+       <b>-E</b>   (Default.)  Text file editing not allowed.
+
+       <b>-f</b>   (Default.)   The  information  in  the  ``From:''  is
+            extracted from subscribe confirm messages  and  added
+            to <i>dir</i><b>/Log</b> together with the subscriber address. This
+            makes it easier for the list owner  to  help  a  sub-
+            scriber  who  cannot  determine  his/her subscription
+            address. If the <b>-S</b> switch is used, the information is
+            instead extracted from the subscribe request.
+
+       <b>-F</b>   Ignore ``From:'' headers.
+
+       <b>-l</b>   <b>ezmlm-manage</b>  will send a subscriber list in reply to
+            the <i>-list</i> command if <i>dir</i><b>/modsub</b> or  <i>dir</i><b>/remote</b>  exist
+            and  target  (the address the reply is to be sent to)
+            is a moderator.
+
+       <b>-L</b>   (Default.)  <b>ezmlm-manage</b> will ignore the  <i>-list</i>  com-
+            mand.
+
+       <b>-m</b>   For lists with moderated subscription, require moder-
+            ator approval also for unsubscribe requests.
+
+       <b>-M</b>   (Default.)  Requests to  unsubscribe  from  moderated
+            lists do not require moderator approval.
+
+                                                                2
+
+ezmlm-manage(1)                                   ezmlm-manage(1)
+
+       <b>-s</b>   (Default.)   <b>ezmlm-manage</b>  will  handle subscriptions
+            with the normal target handshake.
+
+       <b>-S</b>   <b>ezmlm-manage</b> will eliminate the target handshake from
+            the  subscription process. This allows anyone to sub-
+            scribe anybody else. DO NOT use this  option,  unless
+            you  know what you are doing. This option may be use-
+            ful for some moderated lists. For  remote  non-moder-
+            ated  lists,  an  attempt  by a non-moderator to sub-
+            scribe an address other than sender results in a con-
+            firmation  request  to  the  moderators.  This is NOT
+            secure and can be easily defeated.
+
+       <b>-u</b>   (Default.)   <b>ezmlm-manage</b>  will  handle   unsubscribe
+            requests with the normal target handshake.
+
+       <b>-U</b>   <b>ezmlm-manage</b> will eliminate the target handshake from
+            the  subscription  process.  This  allows  anyone  to
+            unsubscribe  anybody  else.  DO  NOT use this option,
+            unless you know what you are doing. For moderated  or
+            remote  admin  lists,  an  attempt  to unsubscribe an
+            address other than SENDER results in  a  confirmation
+            request to the moderators and the target. This is NOT
+            secure and can be easily defeated.
+
+       <b>-v</b>   Display <b>ezmlm-manage</b> version information.
+
+       <b>-V</b>   Display <b>ezmlm-manage</b> version information.
+
+<H2>CHARACTER SETS</H2>
+       If <i>dir</i><b>/charset</b> exists, <b>ezmlm-manage</b> will use the character
+       set  listed for all messages. Otherwise, the default ``us-
+       ascii'' will be used. The character set can be suffixed by
+       ``:''  followed  by a code. If the code is ``Q'', outgoing
+       messages are sent as ``Quoted-Printable'', if it is  ``B''
+       they are sent ``base64'' encoded.  Otherwise, text is sent
+       as is.
+
+       Incoming text for the <i>-edit</i> is accepted  unencoded  or  in
+       either of these encodings.
+
+<H2>SUBSCRIPTIONS</H2>
+       If  <i>action</i>  is  <b>sc.</b><i>cookie</i>,  where <i>cookie</i> is an appropriate
+       code (depending on the target, the approximate  time,  and
+       other  factors), <b>ezmlm-manage</b> adds the target to the mail-
+       ing list if subscriptions are  not  moderated.   For  sub-
+       scription  moderated lists, <b>ezmlm-manage</b> sends a confirma-
+       tion request to the moderators with  the  right  <b>tc.</b><i>cookie</i>
+       address in its response.
+
+       If  <i>action</i>  is  <b>tc.</b><i>cookie</i>,  where <i>cookie</i> is an appropriate
+       code (depending on the target, the approximate  time,  and
+       other  factors), <b>ezmlm-manage</b> adds the target to the mail-
+       ing list. If the target was not already  a  subscriber,  a
+
+                                                                3
+
+ezmlm-manage(1)                                   ezmlm-manage(1)
+
+       welcome message is sent to the target.
+
+       If  <i>action</i>  is  <b>subscribe</b>, <b>ezmlm-manage</b> does not subscribe
+       the target, but it identifies the right <b>sc.</b><i>cookie</i>  address
+       in its response.
+
+       This  confirmation  mechanism (1) verifies that the target
+       is reachable and (2) protects the  target  against  forged
+       subscription requests.
+
+       Actions  of <b>uc.</b><i>cookie</i> and <b>unsubscribe</b> are used in the same
+       way to delete the target from the  mailing  list.   Unsub-
+       scribes do not require moderator confirmation.
+
+       Actions  of <b>vc.</b><i>cookie</i> are used to confirm moderator-initi-
+       ated unsubscribes for lists configured with remote  admin-
+       istration (see MODERATION).
+
+       If  <i>action</i> is <b>query</b>, <b>ezmlm-manage</b> returns a message to the
+       target indicating whether or not the target address  is  a
+       subscriber.
+
+       If  <i>action</i>  is  <b>info</b> or <b>faq</b>, <b>ezmlm-manage</b> returns the con-
+       tents of <i>dir</i><b>/text/info</b> or <i>dir</i><b>/text/info</b>, respectively.
+
+       If <i>dir</i><b>/public</b> does not  exist,  <b>ezmlm-manage</b>  rejects  all
+       subscription and unsubscription attempts.  However, if the
+       list is configured with remote administration,  moderator-
+       initiated subscribe and unsubscribe requests will still be
+       honored. Also, if <i>action</i> is <i>help</i>, <b>ezmlm-manage</b> will  still
+       send help.
+
+<H2>TEXT FILE EDITING</H2>
+       If  <i>action</i>  is <b>edit</b>, the <b>-e</b> switch is used, and the target
+       address is that of a  remote  administrator,  <b>ezmlm-manage</b>
+       will  reply  with a list of editable file in <i>dir</i><b>/text/</b> and
+       instructions  for  editing.  Cookies  for  editing  expire
+       approximately  27.8 hours after they are issued, or when a
+       file has been changed, whichever is sooner.  The  size  of
+       the updated file is limited to 5120 bytes.
+
+       If  <i>action</i>  is  <b>edit.</b><i>file</i>,  the <b>-e</b> switch is used, and the
+       target address is that of a remote  administrator,  <b>ezmlm-</b>
+       <b>manage</b> will return an editable copy of <i>file</i>.
+
+       If  <i>action</i> is <b>ed.</b><i>cookie</i>, <b>ezmlm-manage</b> will verify that the
+       edit cookie is still valid and that the file has not  been
+       modified since the cookie was issued. If the cookie passes
+       these tests, <b>ezmlm-manage</b> will update <i>dir</i><b>/text</b><i>/file</i>.
+
+<H2>ARCHIVE RETRIEVALS</H2>
+       If <i>action</i> is <b>get.</b><i>num</i>, <b>ezmlm-manage</b> sends back message  <i>num</i>
+       from  <i>dir</i><b>/archive/</b>.  This can be disabled with the <b>-C</b> com-
+       mand line switch.
+
+                                                                4
+
+ezmlm-manage(1)                                   ezmlm-manage(1)
+
+       If <i>dir</i><b>/public</b> does not  exist,  <b>ezmlm-manage</b>  rejects  all
+       archive retrieval attempts.
+
+<H2>MODERATION</H2>
+       If  <i>dir</i><b>/modsub</b>  exists, subscriptions are moderated. Users
+       can unsubscribe without moderator  action,  but  moderator
+       confirmation is required for subscriptions.
+
+       If  <i>dir</i><b>/modsub</b>  starts with a forward slash, it is assumed
+       that the content this is the base directory for the moder-
+       ator  database ( <i>moddir</i>).  Otherwise, <i>moddir</i> is assumed to
+       be <i>dir</i><b>/mod/</b>.
+
+       The moderator names are assumed to be stored in a  set  of
+       files in <i>/moddir</i><b>/subscribers/</b>.
+
+       I to add, remove, and list moderators, use respectively:
+
+       <b>ezmlm-sub</b> <i>moddir</i> <i>user@host</i>
+
+       <b>ezmlm-unsub</b> <i>moddir</i> <i>user@host</i>
+
+       <b>ezmlm-list</b> <i>moddir</i>
+
+       Subscription  requests  from potential subscribers will be
+       sent for a second round of confirmation to all the modera-
+       tors.  If a moderator approves the request, a message con-
+       firming the subscription will be sent to  the  subscriber.
+       The  subscriber will not know which moderator approved the
+       subscription.
+
+       If more than one moderator  replies  to  the  confirmation
+       request,  the  subscriber  will not receive duplicate mes-
+       sages about being on (or not on) the mailing list.
+
+       Unsubscribe requests from users are handled  as  for  non-
+       moderated lists.
+
+       All  subscribe  confirmation  requests requiring moderator
+       action have  a  subject  of  <b>CONFIRM</b>  <b>subscribe</b>  <b>to</b>  <i>list-</i>
+       <i>name@host.</i>  All unsubscribe confirmation requests in reply
+       to moderator-initiated unsubscribe dialogs have a  subject
+       of <b>CONFIRM</b> <b>unsubscribe</b> <b>from</b> <i>listname@host.</i>
+
+       If  <i>dir</i><b>/remote</b>  exists (remote administration), moderators
+       can initiate a request to subscribe a user 'username@user-
+       host' by sending mail to <i>listname-subscribe</i><b>-username=user-</b>
+       <b>host</b><i>@host</i>.   The  moderator  (not  the  subscriber)   will
+       receive  the  confirmation  request,  and can complete the
+       transaction. Moderators' request to unsubscribe users  are
+       handled analogously.
+
+       <i>dir</i><b>/remote</b> starts with a forward slash, it is assumed that
+       the content this is the base directory for  the  moderator
+
+                                                                5
+
+ezmlm-manage(1)                                   ezmlm-manage(1)
+
+       database ( <i>moddir</i>).  The moderator names are assumed to be
+       stored in a set of files in <i>/moddir</i><b>/subscribers/</b>.  If both
+       <i>dir</i><b>/modsub</b>  and  <i>dir</i><b>/remote</b> exist, and both contain direc-
+       tory names, the directory name in <i>dir</i><b>/modsub</b> is used,  and
+       the <i>dir</i><b>/remote</b> entry is ignored.
+
+       It is possible to set up a mailinglist for moderators only
+       by using <i>dir</i><b>/mod/</b> as the list directory.  Make  sure  that
+       such  a list is not public! Otherwise, anyone can become a
+       moderator by subscribing to this list.
+
+       If action is <b>-help</b> and target is a moderator, <b>ezmlm-manage</b>
+       will  in addition to the usual help send <i>dir</i><b>/text/mod-help</b>
+       containing instructions for moderators.
+
+       If action is <b>-list</b> and target is a moderator, the list  is
+       set  up  for subscription moderation or remote administra-
+       tion, and the <i>-l</i> command line switch is used, <b>ezmlm-manage</b>
+       will  reply  with  an unsorted subscriber list. Extensions
+       for digest subscribers and auxillary  databases  are  sup-
+       ported (see above).
+
+       If  action  is <b>-log</b>, <b>ezmlm-manage</b> will reply with the con-
+       tents of the <i>Log</i> file with the same access restrictions as
+       for the <b>-list</b> action.
+
+<H2>SEE ALSO</H2>
+       <A HREF="ezmlm-make.1.html">ezmlm-make(1)</A>,   <A HREF="ezmlm-return.1.html">ezmlm-return(1)</A>,   <A HREF="ezmlm-send.1.html">ezmlm-send(1)</A>,  <A HREF="ezmlmsub.1.html">ezmlmsub(1)</A>
+       , <A HREF="ezmlm-unsub.1.html">ezmlm-unsub(1)</A>,  <A HREF="ezmlm-list.1.html">ezmlm-list(1)</A>,  <A HREF="ezmlm.5.html">ezmlm(5)</A>,  <A HREF="qmailcommand.8.html">qmailcommand(8)</A>
+       
+
+                                                                6
+
+</PRE>
+  <hr>
+  <ADDRESS>
+  © 1994 <A HREF="http://www.ntua.gr/~christia/man-cgi.html">Man-cgi 1.15</A>, Panagiotis Christias &lt;christia@theseas.ntua.gr&gt;
+  </ADDRESS>
