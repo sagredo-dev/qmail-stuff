@@ -7,6 +7,10 @@
 #
 # Modified by Roberto Puzzanghera - October 22, 2010
 # November 17, 2020: moved log file to /var/log/spamassassin/spamd.log
+# January 19, 2026: external IP dinamically determined, checking PIDFILE upon start/stop (tx W. Silverstein)
+
+# Comma separated IPs that are allowed to query the spamd server
+IP=127.0.0.1,::1,10.0.0.0/24
 
 DAEMON=/usr/local/bin/spamd
 NAME=spamd
@@ -15,12 +19,16 @@ DESC="SpamAssassin Mail Filter Daemon"
 LOGFILE=/var/log/spamassassin/spamd.log
 PIDFILE="/var/run/$NAME.pid"
 PNAME="spamd"
-#DEBUG="-D"
+LISTEN_IP=0.0.0.0
+MYIP=$(dig TXT +short o-o.myaddr.l.google.com @ns1.google.com |awk -F'"' '{print $2}')
+#DEBUG="-D" # comment out to disable debug
+USER_PREFS="-q" # Use with -x. Comment out to disable sql user prefs
 
-DOPTIONS="$DEBUG -x -q -u spamd -A 127.0.0.1,::1,10.0.0.0/24,51.77.64.233 -i 0.0.0.0 -s $LOGFILE -H /home/spamd -d --pidfile=$PIDFILE"
+DOPTIONS="$DEBUG ${USER_PREFS} -x -u spamd -A $IP,$MYIP -i $LISTEN_IP -s $LOGFILE -H /home/spamd -d --pidfile=$PIDFILE"
 
 KILL="/bin/kill"
 KILLALL="/bin/killall"
+
 # Defaults - don't touch, edit /etc/mail/spamassassin/local.cf
 ENABLED=0
 OPTIONS=""
@@ -30,14 +38,22 @@ set -e
 case "$1" in
 start)
   echo -n "Starting $DESC: "
-  $DAEMON $OPTIONS $DOPTIONS
-  echo "$NAME."
+  if [ ! -f $PIDFILE ]; then
+    $DAEMON $OPTIONS $DOPTIONS
+    echo "$NAME."
+  else
+    echo "already running\n"
+  fi
   ;;
 stop)
   echo -n "Stopping $DESC: "
-  $KILL -9 `cat $PIDFILE`
-  /bin/rm $PIDFILE
-  echo "$NAME."
+  if [ -f $PIDFILE ]; then
+    $KILL -9 `cat $PIDFILE`
+    /bin/rm $PIDFILE
+    echo "$NAME."
+  else
+    echo "$NAME is not running\n"
+  fi
   ;;
 restart|force-reload)
   echo -n "Restarting $DESC: "
