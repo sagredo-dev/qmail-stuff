@@ -18,7 +18,7 @@ EMAIL_PORT = 25
 
 #: Default list of admins who receive the emails from error logging.
 ADMINS = (
-    ('Mailman Suite Admin', 'admin@sagredo.eu'),
+    ('Mailman Suite Admin', 'postmaster@mydomain.tld'),
 )
 
 # Postgresql database setup.
