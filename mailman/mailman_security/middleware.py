@@ -2,8 +2,7 @@ import time
 import hashlib
 import logging
 from django.core.cache import cache
-from django.http import HttpResponseTooManyRequests
-
+from django.http import HttpResponse
 
 logger = logging.getLogger("mailman_security")
 
@@ -78,7 +77,7 @@ class SimpleRateLimitMiddleware:
                 path, ip, data["count"]
             )
 
-            return HttpResponseTooManyRequests(
+            return HttpResponse(
                 "Too many requests. Please try again later."
             )
 
