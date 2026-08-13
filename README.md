@@ -1,4 +1,4 @@
-# qmail-stuff
-patches, scripts, programs for `qmail` MTA and related.
+# `qmail` stuff
+Patches, scripts, programs for `qmail` MTA and related.
 
 More info [here](https://www.sagredo.eu/en/qmail-notes-185/qmail-vpopmail-dovecot-roberto-s-qmail-notes-8.html)
