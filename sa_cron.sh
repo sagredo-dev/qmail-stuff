@@ -28,7 +28,8 @@ DELETE_TEACH_DATA=1
 SA_LEARN_CMD=/usr/local/bin/sa-learn
 SA_LEARN_LOGFILE=/var/log/spamassassin/sa_learn.log
 SA_CMD=/usr/local/bin/spamassassin
-SA_LOGFILE=/var/log/spamassassin/spamassassin.log
+SA_LOGDIR=/var/log/spamassassin
+SA_LOGFILE=${SA_LOGDIR}/spamassassin.log
 
 
 ################### you should not modify anything below this line
@@ -37,6 +38,11 @@ echo
 echo '################ sa_cron'
 date
 echo
+
+## logdir check
+if [ ! -d $SA_LOGDIR ]; then
+  mkdir -p $SA_LOGDIR
+fi
 
 # sed path
 SED=""
