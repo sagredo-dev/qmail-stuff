@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <link rel="stylesheet" href="style.css" type="text/css" media="all"/>
+  <title><a href="qmail-log.5.html">qmail-log(5)</a></title>
+</head>
+<body>
+<nav class="qmail-nav"><a href="index.html">&larr; Qmail man</a></nav>
+<table class="head">
+  <tr>
+    <td class="head-ltitle"><a href="qmail-log.5.html">qmail-log(5)</a></td>
+    <td class="head-vol">File Formats Manual</td>
+    <td class="head-rtitle"><a href="qmail-log.5.html">qmail-log(5)</a></td>
+  </tr>
+</table>
+<div class="manual-text">
+<h1 class="Sh" title="Sh" id="NAME"><a class="permalink" href="#NAME">NAME</a></h1>
+qmail-log - the qmail activity record
+<h1 class="Sh" title="Sh" id="DESCRIPTION"><a class="permalink" href="#DESCRIPTION">DESCRIPTION</a></h1>
+<b>qmail-send</b> prints a series of lines describing its activities. Each
+  possible line is described below.
+<h1 class="Sh" title="Sh" id="STATUS"><a class="permalink" href="#STATUS">STATUS</a></h1>
+<dl class="Bl-tag">
+  <dt><b>status: local <i>l</i><b>/</b><i>L</i><b> remote
+    </b><i>r</i><b>/</b><i>R</i><b> ...</b></b></dt>
+  <dd><b>qmail-send</b> is waiting for <i>l</i> local deliveries and <i>r</i>
+      remote deliveries. The concurrency limits are <i>L</i> and <i>R</i>.</dd>
+</dl>
+<dl class="Bl-tag">
+  <dt><b>status: exiting</b></dt>
+  <dd><b>qmail-send</b> is done.</dd>
+</dl>
+<h1 class="Sh" title="Sh" id="FATAL_PROBLEMS"><a class="permalink" href="#FATAL_PROBLEMS">FATAL
+  PROBLEMS</a></h1>
+<dl class="Bl-tag">
+  <dt><b>alert: cannot start: ...</b></dt>
+  <dd><b>qmail-send</b> is unable to prepare itself for delivering messages; it
+      is giving up. This normally indicates a serious configuration error, but
+      it can be caused by a temporary lack of resources.</dd>
+</dl>
+<dl class="Bl-tag">
+  <dt><b>alert: oh no! lost ...</b></dt>
+  <dd>One of the other daemons has died. <b>qmail-send</b> will exit as soon as
+      possible.</dd>
+</dl>
+<h1 class="Sh" title="Sh" id="SERIOUS_PROBLEMS"><a class="permalink" href="#SERIOUS_PROBLEMS">SERIOUS
+  PROBLEMS</a></h1>
+<dl class="Bl-tag">
+  <dt><b>alert: unable to append to bounce message...</b></dt>
+  <dd><b>qmail-send</b> is unable to record a permanent failure, usually because
+      the disk is full. This is a very serious problem; <b>qmail-send</b> cannot
+      proceed without recording the results. It will try again in ten
+    seconds.</dd>
+</dl>
+<dl class="Bl-tag">
+  <dt><b>alert: out of memory...</b></dt>
+  <dd><b>qmail-send</b> tried to allocate more memory and failed. It will try
+      again in ten seconds.</dd>
+</dl>
+<dl class="Bl-tag">
+  <dt><b>alert: unable to opendir...</b></dt>
+  <dd><b>qmail-send</b> is having trouble reading a file list from disk, usually
+      because the system's file descriptor table is full, but possibly because
+      permissions are set incorrectly. It will try again in ten seconds.</dd>
+</dl>
+<dl class="Bl-tag">
+  <dt><b>alert: unable to switch back...</b></dt>
+  <dd><b>qmail-send</b> was sent SIGHUP, and it is unable to reenter the queue
+      directory. This is a very serious problem; <b>qmail-send</b> cannot
+      proceed outside the queue directory. It will try again in ten
+    seconds.</dd>
+</dl>
+<dl class="Bl-tag">
+  <dt><b>alert: unable to reread...</b></dt>
+  <dd><b>qmail-send</b> was sent SIGHUP, but it is unable to read the new
+      controls. It will continue operating with the original controls.</dd>
+</dl>
+<h1 class="Sh" title="Sh" id="MESSAGES"><a class="permalink" href="#MESSAGES">MESSAGES</a></h1>
+<dl class="Bl-tag">
+  <dt><b>new msg <i>m</i><b></b></b></dt>
+  <dd><b>qmail-send</b> is going to preprocess a queued message. The message
+      number, <i>m</i>, is its disk inode number. After a message is removed
+      from the queue, its number can be reused immediately.</dd>
+</dl>
+<dl class="Bl-tag">
+  <dt><b>info msg <i>m</i><b>: bytes </b><i>b</i><b> from
+    &lt;</b><i>s</i><b>&gt; qp </b> <i>q</i><b> uid </b><i>u</i><b></b></b></dt>
+  <dd>Message <i>m</i> contains <i>b</i> bytes; its envelope sender is <i>s</i>;
+      it was queued by a user with user ID <i>u</i>. <i>q</i> is a long-term
+      queue identifier, the process ID of the <b>qmail-queue</b> that queued the
+      message.</dd>
+</dl>
+<dl class="Bl-tag">
+  <dt><b>bounce msg <i>m</i><b> qp </b><i>q</i><b></b></b></dt>
+  <dd>Message <i>m</i> had some delivery failures. The long-term queue
+      identifier of the bounce (or double-bounce) message is <i>q</i>.</dd>
+</dl>
+<dl class="Bl-tag">
+  <dt><b>triple bounce: discarding ...</b></dt>
+  <dd>Message <i>m</i> had some delivery failures, but it is already a
+      double-bounce message, so it must be thrown away. Triple-bounce messages
+      do not exist.</dd>
+</dl>
+<dl class="Bl-tag">
+  <dt><b>end msg <i>m</i><b></b></b></dt>
+  <dd><b>qmail-send</b> is about to remove message <i>m</i> from the queue.</dd>
+</dl>
+<h1 class="Sh" title="Sh" id="DELIVERIES"><a class="permalink" href="#DELIVERIES">DELIVERIES</a></h1>
+<dl class="Bl-tag">
+  <dt><b>starting delivery <i>d</i><b>: msg </b><i>m</i><b> to ...</b></b></dt>
+  <dd><b>qmail-send</b> is telling <b>qmail-lspawn</b> or <b>qmail-rspawn</b> to
+      deliver message <i>m</i> to one recipient. The delivery number, <i>d</i>,
+      starts at 1 and increases by 1 for each new delivery.</dd>
+</dl>
+<dl class="Bl-tag">
+  <dt><b>delivery <i>d</i><b>: success: ...</b></b></dt>
+  <dd>Delivery <i>d</i> was successful.</dd>
+</dl>
+<dl class="Bl-tag">
+  <dt><b>delivery <i>d</i><b>: failure: ...</b></b></dt>
+  <dd>Delivery <i>d</i> failed permanently. The message will bounce.</dd>
+</dl>
+<dl class="Bl-tag">
+  <dt><b>delivery <i>d</i><b>: deferral: ...</b></b></dt>
+  <dd>Delivery <i>d</i> failed temporarily. This recipient will be retried
+      later.</dd>
+</dl>
+<dl class="Bl-tag">
+  <dt><b>delivery <i>d</i><b>: report mangled, will defer</b></b></dt>
+  <dd>There is a serious bug in <b>qmail-lspawn</b> or <b>qmail-rspawn</b>. This
+      recipient will be retried later.</dd>
+</dl>
+<h1 class="Sh" title="Sh" id="WARNINGS"><a class="permalink" href="#WARNINGS">WARNINGS</a></h1>
+<dl class="Bl-tag">
+  <dt><b>internal error: delivery report out of range</b></dt>
+  <dd><b>qmail-lspawn</b> or <b>qmail-rspawn</b> has supplied a report on a
+      nonexistent delivery. This is a serious bug.</dd>
+</dl>
+<dl class="Bl-tag">
+  <dt><b>qmail-clean unable to clean up ...</b></dt>
+  <dd>For some reason <b>qmail-clean</b> is unable to remove the indicated file.
+      It will try again later.</dd>
+</dl>
+<dl class="Bl-tag">
+  <dt><b>trouble fsyncing ...</b></dt>
+  <dd><b>qmail-send</b> was unable to write to disk the results of preprocessing
+      a queued message. It will try again later.</dd>
+</dl>
+<dl class="Bl-tag">
+  <dt><b>trouble in select</b></dt>
+  <dd>There is an operating system bug.</dd>
+</dl>
+<dl class="Bl-tag">
+  <dt><b>trouble injecting bounce message...</b></dt>
+  <dd><b>qmail-send</b> was unable to queue a bounce message, usually because
+      the disk is full. It will try again later.</dd>
+</dl>
+<dl class="Bl-tag">
+  <dt><b>trouble marking ...</b></dt>
+  <dd><b>qmail-send</b> was unable to record the result of a successful or
+      permanently unsuccessful delivery. This means that the delivery will be
+      tried again later.</dd>
+</dl>
+<dl class="Bl-tag">
+  <dt><b>trouble opening ...</b></dt>
+  <dd><b>qmail-send</b> was unable to open the list of local or remote
+      recipients for a message. It will try again later.</dd>
+</dl>
+<dl class="Bl-tag">
+  <dt><b>trouble reading ...</b></dt>
+  <dd>Either <b>qmail-send</b> is unable to read a recipient list, or it is
+      unable to read the envelope of a queued message, or it is out of memory.
+      Whatever it was doing, it will try again later.</dd>
+</dl>
+<dl class="Bl-tag">
+  <dt><b>trouble writing to ...</b></dt>
+  <dd><b>qmail-send</b> was unable to preprocess a queued message, usually
+      because the disk is full. It will try again later.</dd>
+</dl>
+<dl class="Bl-tag">
+  <dt><b>unable to create ...</b></dt>
+  <dd><b>qmail-send</b> was unable to preprocess a queued message, usually
+      because the disk is out of inodes. It will try again later.</dd>
+</dl>
+<dl class="Bl-tag">
+  <dt><b>unable to open ...</b></dt>
+  <dd><b>qmail-send</b> is unable to read the envelope of a queued message for
+      preprocessing. It will try again later.</dd>
+</dl>
+<dl class="Bl-tag">
+  <dt><b>unable to start qmail-queue...</b></dt>
+  <dd><b>qmail-send</b> is unable to queue a bounce message, usually because the
+      machine is almost out of memory. It will try again later. This can also be
+      caused by incorrect settings of <b>$QMAILQUEUE</b> or errors in a program
+      or script which <b>$QMAILQUEUE</b> points to.</dd>
+</dl>
+<dl class="Bl-tag">
+  <dt><b>unable to stat ...</b></dt>
+  <dd><b>qmail-send</b> is unable to obtain information about a file that should
+      exist. It will try again later.</dd>
+</dl>
+<dl class="Bl-tag">
+  <dt><b>unable to unlink ...</b></dt>
+  <dd><b>qmail-send</b> is unable to remove a file. It will try again
+    later.</dd>
+</dl>
+<dl class="Bl-tag">
+  <dt><b>unable to utime ...</b></dt>
+  <dd><b>qmail-send</b> is about to exit, and it is unable to record on disk the
+      next scheduled delivery time for a message. The message will be retried as
+      soon as <b>qmail-send</b> is restarted.</dd>
+</dl>
+<dl class="Bl-tag">
+  <dt><b>unknown record type in ...</b></dt>
+  <dd>There is a serious bug in either <b>qmail-queue</b> or
+    <b>qmail-send</b>.</dd>
+</dl>
+<h1 class="Sh" title="Sh" id="SEE_ALSO"><a class="permalink" href="#SEE_ALSO">SEE
+  ALSO</a></h1>
+<a href="qmail-send.8.html">qmail-send(8)</a></div>
+<table class="foot">
+  <tr>
+    <td class="foot-date"></td>
+    <td class="foot-os"></td>
+  </tr>
+</table>
+</body>
+</html>

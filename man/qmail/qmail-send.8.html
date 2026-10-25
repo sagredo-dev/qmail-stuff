@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <link rel="stylesheet" href="style.css" type="text/css" media="all"/>
+  <title><a href="qmail-send.8.html">qmail-send(8)</a></title>
+</head>
+<body>
+<nav class="qmail-nav"><a href="index.html">&larr; Qmail man</a></nav>
+<table class="head">
+  <tr>
+    <td class="head-ltitle"><a href="qmail-send.8.html">qmail-send(8)</a></td>
+    <td class="head-vol">System Manager's Manual</td>
+    <td class="head-rtitle"><a href="qmail-send.8.html">qmail-send(8)</a></td>
+  </tr>
+</table>
+<div class="manual-text">
+<h1 class="Sh" title="Sh" id="NAME"><a class="permalink" href="#NAME">NAME</a></h1>
+qmail-send - deliver mail messages from the queue
+<h1 class="Sh" title="Sh" id="SYNOPSIS"><a class="permalink" href="#SYNOPSIS">SYNOPSIS</a></h1>
+<b>qmail-send</b>
+<h1 class="Sh" title="Sh" id="DESCRIPTION"><a class="permalink" href="#DESCRIPTION">DESCRIPTION</a></h1>
+<b>qmail-send</b> handles messages placed into the outgoing queue by
+  <b>qmail-queue</b>. It uses <b>qmail-lspawn</b> to deliver messages to local
+  recipients and <b>qmail-rspawn</b> to deliver messages to remote recipients.
+  If a message is temporarily undeliverable to one or more addresses,
+  <b>qmail-send</b> leaves it in the queue and tries the addresses again later.
+<div class="Pp"></div>
+<b>Supplemental queues</b> allow more than one queue for remote recipients. (4 -
+  2) supplemental queues total, because one queue is always designated for local
+  deliveries and a second queue is always available for remote deliveries that
+  don't match any of the domains listed in the supplemental queue control files.
+  This makes it possible to divide remote deliveries into distinct queues at
+  different concurrency levels and can be used as a throttling mechanism based
+  on domain. Supplemental queues are managed by the supplsX and
+  concurrencysupplX control files, where X is an integer from 0 to (4 - 3).
+<div class="Pp"></div>
+<b>qmail-send</b> prints a readable record of its activities to descriptor 0. It
+  writes commands to <b>qmail-lspawn</b>, <b>qmail-rspawn</b>, and
+  <b>qmail-clean</b> on descriptors 1, 3, and 5, and reads responses from
+  descriptors 2, 4, and 6. <b>qmail-send</b> is responsible for avoiding
+  deadlock.
+<div class="Pp"></div>
+If <b>qmail-send</b> receives a TERM signal, it will exit cleanly, after waiting
+  (possibly more than a minute) for current delivery attempts to finish.
+<div class="Pp"></div>
+If <b>qmail-send</b> receives an ALRM signal, it will reschedule every message
+  in the queue for immediate delivery.
+<h1 class="Sh" title="Sh" id="CONTROL_FILES"><a class="permalink" href="#CONTROL_FILES">CONTROL
+  FILES</a></h1>
+<b>WARNING:</b> <b>qmail-send</b> reads its control files only when it starts.
+  If you change the control files, you must stop and restart <b>qmail-send</b>.
+  Exception: If <b>qmail-send</b> receives a HUP signal, it will reread
+  <i>concurrencylocal</i>, <i>concurrencyremote</i>, <i>locals,</i>
+  <i>supplsX,</i> <i>concurrencylocal,</i> <i>concurrencyremote,</i>
+  <i>concurrencysupplX</i> and <i>virtualdomains</i>.
+<dl class="Bl-tag">
+  <dt><i>bouncefrom</i></dt>
+  <dd>Bounce username. Default: <b>MAILER-DAEMON</b>.</dd>
+</dl>
+<dl class="Bl-tag">
+  <dt><i>bouncehost</i></dt>
+  <dd>Bounce host. Default: <i>me</i>, if that is supplied; otherwise the
+      literal name <b>bouncehost</b>, which is probably not what you want. If a
+      message is permanently undeliverable, <b>qmail-send</b> sends a
+      <b>single-bounce</b> notice back to the message's envelope sender. The
+      notice is <b>From: <i>bouncefrom</i><b>@</b><i>bouncehost</i>,</b>
+      although its envelope sender is empty.</dd>
+</dl>
+<dl class="Bl-tag">
+  <dt><i>concurrencylocal</i></dt>
+  <dd>Maximum number of simultaneous local delivery attempts. Default: 10. If 0,
+      local deliveries will be put on hold. <i>concurrencylocal</i> is limited
+      at compile time to 509.</dd>
+</dl>
+<dl class="Bl-tag">
+  <dt><i>concurrencyremote</i></dt>
+  <dd>Maximum number of simultaneous remote delivery attempts. Default: 20. If
+      0, remote deliveries will be put on hold. <i>concurrencyremote</i> is
+      limited at compile time to 509.</dd>
+</dl>
+<dl class="Bl-tag">
+  <dt><i>concurrencysupplX</i></dt>
+  <dd>Maximum number of simultaneous delivery attempts via supplemental channel
+      X, where X is an integer starting at 0. Default: 20. If 0, deliveries via
+      channel X will be put on hold. <i>concurrencysupplX</i> is limited at
+      compile time to 509.</dd>
+</dl>
+<dl class="Bl-tag">
+  <dt><i>doublebouncehost</i></dt>
+  <dd>Double-bounce host. Default: <i>me</i>, if that is supplied; otherwise the
+      literal name <b>doublebouncehost</b>, which is probably not what you
+    want.</dd>
+</dl>
+<dl class="Bl-tag">
+  <dt><i>doublebounceto</i></dt>
+  <dd>User to receive double-bounces. Default: <b>postmaster</b>. If a
+      single-bounce notice is permanently undeliverable, <b>qmail-send</b> sends
+      a <b>double-bounce</b> notice to
+      <i>doublebounceto<b>@</b><i>doublebouncehost</i></i><i>.</i> <i>(If that
+      bounces,</i> <b>qmail-send</b> gives up.) As a special case, if the first
+      line of <i>doublebounceto</i> is blank (contains a single linefeed),
+      qmail-send will not queue the double-bounce at all.</dd>
+</dl>
+<dl class="Bl-tag">
+  <dt><i>envnoathost</i></dt>
+  <dd>Presumed domain name for addresses without @ signs. Default: <i>me</i>, if
+      that is supplied; otherwise the literal name <b>envnoathost</b>, which is
+      probably not what you want. If <b>qmail-send</b> sees an envelope
+      recipient address without an @ sign, it appends
+      <b>@<i>envnoathost</i>.</b></dd>
+</dl>
+<dl class="Bl-tag">
+  <dt><i>locals</i></dt>
+  <dd>List of domain names that the current host receives mail for, one per
+      line. Default: <i>me</i>, if that is supplied; otherwise <b>qmail-send</b>
+      refuses to run. An address <i>user@domain</i> is considered local if
+      <i>domain</i> is listed in <i>locals</i>.</dd>
+</dl>
+<dl class="Bl-tag">
+  <dt><i>supplsX</i></dt>
+  <dd>List of domain names that the current host will deliver on supplemental
+      channel X where X is an integer starting at 0, one per line. No
+    default.</dd>
+</dl>
+<dl class="Bl-tag">
+  <dt><i>percenthack</i></dt>
+  <dd>List of domain names where the percent hack is applied. If <i>domain</i>
+      is listed in <i>percenthack</i>, any address of the form
+      <i>user%fqdn@domain</i> is rewritten as <i>user@fqdn</i>. <i>user</i> may
+      contain %, so the percent hack may be applied repeatedly.
+      <b>qmail-send</b> handles <i>percenthack</i> before <i>locals</i> and
+      <i>supplsX.</i></dd>
+</dl>
+<dl class="Bl-tag">
+  <dt><i>queuelifetime</i></dt>
+  <dd>Number of seconds a message can stay in the queue. Default: 604800 (one
+      week). After this time expires, <b>qmail-send</b> will try the message
+      once more, but it will treat any temporary delivery failures as permanent
+      failures.</dd>
+</dl>
+<dl class="Bl-tag">
+  <dt><i>virtualdomains</i></dt>
+  <dd>List of virtual users or domains, one per line. A virtual user has the
+      form <i>user<b>@</b><i>domain</i><b>:</b><i>prepend</i></i><i>,</i>
+      <i>without any extra spaces.</i> <i>When</i> <b>qmail-send</b> sees the
+      recipient address <i>user<b>@</b><i>domain</i></i><i>,</i> <i>it converts
+      it to</i> <i>prepend<b>-</b><i>user</i><b>@</b><i>domain</i></i> <i>and
+      treats it as local.</i>
+    <div class="Pp"></div>
+    A virtual domain has the form <i>domain<b>:</b><i>prepend</i></i><i>.</i>
+      <i>It applies to any recipient address at</i> <i>domain</i>. For example,
+      if
+    <div class="Pp"></div>
+    <pre>
+     nowhere.mil:joe-foo
+    </pre>
+    <div class="Pp"></div>
+    is in <i>virtualdomains</i>, and a message arrives for
+      <b>info@nowhere.mil</b>, <b>qmail-send</b> will rewrite the recipient
+      address as <b>joe-foo-info@nowhere.mil</b> and deliver the message
+      locally.
+    <div class="Pp"></div>
+    <i>virtualdomains</i> may contain wildcards:
+    <div class="Pp"></div>
+    <pre>
+     .fax:uucp-fax
+     :alias-catchall
+     .nowhere.mil:joe-foo-host
+    </pre>
+    <div class="Pp"></div>
+    <i>virtualdomains</i> may also contain exceptions: an empty <i>prepend</i>
+      means that <i>domain</i> is not a virtual domain.
+    <div class="Pp"></div>
+    <b>qmail-send</b> handles <i>virtualdomains</i> after <i>locals</i>: if a
+      domain is listed in <i>locals</i>, <i>virtualdomains</i> does not
+    apply.</dd>
+</dl>
+<h1 class="Sh" title="Sh" id="SEE_ALSO"><a class="permalink" href="#SEE_ALSO">SEE
+  ALSO</a></h1>
+nice(1), <a href="addresses.5.html">addresses(5)</a>, <a href="envelopes.5.html">envelopes(5)</a>, <a href="qmail-control.5.html">qmail-control(5)</a>, <a href="qmail-log.5.html">qmail-log(5)</a>,
+  <a href="qmail-queue.8.html">qmail-queue(8)</a>, <a href="qmail-clean.8.html">qmail-clean(8)</a>, <a href="qmail-lspawn.8.html">qmail-lspawn(8)</a>, <a href="qmail-rspawn.8.html">qmail-rspawn(8)</a></div>
+<table class="foot">
+  <tr>
+    <td class="foot-date"></td>
+    <td class="foot-os"></td>
+  </tr>
+</table>
+</body>
+</html>

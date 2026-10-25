@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <link rel="stylesheet" href="style.css" type="text/css" media="all"/>
+  <title><a href="qmail-popup.8.html">qmail-popup(8)</a></title>
+</head>
+<body>
+<nav class="qmail-nav"><a href="index.html">&larr; Qmail man</a></nav>
+<table class="head">
+  <tr>
+    <td class="head-ltitle"><a href="qmail-popup.8.html">qmail-popup(8)</a></td>
+    <td class="head-vol">System Manager's Manual</td>
+    <td class="head-rtitle"><a href="qmail-popup.8.html">qmail-popup(8)</a></td>
+  </tr>
+</table>
+<div class="manual-text">
+<h1 class="Sh" title="Sh" id="NAME"><a class="permalink" href="#NAME">NAME</a></h1>
+qmail-popup - read a POP username and password
+<h1 class="Sh" title="Sh" id="SYNOPSIS"><a class="permalink" href="#SYNOPSIS">SYNOPSIS</a></h1>
+<b>qmail-popup</b> <i>hostname</i> <i>subprogram</i>
+<h1 class="Sh" title="Sh" id="DESCRIPTION"><a class="permalink" href="#DESCRIPTION">DESCRIPTION</a></h1>
+<b>qmail-popup</b> reads a POP username and password from the network. It then
+  runs <i>subprogram</i>.
+<div class="Pp"></div>
+<b>qmail-popup</b> is most commonly invoked from <b>inetd</b> as
+<div class="Pp"></div>
+<pre>
+   qmail-popup CHANGEME checkpassword qmail-pop3d Maildir
+</pre>
+<div class="Pp"></div>
+with CHANGEME replaced by the fully qualified domain name of the local host.
+<div class="Pp"></div>
+<b>qmail-popup</b> expects descriptor 0 to read from the network and descriptor
+  1 to write to the network. It reads a username and password from descriptor 0
+  in POP's USER-PASS style or APOP style. It invokes <i>subprogram</i>, with the
+  same descriptors 0 and 1; descriptor 2 writing to the network; and descriptor
+  3 reading the username, a 0 byte, the password, another 0 byte, an APOP
+  timestamp derived from <i>hostname</i>, and a final 0 byte. <b>qmail-popup</b>
+  then waits for <i>subprogram</i> to finish. It prints an error message if
+  <i>subprogram</i> crashes or exits nonzero.
+<div class="Pp"></div>
+<b>qmail-popup</b> should be used only within a secure network. Otherwise an
+  eavesdropper can steal passwords. Even if you use APOP, an active attacker can
+  still take over the connection and wreak havoc.
+<div class="Pp"></div>
+<b>qmail-popup</b> has a 20-minute idle timeout.
+<div class="Pp"></div>
+<b>qmail-popup</b> is based on a program contributed by Russ Nelson.
+<h1 class="Sh" title="Sh" id="SEE_ALSO"><a class="permalink" href="#SEE_ALSO">SEE
+  ALSO</a></h1>
+<a href="maildir.5.html">maildir(5)</a>, <a href="qmail-local.8.html">qmail-local(8)</a>, <a href="qmail-pop3d.8.html">qmail-pop3d(8)</a></div>
+<table class="foot">
+  <tr>
+    <td class="foot-date"></td>
+    <td class="foot-os"></td>
+  </tr>
+</table>
+</body>
+</html>

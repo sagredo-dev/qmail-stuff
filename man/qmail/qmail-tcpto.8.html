@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <link rel="stylesheet" href="style.css" type="text/css" media="all"/>
+  <title><a href="qmail-tcpto.8.html">qmail-tcpto(8)</a></title>
+</head>
+<body>
+<nav class="qmail-nav"><a href="index.html">&larr; Qmail man</a></nav>
+<table class="head">
+  <tr>
+    <td class="head-ltitle"><a href="qmail-tcpto.8.html">qmail-tcpto(8)</a></td>
+    <td class="head-vol">System Manager's Manual</td>
+    <td class="head-rtitle"><a href="qmail-tcpto.8.html">qmail-tcpto(8)</a></td>
+  </tr>
+</table>
+<div class="manual-text">
+<h1 class="Sh" title="Sh" id="NAME"><a class="permalink" href="#NAME">NAME</a></h1>
+qmail-tcpto - print TCP timeout table
+<h1 class="Sh" title="Sh" id="SYNOPSIS"><a class="permalink" href="#SYNOPSIS">SYNOPSIS</a></h1>
+<b>qmail-tcpto</b>
+<h1 class="Sh" title="Sh" id="DESCRIPTION"><a class="permalink" href="#DESCRIPTION">DESCRIPTION</a></h1>
+After an SMTP connection attempt times out, <b>qmail-remote</b> records the
+  relevant IP address. If the same address fails again (after at least two
+  minutes with no intervening successful connections), <b>qmail-remote</b>
+  assumes that further attempts will fail for at least another hour.
+<div class="Pp"></div>
+<b>qmail-tcpto</b> prints <b>qmail-remote</b>'s current list of timeouts.
+<div class="Pp"></div>
+<b>qmail-tcpto</b> must be run either as <b>root</b> or with user id
+  <b>qmailr</b> and group id <b>qmail</b>.
+<h1 class="Sh" title="Sh" id="SEE_ALSO"><a class="permalink" href="#SEE_ALSO">SEE
+  ALSO</a></h1>
+<a href="qmail-qread.8.html">qmail-qread(8)</a>, <a href="qmail-remote.8.html">qmail-remote(8)</a>, <a href="qmail-tcpok.8.html">qmail-tcpok(8)</a></div>
+<table class="foot">
+  <tr>
+    <td class="foot-date"></td>
+    <td class="foot-os"></td>
+  </tr>
+</table>
+</body>
+</html>

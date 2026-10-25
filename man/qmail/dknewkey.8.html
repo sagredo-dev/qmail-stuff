@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <link rel="stylesheet" href="style.css" type="text/css" media="all"/>
+  <title><a href="dknewkey.8.html">dknewkey(8)</a></title>
+</head>
+<body>
+<nav class="qmail-nav"><a href="index.html">&larr; Qmail man</a></nav>
+<table class="head">
+  <tr>
+    <td class="head-ltitle"><a href="dknewkey.8.html">dknewkey(8)</a></td>
+    <td class="head-vol">System Manager's Manual</td>
+    <td class="head-rtitle"><a href="dknewkey.8.html">dknewkey(8)</a></td>
+  </tr>
+</table>
+<div class="manual-text">
+<h1 class="Sh" title="Sh" id="NAME"><a class="permalink" href="#NAME">NAME</a></h1>
+dknewkey - create a new domain key
+<div class="Pp"></div>
+<h1 class="Sh" title="Sh" id="SYNOPSIS"><a class="permalink" href="#SYNOPSIS">SYNOPSIS</a></h1>
+<b>dknewkey</b> [-<b>t</b> <i>type</i>] [-<b>d</b> <i>domain</i> |
+  --<b>domain</b> <i>domain</i>] [- <b>b</b> | --<b>bits</b> <i>bits</i>]
+  [-<b>f</b> | -- <b>force</b>] [-<b>e</b> | --<b>enforce</b>] <i>selector</i>
+<div class="Pp"></div>
+or
+<div class="Pp"></div>
+<b>dknewkey</b> [-<b>p</b> | --<b>print</b>] [- <b>d</b> <i>domain</i> |
+  --<b>domain</b> <i>domain</i>] [<i>selector</i>]
+<div class="Pp"></div>
+or
+<div class="Pp"></div>
+<b>dknewkey</b> [-<b>r</b> | --<b>remove</b>] [- <b>d</b> <i>domain</i> |
+  --<b>domain</b> <i>domain</i>] <i>selector</i>
+<div class="Pp"></div>
+<h1 class="Sh" title="Sh" id="DESCRIPTION"><a class="permalink" href="#DESCRIPTION">DESCRIPTION</a></h1>
+<b>dknewkey</b> generates new DKIM keys and prints the associated DNS record
+  (public key) on stdout. For RSA keys, it defaults to 2048 bit key size. This
+  is controlled by the <i>bits</i> variable. ed25519 keys do not have a variable
+  size. For RSA keys k=sha256 is now included in the public DNS record to
+  prevent inadvertent use with the now obsolete sha1 hash algorithm (See RFC
+  8301).
+<div class="Pp"></div>
+<i>selector</i> is the file which will hold the private key. Additionally
+  <i>selector.pub</i> containing the public key will be created. <i>bits</i> is
+  the number of bits in the key. If not specified, defaults to 1024. To
+  implement domainkeys you can use <b>envrules</b> in <b>qmail-smtpd</b> or
+  <b>spawn-filter</b> to set the DKIMSIGN variable to the path of the signature
+  file holding the private key.
+<div class="Pp"></div>
+<b>dknewkey</b> uses the following <b>openssl</b> command to generate the
+  private/public keys
+<dl class="Bl-tag">
+  <dt>&#x2022;</dt>
+  <dd>openssl -genrsa -out <i>selector</i> <i>bits</i> # for RSA</dd>
+</dl>
+<dl class="Bl-tag">
+  <dt>&#x2022;</dt>
+  <dd>openssl genpkey -algorithm Ed25519 -out <i>selector</i> # for Ed25519</dd>
+</dl>
+<dl class="Bl-tag">
+  <dt>&#x2022;</dt>
+  <dd>openssl rsa -in <i>selector</i> -out <i>selector.pub</i> -pubout -outform
+      PEM
+    <div class="Pp"></div>
+    <div class="Pp"></div>
+  </dd>
+</dl>
+<h1 class="Sh" title="Sh" id="OPTIONS"><a class="permalink" href="#OPTIONS">OPTIONS</a></h1>
+<dl class="Bl-tag">
+  <dt>-<b>p</b> | --<b>print</b></dt>
+  <dd>print DKIM public key for selector <i>selector</i>, domain <i>domain</i>.
+      If <i>selector</i> is not provided, all selectors will be printed. If
+      <i>domain</i> is not provided, all selectors for all domains will be
+      printed.
+    <div class="Pp"></div>
+  </dd>
+</dl>
+<dl class="Bl-tag">
+  <dt>-<b>r</b> | --<b>remove</b></dt>
+  <dd>remove DKIM keys for selector <i>selector</i>, domain <i>domain</i>
+    <div class="Pp"></div>
+  </dd>
+</dl>
+<dl class="Bl-tag">
+  <dt>-<b>t</b> <i>type</i> | --<b>type</b> <i>type</i></dt>
+  <dd>Key type to use for cryptography method. Valid values are rsa and ed25519.
+      Defaults to rsa.
+    <div class="Pp"></div>
+  </dd>
+</dl>
+<dl class="Bl-tag">
+  <dt>-<b>d</b> <i>domain</i> | --<b>domain</b> <i>domain</i></dt>
+  <dd>domain name for the DKIM key. The private key <i>selector</i>, public key
+      <i>selector.pub</i> will be created in the directory
+      /var/qmail/control/domainkeys/ <i>domain</i>.
+    <div class="Pp"></div>
+    If this is not specified, the private key <i>selector</i>, public key
+      <i>selector.pub</i> will be created in the directory
+      /var/qmail/control/domainkeys.
+    <div class="Pp"></div>
+  </dd>
+</dl>
+<dl class="Bl-tag">
+  <dt>-<b>b</b> | --<b>bits</b> <i>keysize</i></dt>
+  <dd>Specify the key size for the DKIM record. Default is 1024
+    <div class="Pp"></div>
+  </dd>
+</dl>
+<dl class="Bl-tag">
+  <dt>-<b>f</b> | --<b>force</b></dt>
+  <dd>Force creation of DKIM key even if it exists. Without this,
+      <b>dknewkey</b> will not overwrite an existing DKIM key
+    <div class="Pp"></div>
+  </dd>
+</dl>
+<dl class="Bl-tag">
+  <dt>-<b>e</b> | --<b>enforce</b></dt>
+  <dd>Create a production key. This will not have the t=y in the selector record
+    <div class="Pp"></div>
+  </dd>
+</dl>
+<h1 class="Sh" title="Sh" id="SEE_ALSO"><a class="permalink" href="#SEE_ALSO">SEE
+  ALSO</a></h1>
+<a href="qmail-dkim.8.html">qmail-dkim(8)</a>, <a href="qmail-smtpd.8.html">qmail-smtpd(8)</a>, <a href="qmail-queue.8.html">qmail-queue(8)</a>, <a href="spawn-filter.8.html">spawn-filter(8)</a>, <a href="dkim.8.html">dkim(8)</a>,
+  openssl(1)</div>
+<table class="foot">
+  <tr>
+    <td class="foot-date"></td>
+    <td class="foot-os"></td>
+  </tr>
+</table>
+</body>
+</html>

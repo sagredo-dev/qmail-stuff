@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <link rel="stylesheet" href="style.css" type="text/css" media="all"/>
+  <title><a href="qmail-remote.8.html">qmail-remote(8)</a></title>
+</head>
+<body>
+<nav class="qmail-nav"><a href="index.html">&larr; Qmail man</a></nav>
+<table class="head">
+  <tr>
+    <td class="head-ltitle"><a href="qmail-remote.8.html">qmail-remote(8)</a></td>
+    <td class="head-vol">System Manager's Manual</td>
+    <td class="head-rtitle"><a href="qmail-remote.8.html">qmail-remote(8)</a></td>
+  </tr>
+</table>
+<div class="manual-text">
+<h1 class="Sh" title="Sh" id="NAME"><a class="permalink" href="#NAME">NAME</a></h1>
+qmail-remote - send mail via SMTP
+<h1 class="Sh" title="Sh" id="SYNOPSIS"><a class="permalink" href="#SYNOPSIS">SYNOPSIS</a></h1>
+<b>qmail-remote</b> <i>host</i> <i>sender</i> <i>recip</i> [ <i>recip ...</i> ]
+<h1 class="Sh" title="Sh" id="DESCRIPTION"><a class="permalink" href="#DESCRIPTION">DESCRIPTION</a></h1>
+<b>qmail-remote</b> reads a mail message from its input and sends the message to
+  one or more recipients at a remote host.
+<div class="Pp"></div>
+The remote host is <b>qmail-remote</b>'s first argument, <i>host</i>.
+  <b>qmail-remote</b> sends the message to <i>host</i>, or to a mail exchanger
+  for <i>host</i> listed in the Domain Name System, via the Simple Mail Transfer
+  Protocol (SMTP). <i>host</i> can be either a fully-qualified domain name:
+<div class="Pp"></div>
+<pre>
+     silverton.berkeley.edu
+</pre>
+<div class="Pp"></div>
+or an IP address enclosed in brackets:
+<div class="Pp"></div>
+<pre>
+     [128.32.183.163]
+</pre>
+<div class="Pp"></div>
+The envelope recipient addresses are listed as <i>recip</i> arguments to
+  <b>qmail-remote</b>. The envelope sender address is listed as <i>sender.</i>
+<div class="Pp"></div>
+<b>qmail-remote</b> will respect SMTPUTF8 and EAI addresses. If message is utf8,
+  <b>qmail-remote</b> will use idn2_lookup_u8(3) to perform IDNA2008 lookup
+  string conversion on <i>host</i>.
+<div class="Pp"></div>
+Note that <b>qmail-remote</b> does not take options and does not follow the
+  <b>getopt</b> standard.
+<h1 class="Sh" title="Sh" id="TRANSPARENCY"><a class="permalink" href="#TRANSPARENCY">TRANSPARENCY</a></h1>
+End-of-file in SMTP is encoded as dot CR LF. A dot at the beginning of a line is
+  encoded as dot dot. It is impossible in SMTP to send a message that does not
+  end with a newline. <b>qmail-remote</b> converts the UNIX newline convention
+  into the SMTP newline convention by inserting CR before each LF.
+<div class="Pp"></div>
+It is a violation of the SMTP protocol to send a message that contains long
+  lines or non-ASCII characters. However, <b>qmail-remote</b> will happily send
+  such messages. It is the user's responsibility to avoid generating illegal
+  messages.
+<h1 class="Sh" title="Sh" id="RESULTS"><a class="permalink" href="#RESULTS">RESULTS</a></h1>
+<b>qmail-remote</b> prints some number of <i>recipient reports,</i> followed by
+  a <i>message report.</i> Each report is terminated by a 0 byte. Each report
+  begins with a single letter:
+<dl class="Bl-tag">
+  <dt>r</dt>
+  <dd>Recipient report: acceptance.</dd>
+</dl>
+<dl class="Bl-tag">
+  <dt>h</dt>
+  <dd>Recipient report: permanent rejection.</dd>
+</dl>
+<dl class="Bl-tag">
+  <dt>s</dt>
+  <dd>Recipient report: temporary rejection.</dd>
+</dl>
+<dl class="Bl-tag">
+  <dt>K</dt>
+  <dd>Message report: success. <i>host</i> has taken responsibility for
+      delivering the message to each acceptable recipient.</dd>
+</dl>
+<dl class="Bl-tag">
+  <dt>Z</dt>
+  <dd>Message report: temporary failure.</dd>
+</dl>
+<dl class="Bl-tag">
+  <dt>D</dt>
+  <dd>Message report: permanent failure.</dd>
+</dl>
+<div class="Pp"></div>
+After this letter comes a human-readable description of what happened.
+<div class="Pp"></div>
+<b>qmail-remote</b> may use SMTP Authenticaton of type CRAM-MD5, PLAIN, or LOGIN
+  (in this order) to connect to remote hosts. The following reports are
+  provided:
+<dl class="Bl-tag">
+  <dt>K</dt>
+  <dd>no supported AUTH method found, continuing without authentication.</dd>
+</dl>
+<dl class="Bl-tag">
+  <dt>Z</dt>
+  <dd>Connected to <i>host</i> but password expired.</dd>
+</dl>
+<dl class="Bl-tag">
+  <dt>Z</dt>
+  <dd>Connected to <i>host</i> but authentication was rejected (AUTH
+    PLAIN).</dd>
+</dl>
+<dl class="Bl-tag">
+  <dt>Z</dt>
+  <dd>Connected to <i>host</i> but unable to base64encode (plain).</dd>
+</dl>
+<dl class="Bl-tag">
+  <dt>Z</dt>
+  <dd>Connected to <i>host</i> but authentication was rejected
+    (plain).&quot;</dd>
+</dl>
+<dl class="Bl-tag">
+  <dt>Z</dt>
+  <dd>Connected to <i>host</i> but authentication was rejected (AUTH
+    LOGIN).</dd>
+</dl>
+<dl class="Bl-tag">
+  <dt>Z</dt>
+  <dd>Connected to <i>host</i> but unable to base64encode user.</dd>
+</dl>
+<dl class="Bl-tag">
+  <dt>Z</dt>
+  <dd>Connected to <i>host</i> but authentication was rejected (username).</dd>
+</dl>
+<dl class="Bl-tag">
+  <dt>Z</dt>
+  <dd>Connected to <i>host</i> but unable to base64encode pass.</dd>
+</dl>
+<dl class="Bl-tag">
+  <dt>Z</dt>
+  <dd>Connected to <i>host</i> but authentication was rejected (AUTH CRAM-MD5).
+      Z Connected to <i>host</i> but unable to base64decode challenge.</dd>
+</dl>
+<dl class="Bl-tag">
+  <dt>Z</dt>
+  <dd>Connected to <i>host</i> but unable to base64encode username+digest.</dd>
+</dl>
+<dl class="Bl-tag">
+  <dt>Z</dt>
+  <dd>Connected to <i>host</i> but authentication was rejected
+      (username+digest).</dd>
+</dl>
+<div class="Pp"></div>
+The recipient reports will always be printed in the same order as
+  <b>qmail-remote</b>'s <i>recip</i> arguments. Note that in failure cases there
+  may be fewer recipient reports than <i>recip</i> arguments.
+<div class="Pp"></div>
+<b>qmail-remote</b> always exits zero.
+<h1 class="Sh" title="Sh" id="CONTROL_FILES"><a class="permalink" href="#CONTROL_FILES">CONTROL
+  FILES</a></h1>
+<dl class="Bl-tag">
+  <dt><i>authsenders</i></dt>
+  <dd>Authenticated sender. For each <i>sender</i> included in
+      <i>authsenders</i>:
+      <i>sender<b>:</b><i>relay</i><b>:</b><i>port</i><b>|</b>
+      <i>user</i><b>|</b> <i>password</i></i> <b>qmail-remote</b> will try SMTP
+      Authentication of type CRAM-MD5, LOGIN, or PLAIN with the provided user
+      name <i>user</i> and password <i>password</i> (the authentication
+      information) and eventually relay the mail through <i>relay</i> on port
+      <i>port</i>. The use of <i>relay</i> and <i>port</i> follows the same
+      rules as for <i>smtproutes</i> Note: In case <i>sender</i> is empty,
+      <b>qmail-remote</b> will try to deliver each outgoing mail SMTP
+      authenticated. If the authentication information is missing, the mail is
+      delivered none-authenticated. <i>authsenders</i> can be constructed as
+      follows:
+    <div class="Pp"></div>
+    <pre>
+   @example.com|generic|passwd
+   .subdomain.example.com|other|otherpw
+   mail@example.com|test|testpass
+   info@example.com:smtp.example.com:26|other|otherpw
+   :mailrelay.example.com:587|e=mc2|testpass
+    </pre>
+  </dd>
+</dl>
+<dl class="Bl-tag">
+  <dt><i>clientcert.pem</i></dt>
+  <dd>SSL certificate that is used to authenticate with the remote server during
+      a TLS session.</dd>
+</dl>
+<dl class="Bl-tag">
+  <dt><i>helohost</i></dt>
+  <dd>Current host name, for use solely in saying hello to the remote SMTP
+      server. Default: <i>me</i>, if that is supplied; otherwise
+      <b>qmail-remote</b> refuses to run.
+    <div class="Pp"></div>
+  </dd>
+</dl>
+<dl class="Bl-tag">
+  <dt><i>notlshosts/&lt;FQDN&gt;</i></dt>
+  <dd><b>qmail-remote</b> will not try TLS on servers for which this file exists
+      (<b>&lt;FQDN&gt;</b> is the fully-qualified domain name of the server).
+      <i>(tlshosts/&lt;FQDN&gt;.pem</i> takes precedence over this file
+      however).
+    <div class="Pp"></div>
+  </dd>
+</dl>
+<dl class="Bl-tag">
+  <dt><i>notlshosts_auto</i></dt>
+  <dd>If it contains a number greater than 0 <b>qmail-remote</b> will
+      automatically add a file <i>notlshosts/&lt;FQDN&gt;</i> so that the
+      connection with the remote server will be allowed thereafter.
+    <div class="Pp"></div>
+  </dd>
+</dl>
+<dl class="Bl-tag">
+  <dt><i>outgoingip</i></dt>
+  <dd>IP address to be used on outgoing connections. Default: system-defined.
+      The value <i>0.0.0.0</i> is equivalent to the system default.</dd>
+</dl>
+<dl class="Bl-tag">
+  <dt><i>smtproutes</i></dt>
+  <dd>Artificial SMTP routes. Each route has the form
+      <i>domain<b>:</b><i>relay</i></i><i>,</i> <i>or</i>
+      <i>domain<b>:</b><i>relay</i>
+      <b>|</b><i>user</i><b>|</b><i>password</i></i> <i>in case of authenticated
+      routes without any extra spaces.</i> <i>If</i> <i>domain</i> matches
+      <i>host</i>, <b>qmail-remote</b> will connect to <i>relay</i>, as if
+      <i>host</i> had <i>relay</i> as its only MX. (It will also avoid doing any
+      CNAME lookups on <i>recip</i>.) <i>host</i> may include a colon and a port
+      number to use instead of the normal SMTP port, 25:
+    <div class="Pp"></div>
+    <pre>
+   inside.af.mil:firewall.af.mil:26
+  :submission.myrelay.com:587|myuserid|mypasswd
+    </pre>
+    <div class="Pp"></div>
+    <i>relay</i> may be empty; this tells <b>qmail-remote</b> to look up MX
+      records as usual. <i>port</i> value of 465 (deprecated smtps port) causes
+      TLS session to be started. <i>smtproutes</i> may include wildcards:
+    <div class="Pp"></div>
+    <pre>
+   .af.mil:
+   :heaven.af.mil
+    </pre>
+    <div class="Pp"></div>
+    Here any address ending with <b>.af.mil</b> (but not <b>af.mil</b> itself)
+      is routed by its MX records; any other address is artificially routed to
+      <b>heaven.af.mil</b>.
+    <div class="Pp"></div>
+    The <b>qmail</b> system does not protect you if you create an artificial
+      mail loop between machines. However, you are always safe using
+      <i>smtproutes</i> if you do not accept mail from the network. Note:
+      <i>authsender</i> routes have precedence over <i>smtproutes</i>.</dd>
+</dl>
+<dl class="Bl-tag">
+  <dt><i>timeoutconnect</i></dt>
+  <dd>Number of seconds <b>qmail-remote</b> will wait for the remote SMTP server
+      to accept a connection. Default: 60. The kernel normally imposes a
+      75-second upper limit.</dd>
+</dl>
+<dl class="Bl-tag">
+  <dt><i>timeoutremote</i></dt>
+  <dd>Number of seconds <b>qmail-remote</b> will wait for each response from the
+      remote SMTP server. Default: 1200.
+    <div class="Pp"></div>
+  </dd>
+</dl>
+<dl class="Bl-tag">
+  <dt><i>tlsclientciphers</i></dt>
+  <dd>A set of OpenSSL client cipher strings. Multiple ciphers contained in a
+      string should be separated by a colon.
+    <div class="Pp"></div>
+  </dd>
+</dl>
+<dl class="Bl-tag">
+  <dt><i>tlshosts/&lt;FQDN&gt;.pem</i></dt>
+  <dd><b>qmail-remote</b> requires TLS authentication from servers for which
+      this file exists (<b>&lt;FQDN&gt;</b> is the fully-qualified domain name
+      of the server). One of the <i>dNSName</i> or the <i>CommonName</i>
+      attributes have to match. The file contains the trusted CA certificates.
+    <div class="Pp"></div>
+    <b>WARNING:</b> this option may cause mail to be delayed, bounced,
+      doublebounced, or lost.
+    <div class="Pp"></div>
+  </dd>
+</dl>
+<dl class="Bl-tag">
+  <dt><i>tlshosts/exhaustivelist</i></dt>
+  <dd>if this file exists no TLS will be tried on hosts other than those for
+      which a file <b>tlshosts/&lt;FQDN&gt;.pem</b> exists.
+    <div class="Pp"></div>
+  </dd>
+</dl>
+<h1 class="Sh" title="Sh" id="ENVIRONMENT_VARIABLES_READ"><a class="permalink" href="#ENVIRONMENT_VARIABLES_READ">ENVIRONMENT
+  VARIABLES READ</a></h1>
+Environment variables may be defined globally in the <b>qmail-smtpd</b> startup
+  script and/or individually as part of the <b>tcpserver's</b> cdb database. The
+  environment variables may be quoted (&quot;variable&quot;, or 'variable') and
+  in case of global use, have to be exported. <b>qmail-smtpd</b> supports the
+  following legacy environment variables, typically provided by <b>tcpserver</b>
+  or <b>sslserver</b> or <b>tcp-env</b>: <i>TCPREMOTEIP</i>,
+  <i>TCPREMOTEHOST</i> <i>TCPREMOTEINFO</i> and <i>TCPLOCALPORT</i> as well as
+  <i>RELAYCLIENT</i>.
+<div class="Pp"></div>
+<b>qmail-smtpd</b> may use the following environment variables for SMTP
+  authentication:
+<dl class="Bl-tag">
+  <dt><i>SMTPAUTH</i></dt>
+  <dd>is used to enable SMTP Authentication for the AUTH types LOGIN and PLAIN.
+      In case</dd>
+</dl>
+<dl class="Bl-tag">
+  <dt><i>SMTPAUTH='+cram'</i></dt>
+  <dd>is defined, <b>qmail-smtpd</b> honors LOGIN, PLAIN, and additionally
+      CRAM-MD5 authentication. Simply</dd>
+</dl>
+<dl class="Bl-tag">
+  <dt><i>SMTPAUTH='cram'</i></dt>
+  <dd>restricts authentication just to CRAM-MD5. If however</dd>
+</dl>
+<dl class="Bl-tag">
+  <dt><i>SMTPAUTH='!'</i></dt>
+  <dd>starts with an exclamation mark, AUTH is required. In particular,</dd>
+</dl>
+<dl class="Bl-tag">
+  <dt><i>SMTPAUTH='!cram'</i></dt>
+  <dd>may be useful. In opposite, if</dd>
+</dl>
+<dl class="Bl-tag">
+  <dt><i>SMTPAUTH='-'</i></dt>
+  <dd>starts with a dash, AUTH is disabled for particular connections.
+    <div class="Pp"></div>
+    Note: The use of 'cram' requires a CRAM-MD5 enabled PAM.
+    <div class="Pp"></div>
+  </dd>
+</dl>
+<h1 class="Sh" title="Sh" id="SEE_ALSO"><a class="permalink" href="#SEE_ALSO">SEE
+  ALSO</a></h1>
+<a href="addresses.5.html">addresses(5)</a>, <a href="envelopes.5.html">envelopes(5)</a>, <a href="qmail-control.5.html">qmail-control(5)</a>, <a href="qmail-send.8.html">qmail-send(8)</a>, <a href="qmail-smtpd.8.html">qmail-smtpd(8)</a>,
+  <a href="qmail-tcpok.8.html">qmail-tcpok(8)</a>, <a href="qmail-tcpto.8.html">qmail-tcpto(8)</a></div>
+<table class="foot">
+  <tr>
+    <td class="foot-date"></td>
+    <td class="foot-os"></td>
+  </tr>
+</table>
+</body>
+</html>

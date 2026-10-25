@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html>
+<!-- This is an automatically generated file.  Do not edit.
+   vim: tw=75
+ -->
+<head>
+  <meta charset="utf-8"/>
+  <link rel="stylesheet" href="style.css" type="text/css" media="all"/>
+  <title><a href="qmail-dkim.8.html">qmail-dkim(8)</a></title>
+</head>
+<body>
+<nav class="qmail-nav"><a href="index.html">&larr; Qmail man</a></nav>
+<table class="head">
+  <tr>
+    <td class="head-ltitle"><a href="qmail-dkim.8.html">qmail-dkim(8)</a></td>
+    <td class="head-vol">System Manager's Manual</td>
+    <td class="head-rtitle"><a href="qmail-dkim.8.html">qmail-dkim(8)</a></td>
+  </tr>
+</table>
+<div class="manual-text">
+<h1 class="Sh" title="Sh" id="NAME"><a class="permalink" href="#NAME">NAME</a></h1>
+qmail-dkim - sign/verify using DKIM (SSP/ADSP optionally) and queue a mail
+  message for delivery
+<div class="Pp"></div>
+<h1 class="Sh" title="Sh" id="SYNOPSIS"><a class="permalink" href="#SYNOPSIS">SYNOPSIS</a></h1>
+<b>qmail-dkim</b>
+<div class="Pp"></div>
+<h1 class="Sh" title="Sh" id="DESCRIPTION"><a class="permalink" href="#DESCRIPTION">DESCRIPTION</a></h1>
+<b>qmail-dkim</b> has the same interface as <b>qmail-queue</b> except that it
+  inserts an appropriate DKIM header (rfc4871, rfc6376) before it queues the
+  message. To invoke <b>qmail-dkim</b>, set QMAILQUEUE to point to qmail-dkim in
+  the environment when you send or receive email.
+<div class="Pp"></div>
+<b>qmail-dkim</b> will call <b>qmail-queue</b>. To invoke an executable other
+  than <b>qmail-queue</b> set <b>DKIMQUEUE</b> to the path to the executable.
+<div class="Pp"></div>
+<b>qmail-dkim</b> supports RSA-SHA1, RSA-SHA256 and ED25519-SHA256 (rfc8463)
+  encryption methods for signing and verification. By default RSA-SHA256 is
+  used.
+<div class="Pp"></div>
+<b>qmail-dkim</b> supports DKIM signing and verification and can optionally use
+  <b>Sender Signing Practice (SSP)</b> or <b>Author Domain Signing</b>
+  <b>Practice</b>. <b>qmail-dkim</b> uses libdkim and OpenSSL libraries for
+  signing and verification.
+<div class="Pp"></div>
+To sign a message, set the <b>DKIMSIGN</b> environment variable to the pathname
+  of the private key that will be used to sign the message. You can run
+  <b>dknewkey</b>(8) to create a private key. Any % character in the environment
+  variable are removed and replaced by the domain name in the From: header. The
+  selector (s=) will be taken from the basename of the file. If, after
+  substituting the %, that file does not exist, the % character will be removed
+  to check if the file exists. In addition to <b>DKIMSIGN</b> environment
+  variable, you can have the domain and the pathname of the private key in the
+  control file <i>dkimkeys</i> which has the following format
+<div class="Pp"></div>
+<pre>
+domain:private_key_path:envstr
+</pre>
+<div class="Pp"></div>
+<br/>
+Here <i>envstr</i> is a string of environment variable additions or removals.
+  e.g.
+<div class="Pp"></div>
+<pre>
+QREGEX=1,DKIMSIGNOPTIONS=-z 4
+<div class="Pp"></div>
+</pre>
+If an entry for <i>domain</i> exists in <i>dkimkeys</i>, the value of
+  <b>DKIMSIGN</b> environment variable is ignored. Also <b>DKIMSIGN</b> is one
+  variable that you cannot set in <i>envstr</i>. You can disable <i>dkimkeys</i>
+  by setting <b>NODKIMKEYS</b> environment variable.
+<div class="Pp"></div>
+If a private key file does not exist and does not have a % character, the
+  message will be rejected with error 32.
+<div class="Pp"></div>
+In the absense of DKIMSIGN and DKIMVERIFY environment variable, qmail-dkim will
+  sign the message if RELAYCLIENT or AUTHINFO environment variable is set. It
+  will verify the message if RELAYCLIENT or AUTHINFO environment variable is not
+  set. Even if DKIMVERIFY is set, you can disable dkim verification, if
+  RELAYCLIENT or AUTHINFO is set, by setting RELAYCLIENT_NODKIMVERIFY
+  environment variable.
+<div class="Pp"></div>
+You can set various DKIM options in getopt style, by setting the environment
+  variable <b>DKIMSIGNOPTIONS</b>
+<div class="Pp"></div>
+<pre>
+c &lt;canonicalization&gt; r for relaxed [DEFAULT], s - simple,
+                     t relaxed/simple, u - simple/relaxed
+l                    include body length tag
+q                    include query method tag;
+t                    include a timestamp tag
+h                    include copied headers. This adds the z= tag
+                     containing a copy of the message's original
+                     headers.
+i &lt;identity&gt;         the identity, if not provided it will not be included
+x &lt;expire_time&gt;      the expire time in seconds since epoch
+                     ( DEFAULT = current time + 604800)
+                     if set to - then it will not be included
+z &lt;hash&gt;             1 for RSA-SHA1, 2 for RSA-SHA256, 3 for
+                     RSA-SHA1+RSA-SHA256, 4 for Ed25519-SHA256
+</pre>
+<div class="Pp"></div>
+<pre>
+DKIMSIGNOPTIONS=&quot;-z 2 -c r -q&quot;
+Use RSA SHA256 hash, set relaxed canonicalization and include query method
+tag
+</pre>
+<div class="Pp"></div>
+Apart from setting <b>DKIMSIGNOPTIONS</b>, you can set the identity and the
+  expire time by setting <b>DKIMIDENTITY</b> and <b>DKIMEXPIRE</b> respectively.
+  <b>DKIMIDENTITY</b> takes precedence over -i option specified in
+  <b>DKIMSIGNOPTIONS</b>. Similarly, <b>DKIMEXPIRE</b> takes precedence over -x
+  option specifed in <b>R DKIMSIGNOPTIONS</b>. <b>qmail-dkim</b> uses the domain
+  found in the Return-Path, Sender, From, X-Bounced-Address headers to set the
+  domain tag. If not it uses the value in <i>bouncehost</i> control file. If
+  <i>bouncehost</i> is missing, <i>me</i> is used. You can use
+  <b>BOUNCEDOMAIN</b> environment variable to override the value in the control
+  file. <b>BOUNCEDOMAIN</b> can be set to an email address or a domain (without
+  the at sign).
+<div class="Pp"></div>
+As a default <b>qmail-dkim</b> inserts RSA-SHA256 DKIM-Signature and expects the
+  private key file to be a RSA private key. This can be changed by setting
+  DKIMOPTIONS=&quot;-z 4&quot; to insert ed25519 signature. <b>qmail-dkim</b>
+  can insert an additional DKIM-signature if <b>DKIMSIGNEXTRA</b> is set. This
+  is useful for inserting both RSA and ED25519 signature when signing. As an
+  example you can have <b>DKIMSIGN</b> pointing to a RSA private key,
+  <b>DKIMSIGNOPTIONS</b> having &quot;-z 2&quot; along with other options if
+  any. Additionally set <b>DKIMSIGNEXTRA</b> pointing to an ed25519 private key
+  and set <b>DKIMSIGNOPTIONSEXTRA</b> to have &quot;-z 4&quot; along with other
+  options if any.
+<div class="Pp"></div>
+To verify a message, set the <b>DKIMVERIFY</b> environment variable to a desired
+  set of letters. Precisely, if you want a libdkim return status to generate an
+  error, include that letter, where A is the first return status (DKIM_SUCCESS),
+  B is the second (DKIM_FINISHED_BODY), etc. The letter should be uppercase if
+  you want a permanent error to be returned, and lowercase if you want a
+  temporary error to be returned (exit code 88). If you omit the letter,
+  qmail-dkim will not issue any error inspite of DKIM verification failure. It
+  will return success and the email will get delivered.
+<div class="Pp"></div>
+The complete set of letters with the corresponding return status is given below
+<pre>
+A - DKIM_SUCCESS                        - Function executed successfully
+B - DKIM_FINISHED_BODY                  - process result: no more message
+                                          body is needed
+C - DKIM_PARTIAL_SUCCESS                - verify result: at least one
+                                          but not all signatures verified
+D - DKIM_NEUTRAL                        - verify result: no signatures
+                                          verified but message is
+                                          not suspicious
+E - DKIM_SUCCESS_BUT_EXTRA              - signature result: signature
+                                          verified but it did not
+                                          include all of the body
+F - DKIM_3PS_SIGNATURE                  - 3rd-party signature
+G - DKIM_FAIL                           - Function failed to execute
+H - DKIM_BAD_SYNTAX                     - signature error: DKIM-Signature
+                                          could not parse or has bad
+                                          tags/values
+I - DKIM_SIGNATURE_BAD                  - signature error: RSA verify
+                                          failed
+J - DKIM_SIGNATURE_BAD_BUT_TESTING      - signature error: RSA verify
+                                          failed but testing
+K - DKIM_SIGNATURE_EXPIRED              - signature error: x= is old
+L - DKIM_SELECTOR_INVALID               - signature error: selector doesn't
+                                          parse or contains invalid values
+M - DKIM_SELECTOR_GRANULARITY_MISMATCH  - signature error: selector
+                                          g= doesn't match i=
+N - DKIM_SELECTOR_KEY_REVOKED           - signature error: selector
+                                          p= empty
+O - DKIM_SELECTOR_DOMAIN_NAME_TOO_LONG  - signature error: selector domain
+                                          name too long to request
+P - DKIM_SELECTOR_DNS_TEMP_FAILURE      - signature error: temporary dns
+                                          failure requesting selector
+Q - DKIM_SELECTOR_DNS_PERM_FAILURE      - signature error: permanent dns
+                                          failure requesting selector
+R - DKIM_SELECTOR_PUBLIC_KEY_INVALID    - signature error: selector
+                                          p= value invalid or wrong format
+S - DKIM_NO_SIGNATURES                  - no signatures
+T - DKIM_NO_VALID_SIGNATURES            - no valid signatures
+U - DKIM_BODY_HASH_MISMATCH             - sigature verify error: message
+                                          body does not hash to bh value
+V - DKIM_SELECTOR_ALGORITHM_MISMATCH    - signature error: selector
+                                          h= doesn't match signature a=
+W - DKIM_STAT_INCOMPAT                  - signature error: incompatible v=
+X - DKIM_UNSIGNED_FROM                  - signature error: not found
+                                          message From headers in signature
+Y - DKIM_BAD_IDENTITY                   - signature error: invalid identity
+                                          in signature
+</pre>
+<div class="Pp"></div>
+For example, if you want to permanently reject messages that have a signature
+  that is expired, include the letter 'K' in the <b>DKIMVERIFY</b> environment
+  variable. If you want to accept all mails and just have the DKIM-Status
+  header, set <b>DKIMVERIFY</b> to &quot;p&quot;. A conservative set of letters
+  is <b>FGHIKLMNORTUVWjp</b>. Reject permanently 3PS, FAILURE, SYNTAX,
+  SIGNATURE_BAD, SIGNATURE_EXPIRED, SELECTOR_INVALID, GRANULARITY_MISMATCH,
+  SELECTOR_KEY_REVOKED, DOMAIN_NAME_TOO_LONG, SELECTOR_PUBLIC_KEY_INVALID,
+  NO_VALID_SIGNATURES, BODY_HASH_MISMATCH, SELECTOR_ALGORITHM_MISMATCH and
+  STAT_INCOMPAT errors, and temporarily SIGNATURE_BAD_BUT_TESTING and
+  DNS_TEMP_FAILURE. Add in <b>S</b> if you want to reject messages that do not
+  have a DKIM signature. You can use the control files <b>signaturedomains</b>
+  and <b>nosignaturedomains</b> (See Below) to further fine tune the action to
+  be taken when a mail arrives with no DKIM signature. Note that
+  <b>qmail-dkim</b> always inserts the <b>DKIM-Status</b> header, so that
+  messages can be rejected later at delivery time, or in the mail reader. In
+  that case you may set <b>DKIMVERIFY</b> to &quot;p&quot; or an empty string.
+  If you want to check all message's From header in signature set the
+  <b>UNSIGNED_FROM</b> environment variable to an empty string. If you want to
+  check messages without signed subject header, set <b>UNSIGNED_SUBJECT</b>
+  environment variable. If you want to honor body lengh tag (l=), set
+  <b>HONOR_BODYLENGTHTAG</b> environment variable.
+<div class="Pp"></div>
+qmail-dkim supports signing practice which can be additonall checked when a
+  signature verifcation fails -
+<div class="Pp"></div>
+<b>SSP - Sender Signing Practice</b>
+<div class="Pp"></div>
+and
+<div class="Pp"></div>
+<b>ADSP - Author Domain Signing Practice</b>.
+<div class="Pp"></div>
+When a signature fails to verify for a message, you can use SSP/ADSP to
+  determine if the message is suspicious or not. To verify a message against
+  SSP/ADSP, set the <b>DKIMPRACTICE</b> environment variable to the desired set
+  of letters allowed for DKIMVERIFY environment variable. SSP/ADSP should be
+  used only when signature verification fails. SSP/ADSP should be invoked only
+  when libdkim returns the error codes (F,G,H,I,J,K,L,M,N,P,Q,R,S,T,U,V,W,X) for
+  signature verification. In case you want to test against SSP/ADSP only for
+  DKIM_NO_SIGNATURE and DKIM_NO_VALID_SIGNATURE set the environment variable
+  <b>DKIMPRACTICE=&quot;ST&quot;</b>. If you want automatic behaviour, set
+  DKIMPRACTICE to an empty string. In this case ADSP/SSP will be used when
+  return code matches &quot;FGHIJKLMNPQRSTUVWX&quot;. <b>qmail-dkim</b> uses
+  ADSP as the default signing practice. You can override this by setting the
+  SIGN_PRACTICE to ssp, adsp, local (lowercase). if you set SIGN_PRACTICE to
+  <i>local</i> <b>,</b> <b></b><b>qmail-dkim</b> will check the domain against
+  the control file <i>signaturedomains</i> (See Below). If the domain is found
+  listed in <i>signaturedomains</i>, <b>qmail-dkim</b> will bypass ADSP/SSP and
+  return DKIM_FAIL if signature fails to verify. Setting <b>SIGN_PRACTICE</b> to
+  anything else will cause <b>qmail-dkim</b> to disable Signing Practice.
+<div class="Pp"></div>
+If ADSP or SSP is checked, <b>qmail-dkim will insert the </b><b>X-DKIM-ADSP</b>
+  or <b>X-DKIM-SSP</b> header as given below
+<div class="Pp"></div>
+<pre>
+A - DKIM_SUCCESS             - Message passes ADSP test
+B - DKIM_ADSP_UNKNOWN        - some messages may be signed
+C - DKIM_ADSP_ALL            - All message are signed with author signature 
+D - DKIM_ADSP_DISCARDABLE    - messages which fail verification are
+                               Discardable
+E - DKIM_ADSP_SCOPE          - domain is out of scope
+F - DKIM_ADSP_TEMPFAIL       - Temporary Error 
+<div class="Pp"></div>
+or
+<div class="Pp"></div>
+A - DKIM_SUCCESS             - Message passes ADSP test
+B - DKIM_SSP_UNKNOWN         - some messages may be signed
+C - DKIM_SSP_ALL             - All message are signed with author signature 
+D - DKIM_SSP_STRICT          - messages which fail verification are
+                               Discardable
+E - DKIM_SSP_SCOPE           - domain is out of scope
+F - DKIM_SSP_TEMPFAIL        - Temporary Error 
+</pre>
+<div class="Pp"></div>
+You can have a control file <i>signaturedomains</i> containing a list of domains
+  which you know are sure to sign messages using DKIM. If a message comes from a
+  domain listed in <i>Rsignaturedomains</i>, and the signature fails
+  verification (any of DKIM failure status), <b>qmail-dkim</b> will bypass
+  ADSP/SSP checks and return DKIM_FAIL. The name of this control file can be
+  overriden by the environment variable <b>SIGNATUREDOMAINS</b>.
+<div class="Pp"></div>
+You can have a control file <i>nosignaturedomains</i> containing a list of
+  domains which you know are sure not to sign messages using DKIM. If a message
+  comes from a domain listed in <i>nosignaturedomains</i>, and does not have a
+  DKIM-Signature header, <b>qmail-dkim</b> will bypass ADSP/SSP checks and
+  return DKIM_NEUTRAL. The wildcard entry '*' in this file, will result in all
+  mails which do not have a signature to pass DKIM test (unless the domain is
+  listed in the control file <b>signaturedomains</b>). The name of this control
+  file can be overriden by the environment variable <b>NOSIGNATUREDOMAINS</b>.
+<div class="Pp"></div>
+<b>qmail-dkim</b> will use the environment variable <b>SELECTOR_DATA</b> instead
+  of dns for the public key text record. This can be used to test signatures
+  without deploying the public key in dns.
+<div class="Pp"></div>
+Typically, you would sign messages generated on-host by setting <b>DKIMSIGN</b>
+  in the environment before running an <b>qmail-smtpd</b>(8) or
+  <b>sendmail(1)</b> / <b>qmail-inject</b>(8). <b>DKIMSIGN</b> will be carried
+  through qmail-smtpd or through qmail's sendmail emulation through
+  <b>qmail-inject</b> to <b>qmail-dkim</b>. You would also set it for
+  <b>qmail-smtpd</b> at the same time <b>RELAYCLIENT</b> is set, most often in
+  the tcpserver cdb file. If a host is authorized to relay, you probably want to
+  sign messages sent by that host. <b>DKIMVERIFY</b> should be set for all other
+  hosts.
+<div class="Pp"></div>
+If neither <b>DKIMSIGN</b> nor <b>DKIMVERIFY</b> are set, then <b>DKIMSIGN</b>
+  will be set to /var/qmail/control/domainkeys/%/default. The % will be replaced
+  by the domain in the From: header. If such a file does not exist, then it will
+  be set to /var/qmail/control/domainkeys/default. If such a private key exists,
+  it will be used to sign the domain. You can also set <b>DKIMKEY</b> to chose a
+  key different from /var/qmail/control/domainkeys/%/default. <b>DKIMKEY</b> can
+  also have % character that will be replaced by the domain in the From: header.
+  If the private key does not exist, qmail-dkim will exit with return code 32.
+<div class="Pp"></div>
+By default <b>qmail-dkim</b> will use all of the headers when signing a message.
+  You an exclude headers from gettng signed by setting a colon separated list of
+  headers in <b>EXCLUDE_DKIMSIGN</b> environment variable.
+<div class="Pp"></div>
+<h1 class="Sh" title="Sh" id="NOTES"><a class="permalink" href="#NOTES">NOTES</a></h1>
+If the environment variable <b>CONTROLDIR</b> is set, <b>qmail-dkim</b> uses
+  that instead of /var/qmail/control to read control files and the private key.
+<div class="Pp"></div>
+<h1 class="Sh" title="Sh" id="EXIT_CODES"><a class="permalink" href="#EXIT_CODES">EXIT
+  CODES</a></h1>
+<b>qmail-dkim</b> returns the same exit codes as qmail-queue with these
+  additions:
+<div class="Pp"></div>
+<dl class="Bl-tag">
+  <dt><b>32</b></dt>
+  <dd>The private key file does not exist.
+    <div class="Pp"></div>
+  </dd>
+</dl>
+<dl class="Bl-tag">
+  <dt><b>57</b></dt>
+  <dd>Trouble waiting for qmail-queue to exit.
+    <div class="Pp"></div>
+  </dd>
+</dl>
+<dl class="Bl-tag">
+  <dt><b>58</b></dt>
+  <dd>Unable to vfork.
+    <div class="Pp"></div>
+  </dd>
+</dl>
+<dl class="Bl-tag">
+  <dt><b>59</b></dt>
+  <dd>Unable to create a pipe to qmail-queue.
+    <div class="Pp"></div>
+  </dd>
+</dl>
+<dl class="Bl-tag">
+  <dt><b>88</b></dt>
+  <dd>For custom errors. Additionally diagnostic information of the error will
+      be written to descriptor 2.
+    <div class="Pp"></div>
+  </dd>
+</dl>
+<h1 class="Sh" title="Sh" id="SEE_ALSO"><a class="permalink" href="#SEE_ALSO">SEE
+  ALSO</a></h1>
+<a href="addresses.5.html">addresses(5)</a>, <a href="envelopes.5.html">envelopes(5)</a>, <a href="qmail-header.5.html">qmail-header(5)</a>, <a href="dknewkey.8.html">dknewkey(8)</a>, <a href="dkim.8.html">dkim(8)</a>,
+  <a href="qmail-inject.8.html">qmail-inject(8)</a>, <a href="qmail-qmqpc.8.html">qmail-qmqpc(8)</a>, <a href="qmail-queue.8.html">qmail-queue(8)</a>, <a href="qmail-send.8.html">qmail-send(8)</a>,
+  <a href="qmail-smtpd.8.html">qmail-smtpd(8)</a></div>
+<table class="foot">
+  <tr>
+    <td class="foot-date"></td>
+    <td class="foot-os"></td>
+  </tr>
+</table>
+</body>
+</html>

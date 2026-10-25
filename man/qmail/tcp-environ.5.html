@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <link rel="stylesheet" href="style.css" type="text/css" media="all"/>
+  <title><a href="tcp-environ.5.html">tcp-environ(5)</a></title>
+</head>
+<body>
+<nav class="qmail-nav"><a href="index.html">&larr; Qmail man</a></nav>
+<table class="head">
+  <tr>
+    <td class="head-ltitle"><a href="tcp-environ.5.html">tcp-environ(5)</a></td>
+    <td class="head-vol">File Formats Manual</td>
+    <td class="head-rtitle"><a href="tcp-environ.5.html">tcp-environ(5)</a></td>
+  </tr>
+</table>
+<div class="manual-text">
+<h1 class="Sh" title="Sh" id="NAME"><a class="permalink" href="#NAME">NAME</a></h1>
+tcp-environ - TCP-related environment variables
+<h1 class="Sh" title="Sh" id="DESCRIPTION"><a class="permalink" href="#DESCRIPTION">DESCRIPTION</a></h1>
+The following environment variables describe a TCP connection. They are set up
+  by <b>tcp-env</b>, <b>tcpclient</b>, and <b>tcpserver</b>. Note that
+  <b>TCPLOCALHOST</b>, <b>TCPREMOTEHOST</b>, and <b>TCPREMOTEINFO</b> can
+  contain arbitrary characters.
+<dl class="Bl-tag">
+  <dt>PROTO</dt>
+  <dd>The string <b>TCP</b>.</dd>
+</dl>
+<dl class="Bl-tag">
+  <dt>TCPLOCALHOST</dt>
+  <dd>The domain name of the local host, with uppercase letters converted to
+      lowercase. If there is no currently available domain name for the local IP
+      address, <b>TCPLOCALHOST</b> is not set.</dd>
+</dl>
+<dl class="Bl-tag">
+  <dt>TCPLOCALIP</dt>
+  <dd>The IP address of the local host, in dotted-decimal form.</dd>
+</dl>
+<dl class="Bl-tag">
+  <dt>TCPLOCALPORT</dt>
+  <dd>The local TCP port number, in decimal.</dd>
+</dl>
+<dl class="Bl-tag">
+  <dt>TCPREMOTEHOST</dt>
+  <dd>The domain name of the remote host, with uppercase letters converted to
+      lowercase. If there is no currently available domain name for the remote
+      IP address, <b>TCPREMOTEHOST</b> is not set.</dd>
+</dl>
+<dl class="Bl-tag">
+  <dt>TCPREMOTEINFO</dt>
+  <dd>A connection-specific string, perhaps a username, supplied by the remote
+      host via 931/1413/IDENT/TAP. If the remote host did not supply connection
+      information, <b>TCPREMOTEINFO</b> is not set.</dd>
+</dl>
+<dl class="Bl-tag">
+  <dt>TCPREMOTEIP</dt>
+  <dd>The IP address of the remote host.</dd>
+</dl>
+<dl class="Bl-tag">
+  <dt>TCPREMOTEPORT</dt>
+  <dd>The remote TCP port number.</dd>
+</dl>
+<h1 class="Sh" title="Sh" id="SEE_ALSO"><a class="permalink" href="#SEE_ALSO">SEE
+  ALSO</a></h1>
+tcpclient(1), tcpserver(1), <a href="tcp-env.1.html">tcp-env(1)</a>, tcp(4)</div>
+<table class="foot">
+  <tr>
+    <td class="foot-date"></td>
+    <td class="foot-os"></td>
+  </tr>
+</table>
+</body>
+</html>

@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <link rel="stylesheet" href="style.css" type="text/css" media="all"/>
+  <title><a href="qmail-newmrh.8.html">qmail-newmrh(8)</a></title>
+</head>
+<body>
+<nav class="qmail-nav"><a href="index.html">&larr; Qmail man</a></nav>
+<table class="head">
+  <tr>
+    <td class="head-ltitle"><a href="qmail-newmrh.8.html">qmail-newmrh(8)</a></td>
+    <td class="head-vol">System Manager's Manual</td>
+    <td class="head-rtitle"><a href="qmail-newmrh.8.html">qmail-newmrh(8)</a></td>
+  </tr>
+</table>
+<div class="manual-text">
+<h1 class="Sh" title="Sh" id="NAME"><a class="permalink" href="#NAME">NAME</a></h1>
+qmail-newmrh - prepare morercpthosts for qmail-smtpd
+<h1 class="Sh" title="Sh" id="SYNOPSIS"><a class="permalink" href="#SYNOPSIS">SYNOPSIS</a></h1>
+<b>qmail-newmrh</b>
+<h1 class="Sh" title="Sh" id="DESCRIPTION"><a class="permalink" href="#DESCRIPTION">DESCRIPTION</a></h1>
+<b>qmail-newmrh</b> reads the instructions in
+  <b>/var/qmail/control/morercpthosts</b> and writes them into
+  <b>/var/qmail/control/morercpthosts.cdb</b> in a binary format suited for
+  quick access by <b>qmail-smtpd</b>.
+<div class="Pp"></div>
+If there is a problem with <b>control/morercpthosts</b>, <b>qmail-newmrh</b>
+  complains and leaves <b>control/morercpthosts.cdb</b> alone.
+<div class="Pp"></div>
+<b>qmail-newmrh</b> ensures that <b>control/morercpthosts.cdb</b> is updated
+  atomically, so <b>qmail-smtpd</b> never has to wait for <b>qmail-newmrh</b> to
+  finish. However, <b>qmail-newmrh</b> makes no attempt to protect against two
+  simultaneous updates of <b>control/morercpthosts.cdb</b>.
+<div class="Pp"></div>
+The binary <b>control/morercpthosts.cdb</b> format is portable across machines.
+<h1 class="Sh" title="Sh" id="SEE_ALSO"><a class="permalink" href="#SEE_ALSO">SEE
+  ALSO</a></h1>
+<a href="qmail-smtpd.8.html">qmail-smtpd(8)</a></div>
+<table class="foot">
+  <tr>
+    <td class="foot-date"></td>
+    <td class="foot-os"></td>
+  </tr>
+</table>
+</body>
+</html>

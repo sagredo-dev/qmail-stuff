@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <link rel="stylesheet" href="style.css" type="text/css" media="all"/>
+  <title><a href="tcp-env.1.html">tcp-env(1)</a></title>
+</head>
+<body>
+<nav class="qmail-nav"><a href="index.html">&larr; Qmail man</a></nav>
+<table class="head">
+  <tr>
+    <td class="head-ltitle"><a href="tcp-env.1.html">tcp-env(1)</a></td>
+    <td class="head-vol">General Commands Manual</td>
+    <td class="head-rtitle"><a href="tcp-env.1.html">tcp-env(1)</a></td>
+  </tr>
+</table>
+<div class="manual-text">
+<h1 class="Sh" title="Sh" id="NAME"><a class="permalink" href="#NAME">NAME</a></h1>
+tcp-env - set up TCP-related environment variables
+<h1 class="Sh" title="Sh" id="SYNOPSIS"><a class="permalink" href="#SYNOPSIS">SYNOPSIS</a></h1>
+<b>tcp-env</b> [ <b>-rR</b> ] [ <b>-t<i>timeout</i></b> <i>]</i> <i>program</i>
+  [ <i>arg ...</i> ]
+<h1 class="Sh" title="Sh" id="DESCRIPTION"><a class="permalink" href="#DESCRIPTION">DESCRIPTION</a></h1>
+The input for <b>tcp-env</b> must be a TCP connection. <b>tcp-env</b> finds out
+  information about that connection, puts the information into several
+  environment variables as described in <b><a href="tcp-environ.5.html">tcp-environ(5)</a>,</b> and runs
+  <i>program</i> with the given arguments.
+<div class="Pp"></div>
+Usually <b>tcp-env</b> is run from <b>inetd</b>. It might instead be run from
+  another server that already sets up the right environment variables; if
+  <b>PROTO</b> is set to <b>TCP</b> when <b>tcp-env</b> is invoked,
+  <b>tcp-env</b> assumes that all the other variables are set up properly, and
+  it does not check whether the input is a TCP connection.
+<h1 class="Sh" title="Sh" id="OPTIONS"><a class="permalink" href="#OPTIONS">OPTIONS</a></h1>
+<dl class="Bl-tag">
+  <dt><b>-r</b></dt>
+  <dd>(Default.) Attempt to obtain <b>TCPREMOTEINFO</b> from the remote
+    host.</dd>
+</dl>
+<dl class="Bl-tag">
+  <dt><b>-R</b></dt>
+  <dd>Do not attempt to obtain <b>TCPREMOTEINFO</b> from the remote host.</dd>
+</dl>
+<dl class="Bl-tag">
+  <dt><b>-t<i>timeout</i></b></dt>
+  <dd>Give up on the <b>TCPREMOTEINFO</b> connection attempt after
+      <i>timeout</i> seconds. Default: 30.</dd>
+</dl>
+<h1 class="Sh" title="Sh" id="SEE_ALSO"><a class="permalink" href="#SEE_ALSO">SEE
+  ALSO</a></h1>
+<a href="tcp-environ.5.html">tcp-environ(5)</a>, inetd(8)</div>
+<table class="foot">
+  <tr>
+    <td class="foot-date"></td>
+    <td class="foot-os"></td>
+  </tr>
+</table>
+</body>
+</html>

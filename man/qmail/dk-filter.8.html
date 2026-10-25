@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <link rel="stylesheet" href="style.css" type="text/css" media="all"/>
+  <title><a href="dk-filter.8.html">dk-filter(8)</a></title>
+</head>
+<body>
+<nav class="qmail-nav"><a href="index.html">&larr; Qmail man</a></nav>
+<table class="head">
+  <tr>
+    <td class="head-ltitle"><a href="dk-filter.8.html">dk-filter(8)</a></td>
+    <td class="head-vol">System Manager's Manual</td>
+    <td class="head-rtitle"><a href="dk-filter.8.html">dk-filter(8)</a></td>
+  </tr>
+</table>
+<div class="manual-text">
+<h1 class="Sh" title="Sh" id="NAME"><a class="permalink" href="#NAME">NAME</a></h1>
+dk-filter - sign/verify using DK/DKIM (SSP/ADSP optionally) and deliver a mail
+  message for delivery
+<div class="Pp"></div>
+<h1 class="Sh" title="Sh" id="SYNOPSIS"><a class="permalink" href="#SYNOPSIS">SYNOPSIS</a></h1>
+<b>FILTERARGS=QMAILHOME/bin/dk-filter</b>
+<div class="Pp"></div>
+<h1 class="Sh" title="Sh" id="DESCRIPTION"><a class="permalink" href="#DESCRIPTION">DESCRIPTION</a></h1>
+<b>dk-filter</b> is a qfilter which can be set as a filter for
+  <b>spawn-filter</b>(8) or <b>qmail-qfilter</b>(1). The filter can be set
+  either as <b>FILTERARGS</b> or in the control file <b>filterargs</b>.
+<div class="Pp"></div>
+<b>dk-filter</b> supports DK/DKIM signing and verification and can optionally
+  use <b>Sender Signing Practice (SSP)</b> or <b>Author Domain</b> <b>Signing
+  Practice</b>. It uses the libdkim and OpenSSL libraries. To sign a message,
+  set the <b>DKIMSIGN</b> environment variable (for DKIM signing) or
+  <b>DKSIGIN</b> environment variable (for DK signing) to the pathname of the
+  private key that will be used to sign the message. If there is a % character
+  in the environment variable, it is removed and replaced by the domain name in
+  the From: header. If, after substituting the %, that file does not exist,
+  /var/qmail/control/domainkeys/%/default will be used as the key. If again,
+  after substituting the % sign, the file does not exist,
+  /var/qmail/control/domainkeys/default will be used as the key. After all
+  substitutions, if the key file does not exist, the message will not be signed.
+  If there is no % and the file does not exist, the message will be rejected
+  with error 32. The default private key /var/qmail/control/domainkeys/default
+  can be overriden by the <b>DKIM_DEFAULT_KEY</b> environment variable.
+<div class="Pp"></div>
+The selector (s=) will be taken from the basename of the file. The private key
+  should be created by <b><a href="dknewkey.8.html">dknewkey(8)</a></b> with RSA or ED25519 encryption method.
+<div class="Pp"></div>
+You can set various DK options in getopt style, by setting the environment
+  variable DKSIGNOPTIONS
+<div class="Pp"></div>
+<pre>
+b  <i>&lt;advice_length&gt;</i>    Length of Advice
+c  <i>&lt;canonicalization&gt;</i> simple, nofws
+s  <i>&lt;privkeyfile&gt;</i>      Private key
+h                    show headers included
+r                    Skip Duplicate Headers
+</pre>
+<div class="Pp"></div>
+<pre>
+DKSIGNOPTIONS=&quot;-h -r -c nofws&quot;
+sets the h= tag, skips duplicate headers and sets nofws canonicalization
+</pre>
+<div class="Pp"></div>
+You can set various DKIM options in getopt style, by setting the environment
+  variable DKIMSIGNOPTIONS
+<div class="Pp"></div>
+<pre>
+c &lt;canonicalization&gt; r for relaxed [DEFAULT], s - simple,
+                     t relaxed/simple, u - simple/relaxed
+l                    include body length tag
+q                    include query method tag;
+t                    include a timestamp tag
+h                    include copied headers. This adds the z= tag
+                     containing a copy of the message's original
+                     headers.
+i &lt;identity&gt;         the identity, if not provided it will not be included
+x &lt;expire_time&gt;      the expire time in seconds since epoch
+                     ( DEFAULT = current time + 604800)
+                     if set to - then it will not be included
+z &lt;hash&gt;             1 for sha1, 2 for sha256, 3 for both
+s &lt;privkeyfile&gt;
+y &lt;selector&gt;
+</pre>
+<div class="Pp"></div>
+<pre>
+DKIMSIGNOPTIONS=&quot;-c r -q&quot;
+sets relaxed canonicalization and include query method tag
+</pre>
+<div class="Pp"></div>
+When signing <b>dk-filter</b> uses the domain found in the Return-Path, Sender,
+  From headers to set the domain tag. If not it uses the value of
+  <b>BOUNCEDOMAIN</b> environment variable. <b>BOUNCEDOMAIN</b> can be set to an
+  email address or a domain (without the at sign).
+<div class="Pp"></div>
+In addition to <b>DKIMSIGN</b> environment variable, you can have the domain and
+  the pathname of the private key in the control file <i>dkimkeys</i> which has
+  the following format
+<div class="Pp"></div>
+<pre>
+domain:private_key_path:envstr
+</pre>
+<div class="Pp"></div>
+<br/>
+Here <i>envstr</i> is a string of environment variable additions or removals.
+  e.g.
+<div class="Pp"></div>
+<pre>
+QREGEX=1,DKIMSIGNOPTIONS=-z 4
+<div class="Pp"></div>
+</pre>
+If an entry for <i>domain</i> exists in <i>dkimkeys</i>, the value of
+  <b>DKIMSIGN</b> environment variable is ignored. You can disable
+  <i>dkimkeys</i> by setting <b>NODKIMKEYS</b> environment variable.
+<div class="Pp"></div>
+<div class="Pp"></div>
+To verify a message, set the <b>DKIMVERIFY</b> or <b>DKVERIFY</b> environment
+  variables. <b>dk-filter</b> always inserts the <b>DKIM-Status</b> or
+  <b>DomainKey-Status</b> header, so that messages can be rejected later at
+  delivery time, or in the mail reader. In that case you may set
+  <b>DKIMVERIFY</b> or <b>DKVERIFY</b> to an empty string. The exit code of
+  <b>dk-filter</b> can be fine tuned by setting <b>DKIMVERIFY</b> environment
+  variable. See <b><a href="dkim.8.html">dkim(8)</a></b> for a detailed description on setting the
+  <b>DKIMVERIFY</b> environment variable.
+<div class="Pp"></div>
+<b>dk-filter</b> does not use any signing practice by default. You can override
+  this by setting the SIGN_PRACTICE to ssp or adsp (lowercase).
+<div class="Pp"></div>
+If neither of these environment variables (DKIMSIGN, DKSIGN, DKIMVERIFY,
+  DKVERIFY) are defined, dk-filter will do signing by default.
+<div class="Pp"></div>
+You can set environment variable NODK to disable domainkeys and set NODKIM
+  environment variable to disable DKIM.
+<div class="Pp"></div>
+<b>dk-filter</b> can insert an additional DKIM-signature if <b>DKIMSIGNEXTRA</b>
+  is set. This is useful for inserting both RSA and ED25519 signature when
+  signing. As an example you can have <b>DKIMSIGN</b> pointing to a RSA private
+  key, <b>DKIMSIGNOPTIONS</b> having &quot;-z 2&quot; along with other options
+  if any. Additionally set <b>DKIMSIGNEXTRA</b> pointing to an ed25519 private
+  key and set <b>DKIMSIGNOPTIONSEXTRA</b> to have &quot;-z 4&quot; along with
+  other options if any.
+<div class="Pp"></div>
+<h1 class="Sh" title="Sh" id="EXIT_CODES"><a class="permalink" href="#EXIT_CODES">EXIT
+  CODES</a></h1>
+0 for success, non-zero failure
+<div class="Pp"></div>
+<h1 class="Sh" title="Sh" id="SEE_ALSO"><a class="permalink" href="#SEE_ALSO">SEE
+  ALSO</a></h1>
+qmail-qfilter(1), <a href="dknewkey.8.html">dknewkey(8)</a>, <a href="dkim.8.html">dkim(8)</a>, <a href="spawn-filter.8.html">spawn-filter(8)</a></div>
+<table class="foot">
+  <tr>
+    <td class="foot-date"></td>
+    <td class="foot-os"></td>
+  </tr>
+</table>
+</body>
+</html>

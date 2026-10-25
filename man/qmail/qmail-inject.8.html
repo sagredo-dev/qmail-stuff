@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <link rel="stylesheet" href="style.css" type="text/css" media="all"/>
+  <title><a href="qmail-inject.8.html">qmail-inject(8)</a></title>
+</head>
+<body>
+<nav class="qmail-nav"><a href="index.html">&larr; Qmail man</a></nav>
+<table class="head">
+  <tr>
+    <td class="head-ltitle"><a href="qmail-inject.8.html">qmail-inject(8)</a></td>
+    <td class="head-vol">System Manager's Manual</td>
+    <td class="head-rtitle"><a href="qmail-inject.8.html">qmail-inject(8)</a></td>
+  </tr>
+</table>
+<div class="manual-text">
+<h1 class="Sh" title="Sh" id="NAME"><a class="permalink" href="#NAME">NAME</a></h1>
+qmail-inject - preprocess and send a mail message
+<h1 class="Sh" title="Sh" id="SYNOPSIS"><a class="permalink" href="#SYNOPSIS">SYNOPSIS</a></h1>
+<b>qmail-inject</b> [ <b>-nNaAhH</b> ] [ <b>-f<i>sender</i></b> <i>] [</i>
+  <i>recip ...</i> ]
+<h1 class="Sh" title="Sh" id="DESCRIPTION"><a class="permalink" href="#DESCRIPTION">DESCRIPTION</a></h1>
+<b>qmail-inject</b> reads a mail message from its standard input, adds
+  appropriate information to the message header, and invokes <b>qmail-queue</b>
+  to send the message to one or more recipients.
+<div class="Pp"></div>
+See <b><a href="qmail-header.5.html">qmail-header(5)</a></b> for information on how <b>qmail-inject</b> rewrites
+  header fields.
+<div class="Pp"></div>
+<b>qmail-inject</b> normally exits 0. It exits 100 if it was invoked improperly
+  or if there is a severe syntax error in the message. It exits 111 for
+  temporary errors.
+<h1 class="Sh" title="Sh" id="ENVIRONMENT_VARIABLES"><a class="permalink" href="#ENVIRONMENT_VARIABLES">ENVIRONMENT
+  VARIABLES</a></h1>
+For the convenience of users who do not run <b>qmail-inject</b> directly,
+  <b>qmail-inject</b> takes many options through environment variables.
+<div class="Pp"></div>
+The user name in the <b>From</b> header field is set by <b>QMAILUSER</b>,
+  <b>MAILUSER</b>, <b>USER</b>, or <b>LOGNAME</b>, whichever comes first.
+<div class="Pp"></div>
+The host name is normally set by the <i>defaulthost</i> control but can be
+  overridden with <b>QMAILHOST</b> or <b>MAILHOST</b>.
+<div class="Pp"></div>
+The personal name is <b>QMAILNAME</b>, <b>MAILNAME</b>, or <b>NAME</b>.
+<div class="Pp"></div>
+The default envelope sender address is the same as the default <b>From</b>
+  address, but it can be overridden with <b>QMAILSUSER</b> and
+  <b>QMAILSHOST</b>. It may also be modified by the <b>r</b> and <b>m</b>
+  letters described below. Bounces will be sent to this address.
+<div class="Pp"></div>
+If <b>QMAILMFTFILE</b> is set, <b>qmail-inject</b> reads a list of mailing list
+  addresses, one per line, from that file. If To+Cc includes one of those
+  addresses (without regard to case), <b>qmail-inject</b> adds a
+  Mail-Followup-To field with all the To+Cc addresses. <b>qmail-inject</b> does
+  not add Mail-Followup-To to a message that already has one.
+<div class="Pp"></div>
+The <b>QMAILINJECT</b> environment variable can contain any of the following
+  letters:
+<dl class="Bl-tag">
+  <dt><b>c</b></dt>
+  <dd>Use address-comment style for the <b>From</b> field. Normally
+      <b>qmail-inject</b> uses name-address style.</dd>
+</dl>
+<dl class="Bl-tag">
+  <dt><b>s</b></dt>
+  <dd>Do not look at any incoming <b>Return-Path</b> field. Normally, if
+      <b>Return-Path</b> is supplied, it sets the envelope sender address,
+      overriding all environment variables. <b>Return-Path</b> is deleted in any
+      case.</dd>
+</dl>
+<dl class="Bl-tag">
+  <dt><b>f</b></dt>
+  <dd>Delete any incoming <b>From</b> field. Normally, if <b>From</b> is
+      supplied, it overrides the usual <b>From</b> field created by
+      <b>qmail-inject</b>.</dd>
+</dl>
+<dl class="Bl-tag">
+  <dt><b>i</b></dt>
+  <dd>Delete any incoming <b>Message-ID</b> field. Normally, if
+      <b>Message-ID</b> is supplied, it overrides the usual <b>Message-ID</b>
+      field created by <b>qmail-inject</b>.</dd>
+</dl>
+<dl class="Bl-tag">
+  <dt><b>r</b></dt>
+  <dd>Use a per-recipient VERP. <b>qmail-inject</b> will append each recipient
+      address to the envelope sender of the copy going to that recipient.</dd>
+</dl>
+<dl class="Bl-tag">
+  <dt><b>m</b></dt>
+  <dd>Use a per-message VERP. <b>qmail-inject</b> will append the current date
+      and process ID to the envelope sender.</dd>
+</dl>
+<h1 class="Sh" title="Sh" id="OPTIONS"><a class="permalink" href="#OPTIONS">OPTIONS</a></h1>
+<dl class="Bl-tag">
+  <dt><b>-a</b></dt>
+  <dd>Send the message to all addresses given as <i>recip</i> arguments; do not
+      use header recipient addresses.</dd>
+</dl>
+<dl class="Bl-tag">
+  <dt><b>-h</b></dt>
+  <dd>Send the message to all header recipient addresses. For non-forwarded
+      messages, this means the addresses listed under <b>To</b>, <b>Cc</b>,
+      <b>Bcc</b>, <b>Apparently-To</b>. For forwarded messages, this means the
+      addresses listed under <b>Resent-To</b>, <b>Resent-Cc</b>,
+      <b>Resent-Bcc</b>. Do not use any <i>recip</i> arguments.</dd>
+</dl>
+<dl class="Bl-tag">
+  <dt><b>-A</b></dt>
+  <dd>(Default.) Send the message to all addresses given as <i>recip</i>
+      arguments. If no <i>recip</i> arguments are supplied, send the message to
+      all header recipient addresses.</dd>
+</dl>
+<dl class="Bl-tag">
+  <dt><b>-H</b></dt>
+  <dd>Send the message to all header recipient addresses, and to all addresses
+      given as <i>recip</i> arguments.</dd>
+</dl>
+<dl class="Bl-tag">
+  <dt><b>-f<i>sender</i></b></dt>
+  <dd>Pass <i>sender</i> to <b>qmail-queue</b> as the envelope sender address.
+      This overrides <b>Return-Path</b> and all environment variables.</dd>
+</dl>
+<dl class="Bl-tag">
+  <dt><b>-N</b></dt>
+  <dd>(Default.) Feed the resulting message to <b>qmail-queue</b>.</dd>
+</dl>
+<dl class="Bl-tag">
+  <dt><b>-n</b></dt>
+  <dd>Print the message rather than feeding it to <b>qmail-queue</b>.</dd>
+</dl>
+<h1 class="Sh" title="Sh" id="CONTROL_FILES"><a class="permalink" href="#CONTROL_FILES">CONTROL
+  FILES</a></h1>
+<dl class="Bl-tag">
+  <dt><i>defaultdomain</i></dt>
+  <dd>Default domain name. Default: <i>me</i>, if that is supplied; otherwise
+      the literal name <b>defaultdomain</b>, which is probably not what you
+      want. <b>qmail-inject</b> adds this name to any host name without dots,
+      including <i>defaulthost</i> if <i>defaulthost</i> does not have dots.
+      (Exception: see <i>plusdomain</i>.)
+    <div class="Pp"></div>
+    The <b>QMAILDEFAULTDOMAIN</b> environment variable overrides
+      <i>defaultdomain</i>.</dd>
+</dl>
+<dl class="Bl-tag">
+  <dt><i>defaulthost</i></dt>
+  <dd>Default host name. Default: <i>me</i>, if that is supplied; otherwise the
+      literal name <b>defaulthost</b>, which is probably not what you want.
+      <b>qmail-inject</b> adds this name to any address without a host name.
+      <i>defaulthost</i> need not be the current host's name. For example, you
+      may prefer that outgoing mail show just your domain name.
+    <div class="Pp"></div>
+    The <b>QMAILDEFAULTHOST</b> environment variable overrides
+      <i>defaulthost</i>.</dd>
+</dl>
+<dl class="Bl-tag">
+  <dt><i>idhost</i></dt>
+  <dd>Host name for Message-IDs. Default: <i>me</i>, if that is supplied;
+      otherwise the literal name <b>idhost</b>, which is certainly not what you
+      want. <i>idhost</i> need not be the current host's name. For example, you
+      may prefer to use fake host names in Message-IDs. However, <i>idhost</i>
+      must be a fully-qualified name within your domain, and each host in your
+      domain should use a different <i>idhost</i>.
+    <div class="Pp"></div>
+    The <b>QMAILIDHOST</b> environment variable overrides <i>idhost</i>.</dd>
+</dl>
+<dl class="Bl-tag">
+  <dt><i>plusdomain</i></dt>
+  <dd>Plus domain name. Default: <i>me</i>, if that is supplied; otherwise the
+      literal name <b>plusdomain</b>, which is probably not what you want.
+      <b>qmail-inject</b> adds this name to any host name that ends with a plus
+      sign, including <i>defaulthost</i> if <i>defaulthost</i> ends with a plus
+      sign. If a host name does not have dots but ends with a plus sign,
+      <b>qmail-inject</b> uses <i>plusdomain</i>, not <i>defaultdomain</i>.
+    <div class="Pp"></div>
+    The <b>QMAILPLUSDOMAIN</b> environment variable overrides
+    <i>plusdomain</i>.</dd>
+</dl>
+<h1 class="Sh" title="Sh" id="SEE_ALSO"><a class="permalink" href="#SEE_ALSO">SEE
+  ALSO</a></h1>
+<a href="addresses.5.html">addresses(5)</a>, <a href="qmail-control.5.html">qmail-control(5)</a>, <a href="qmail-header.5.html">qmail-header(5)</a>, <a href="qmail-queue.8.html">qmail-queue(8)</a></div>
+<table class="foot">
+  <tr>
+    <td class="foot-date"></td>
+    <td class="foot-os"></td>
+  </tr>
+</table>
+</body>
+</html>

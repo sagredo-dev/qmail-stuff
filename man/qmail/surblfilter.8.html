@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html>
+<!-- This is an automatically generated file.  Do not edit.
+   vim: tw=75
+ -->
+<head>
+  <meta charset="utf-8"/>
+  <link rel="stylesheet" href="style.css" type="text/css" media="all"/>
+  <title><a href="surblfilter.8.html">surblfilter(8)</a></title>
+</head>
+<body>
+<nav class="qmail-nav"><a href="index.html">&larr; Qmail man</a></nav>
+<table class="head">
+  <tr>
+    <td class="head-ltitle"><a href="surblfilter.8.html">surblfilter(8)</a></td>
+    <td class="head-vol">System Manager's Manual</td>
+    <td class="head-rtitle"><a href="surblfilter.8.html">surblfilter(8)</a></td>
+  </tr>
+</table>
+<div class="manual-text">
+<h1 class="Sh" title="Sh" id="NAME"><a class="permalink" href="#NAME">NAME</a></h1>
+surblfilter - qmail SURBL blocklist interface
+<h1 class="Sh" title="Sh" id="SYNOPSIS"><a class="permalink" href="#SYNOPSIS">SYNOPSIS</a></h1>
+<b>surblfilter</b> [ <b>-v</b> ] [ <b>-c</b> ] [ <b>-t</b> ]
+<h1 class="Sh" title="Sh" id="DESCRIPTION"><a class="permalink" href="#DESCRIPTION">DESCRIPTION</a></h1>
+<b>SURBL</b>s are lists of web sites that have appeared in unsolicited messages.
+  Unlike most lists, SURBLs are not lists of message senders.
+<div class="Pp"></div>
+Web sites seen in unsolicited messages tend to be more stable than the rapidly
+  changing botnet IP addresses used to send the vast majority of them. Sender
+  lists like zen.spamhaus.org can be used in a first stage filter to help
+  identify 80% to 90% of unsolicited messages. SURBLs can help find about 75% of
+  the otherwise difficult, remaining unsolicited messages in a second stage
+  filter. Used together with sender lists, SURBLs have proven to be a
+  highly-effective way to detect 95% of unsolicited messages.
+<div class="Pp"></div>
+<b>surblfilter</b> reads an rfc822 email on stdin, extracts URL and checks them
+  against SURBL. <b>surblfilter</b> can be used as a filter using
+  <b><a href="qmail-qfilter.8.html">qmail-qfilter(8)</a></b>. It can also be used as a <a href="qmail-queue.8.html">qmail-queue(8)</a> frontend by
+  setting QMAILQUEUE environment variable to a wrapper
+  /var/qmail/bin/surblqueue. You can define <b>SURBLQUEUE</b> environment
+  variable to make <b>surblqueue</b> execute something other than
+  <b>qmail-queue</b>(8).
+<div class="Pp"></div>
+<b>surblfilter</b> uses <b>QMAILRCPTS</b> environment variable to get the
+  recipient list. You can whitelist recipients by having the email addresses in
+  <i>surblrcpt</i> control file. You can change the name of this control file by
+  setting <b>SURBLRCPT</b> environment variable.
+<div class="Pp"></div>
+<div class="Pp"></div>
+<b>surblfilter</b> uses the control file <i>surbldomainwhite</i> to whitelist a
+  domain.
+<div class="Pp"></div>
+<div class="Pp"></div>
+The default SURBL list that is used is <b>multi.surbl.org</b>. You can use a
+  different list by setting the <i>surbldomain</i> control file.
+<div class="Pp"></div>
+<div class="Pp"></div>
+<b>surblfilter</b> caches results in @controldir@/cache directory. The filename
+  of files in this directory represents the domain. If a file has permission
+  0600, it means that the domain was blacklisted. The entries are cached for a
+  default of 300 seconds. You can change this by setting <b>CACHELIFETIME</b>
+  environment variable or setting this value in <b>cacheliftime</b> control
+  file. The cache directory should be owned by the uid of the running
+  <a href="qmail-smtpd.8.html">qmail-smtpd(8)</a>.
+<div class="Pp"></div>
+<b>surblfilter</b> removes all leading host names, subdomains, www., randomized
+  subdomains, etc. In order to determine the level of domain check, it uses the
+  control files <b>level3-tlds</b> and <b>level2-tlds</b>. For any domain found
+  in <b>level3-tlds</b>, it checks the domain at level4. For any domain found in
+  <b>level2-tlds</b>, it checks the domain at level3. For all domains not found
+  in these two control files, it checks the domain at level2. Please look at
+  http://www.surbl.org/guidelines for more details.
+<div class="Pp"></div>
+<div class="Pp"></div>
+<h1 class="Sh" title="Sh" id="OPTIONS"><a class="permalink" href="#OPTIONS">OPTIONS</a></h1>
+<dl class="Bl-tag">
+  <dt><b>-v</b></dt>
+  <dd>Use debug mode. If debug is turned on <b>surblfilter</b> writes debug
+      output to descriptor 5. You can set <b>SURBL_DEBUG_FN</b> to a filename to
+      make surblqueue redirect debug output to the debug file.
+    <div class="Pp"></div>
+  </dd>
+</dl>
+<dl class="Bl-tag">
+  <dt><b>-c</b></dt>
+  <dd>Do not cache results
+    <div class="Pp"></div>
+  </dd>
+</dl>
+<dl class="Bl-tag">
+  <dt><b>-t</b></dt>
+  <dd>Do dns text query to get the reason. This option will slow
+      <b>surblfilter</b>. Remember that last octet of the IP address obtained
+      for the domain gives you the reason for the block
+    <div class="Pp"></div>
+  </dd>
+</dl>
+<h1 class="Sh" title="Sh" id="RETURN_VALUE"><a class="permalink" href="#RETURN_VALUE">RETURN
+  VALUE</a></h1>
+<b>surbfilter</b> returns 88 if the domain is blocked and prints the reason on
+  standard error. This allows for <a href="qmail-smtpd.8.html">qmail-smtpd(8)</a> to print a permanent error
+  during a SMTP session. It returns 111 for all temporary errors. It returns 0
+  if the message does not contain any domain blocked by SURBL
+<div class="Pp"></div>
+<h1 class="Sh" title="Sh" id="SEE_ALSO"><a class="permalink" href="#SEE_ALSO">SEE
+  ALSO</a></h1>
+<a href="qmail-smtpd.8.html">qmail-smtpd(8)</a>, <a href="qmail-queue.8.html">qmail-queue(8)</a>, qmail-qfilter(1)</div>
+<table class="foot">
+  <tr>
+    <td class="foot-date"></td>
+    <td class="foot-os"></td>
+  </tr>
+</table>
+</body>
+</html>

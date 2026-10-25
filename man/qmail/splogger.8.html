@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <link rel="stylesheet" href="style.css" type="text/css" media="all"/>
+  <title><a href="splogger.8.html">splogger(8)</a></title>
+</head>
+<body>
+<nav class="qmail-nav"><a href="index.html">&larr; Qmail man</a></nav>
+<table class="head">
+  <tr>
+    <td class="head-ltitle"><a href="splogger.8.html">splogger(8)</a></td>
+    <td class="head-vol">System Manager's Manual</td>
+    <td class="head-rtitle"><a href="splogger.8.html">splogger(8)</a></td>
+  </tr>
+</table>
+<div class="manual-text">
+<h1 class="Sh" title="Sh" id="NAME"><a class="permalink" href="#NAME">NAME</a></h1>
+splogger - make entries in syslog
+<h1 class="Sh" title="Sh" id="SYNOPSIS"><a class="permalink" href="#SYNOPSIS">SYNOPSIS</a></h1>
+<b>splogger</b> [ <i>tag</i> [ <i>fac</i> ] ]
+<h1 class="Sh" title="Sh" id="DESCRIPTION"><a class="permalink" href="#DESCRIPTION">DESCRIPTION</a></h1>
+<b>splogger</b> reads a series of messages and feeds them to <b>syslog</b>. At
+  the front of each message it puts <i>tag</i> (default: <b>splogger</b>) and a
+  numerical timestamp.
+<div class="Pp"></div>
+<b>splogger</b> checks for <b>alert:</b> or <b>warning:</b> at the beginning of
+  each message. It selects a priority of LOG_ALERT, LOG_WARNING, or LOG_INFO
+  accordingly.
+<div class="Pp"></div>
+<b>splogger</b> logs messages with facility <i>fac</i>. <i>fac</i> (default: 2)
+  must be numeric.
+<div class="Pp"></div>
+<b>splogger</b> converts unprintable characters to question marks.
+<div class="Pp"></div>
+<b>splogger</b> does not log blank lines.
+<div class="Pp"></div>
+<b>splogger</b> folds messages after 800 characters, since <b>syslog</b> can't
+  handle long messages. <b>splogger</b> uses a + after the timestamp to mark
+  folded lines.
+<div class="Pp"></div>
+Note that the <b>syslog</b> mechanism is inherently unreliable: it does not
+  guarantee that messages will be logged. It is also very slow.
+<h1 class="Sh" title="Sh" id="SEE_ALSO"><a class="permalink" href="#SEE_ALSO">SEE
+  ALSO</a></h1>
+syslog(3), logger(8)</div>
+<table class="foot">
+  <tr>
+    <td class="foot-date"></td>
+    <td class="foot-os"></td>
+  </tr>
+</table>
+</body>
+</html>

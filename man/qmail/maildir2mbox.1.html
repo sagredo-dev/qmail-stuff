@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <link rel="stylesheet" href="style.css" type="text/css" media="all"/>
+  <title><a href="maildir2mbox.1.html">maildir2mbox(1)</a></title>
+</head>
+<body>
+<nav class="qmail-nav"><a href="index.html">&larr; Qmail man</a></nav>
+<table class="head">
+  <tr>
+    <td class="head-ltitle"><a href="maildir2mbox.1.html">maildir2mbox(1)</a></td>
+    <td class="head-vol">General Commands Manual</td>
+    <td class="head-rtitle"><a href="maildir2mbox.1.html">maildir2mbox(1)</a></td>
+  </tr>
+</table>
+<div class="manual-text">
+<h1 class="Sh" title="Sh" id="NAME"><a class="permalink" href="#NAME">NAME</a></h1>
+maildir2mbox - move mail from a maildir to an mbox
+<h1 class="Sh" title="Sh" id="SYNOPSIS"><a class="permalink" href="#SYNOPSIS">SYNOPSIS</a></h1>
+<b>maildir2mbox</b>
+<h1 class="Sh" title="Sh" id="DESCRIPTION"><a class="permalink" href="#DESCRIPTION">DESCRIPTION</a></h1>
+<b>maildir2mbox</b> moves mail from a <i>maildir</i>-format directory to an
+  <i>mbox</i>-format file.
+<div class="Pp"></div>
+You must supply three environment variables to <b>maildir2mbox</b>:
+  <b>MAILDIR</b> is the name of your <i>maildir</i> directory; <b>MAIL</b> is
+  the name of your <i>mbox</i> file; and <b>MAILTMP</b> is a temporary file that
+  <b>maildir2mbox</b> can overwrite. <b>MAILTMP</b> and <b>MAIL</b> must be on
+  the same filesystem.
+<div class="Pp"></div>
+<b>maildir2mbox</b> is reliable: it will not remove messages from <b>MAILDIR</b>
+  until the messages have been successfully appended to <b>MAIL</b>.
+<div class="Pp"></div>
+<b>maildir2mbox</b> locks <b>MAIL</b> to protect against simultaneous access by
+  a mail reader. This locking system does not protect against simultaneous
+  access by another <b>maildir2mbox</b>; you should run only one
+  <b>maildir2mbox</b> at a time.
+<h1 class="Sh" title="Sh" id="SEE_ALSO"><a class="permalink" href="#SEE_ALSO">SEE
+  ALSO</a></h1>
+<a href="maildir.5.html">maildir(5)</a></div>
+<table class="foot">
+  <tr>
+    <td class="foot-date"></td>
+    <td class="foot-os"></td>
+  </tr>
+</table>
+</body>
+</html>

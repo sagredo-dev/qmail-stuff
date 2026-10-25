@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <link rel="stylesheet" href="style.css" type="text/css" media="all"/>
+  <title><a href="qmail-users.5.html">qmail-users(5)</a></title>
+</head>
+<body>
+<nav class="qmail-nav"><a href="index.html">&larr; Qmail man</a></nav>
+<table class="head">
+  <tr>
+    <td class="head-ltitle"><a href="qmail-users.5.html">qmail-users(5)</a></td>
+    <td class="head-vol">File Formats Manual</td>
+    <td class="head-rtitle"><a href="qmail-users.5.html">qmail-users(5)</a></td>
+  </tr>
+</table>
+<div class="manual-text">
+<h1 class="Sh" title="Sh" id="NAME"><a class="permalink" href="#NAME">NAME</a></h1>
+qmail-users - assign mail addresses to users
+<h1 class="Sh" title="Sh" id="OVERVIEW"><a class="permalink" href="#OVERVIEW">OVERVIEW</a></h1>
+The file <b>/var/qmail/users/assign</b> assigns addresses to users. For example,
+<div class="Pp"></div>
+<pre>
+   =joe.shmoe:joe:503:78:/home/joe:::
+</pre>
+<div class="Pp"></div>
+says that mail for <b>joe.shmoe</b> should be delivered to user <b>joe</b>, with
+  uid 503 and gid 78, as specified by <b>/home/joe/.qmail</b>.
+<div class="Pp"></div>
+Assignments fed to <b>qmail-newu</b> will be used by <b>qmail-lspawn</b> to
+  control <b>qmail-local</b>'s deliveries. See <b>qmail-newu</b>(8). A change to
+  <b>/var/qmail/users/assign</b> will have no effect until <b>qmail-newu</b> is
+  run.
+<h1 class="Sh" title="Sh" id="STRUCTURE"><a class="permalink" href="#STRUCTURE">STRUCTURE</a></h1>
+<b>/var/qmail/users/assign</b> is a series of assignments, one per line. It ends
+  with a line containing a single dot. Lines must not contain NUL.
+<h1 class="Sh" title="Sh" id="SIMPLE_ASSIGNMENTS"><a class="permalink" href="#SIMPLE_ASSIGNMENTS">SIMPLE
+  ASSIGNMENTS</a></h1>
+A simple assignment is a line of the form
+<div class="Pp"></div>
+<pre>
+   =local:user:uid:gid:homedir:dash:ext:
+</pre>
+<div class="Pp"></div>
+Here <i>local</i> is an address; <i>user</i>, <i>uid</i>, and <i>gid</i> are the
+  account name, uid, and gid of the user in charge of <i>local</i>; and messages
+  to <i>local</i> will be controlled by
+  <i>homedir<b>/.qmail</b><i>dashext</i></i><i>.</i>
+<div class="Pp"></div>
+If there are several assignments for the same <i>local</i> address,
+  <b>qmail-lspawn</b> will use the first one.
+<div class="Pp"></div>
+<i>local</i> is interpreted without regard to case.
+<h1 class="Sh" title="Sh" id="WILDCARD_ASSIGNMENTS"><a class="permalink" href="#WILDCARD_ASSIGNMENTS">WILDCARD
+  ASSIGNMENTS</a></h1>
+A wildcard assignment is a line of the form
+<div class="Pp"></div>
+<pre>
+   +loc:user:uid:gid:homedir:dash:pre:
+</pre>
+<div class="Pp"></div>
+This assignment applies to any address beginning with <i>loc</i>, including
+  <i>loc</i> itself. It means the same as
+<div class="Pp"></div>
+<pre>
+   =locext:user:uid:gid:homedir:dash:preext:
+</pre>
+<div class="Pp"></div>
+for every string <i>ext</i>.
+<div class="Pp"></div>
+A more specific wildcard assignment overrides a less specific assignment, and a
+  simple assignment overrides any wildcard assignment. For example:
+<div class="Pp"></div>
+<pre>
+   +:alias:7790:2108:/var/qmail/alias:-::
+   +joe-:joe:507:100:/home/joe:-::
+   =joe:joe:507:100:/home/joe:::
+</pre>
+<div class="Pp"></div>
+The address <b>joe</b> is handled by the third line; the address
+  <b>joe-direct</b> is handled by the second line; the address <b>bill</b> is
+  handled by the first line.
+<h1 class="Sh" title="Sh" id="SEE_ALSO"><a class="permalink" href="#SEE_ALSO">SEE
+  ALSO</a></h1>
+<a href="qmail-pw2u.8.html">qmail-pw2u(8)</a>, <a href="qmail-newu.8.html">qmail-newu(8)</a>, <a href="qmail-lspawn.8.html">qmail-lspawn(8)</a></div>
+<table class="foot">
+  <tr>
+    <td class="foot-date"></td>
+    <td class="foot-os"></td>
+  </tr>
+</table>
+</body>
+</html>

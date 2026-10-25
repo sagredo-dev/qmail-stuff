@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <link rel="stylesheet" href="style.css" type="text/css" media="all"/>
+  <title><a href="qmail-limits.7.html">qmail-limits(7)</a></title>
+</head>
+<body>
+<nav class="qmail-nav"><a href="index.html">&larr; Qmail man</a></nav>
+<table class="head">
+  <tr>
+    <td class="head-ltitle"><a href="qmail-limits.7.html">qmail-limits(7)</a></td>
+    <td class="head-vol">Miscellaneous Information Manual</td>
+    <td class="head-rtitle"><a href="qmail-limits.7.html">qmail-limits(7)</a></td>
+  </tr>
+</table>
+<div class="manual-text">
+<h1 class="Sh" title="Sh" id="NAME"><a class="permalink" href="#NAME">NAME</a></h1>
+qmail-limits - artificial limits in the qmail system
+<h1 class="Sh" title="Sh" id="DESCRIPTION"><a class="permalink" href="#DESCRIPTION">DESCRIPTION</a></h1>
+The <b>qmail</b> system is able to handle messages of any size, addresses of any
+  size, mailing lists of any size, and so on, except as limited by the available
+  memory and disk space.
+<div class="Pp"></div>
+However, it imposes certain artificial limits:
+<dl class="Bl-tag">
+  <dt>1.</dt>
+  <dd><b>qmail-lspawn</b> silently limits the number of simultaneous local
+      deliveries to 509. <b>qmail-rspawn</b> silently limits the number of
+      simultaneous remote deliveries to 509.</dd>
+</dl>
+<dl class="Bl-tag">
+  <dt>2.</dt>
+  <dd><b>qmail-queue</b> rejects any message with an envelope address longer
+      than 1000 characters.</dd>
+</dl>
+<dl class="Bl-tag">
+  <dt>3.</dt>
+  <dd><b>qmail-lspawn</b> truncates any overly long error report from a delivery
+      program. It appends a note saying that it did so.</dd>
+</dl>
+<h1 class="Sh" title="Sh" id="SEE_ALSO"><a class="permalink" href="#SEE_ALSO">SEE
+  ALSO</a></h1>
+<a href="qmail-lspawn.8.html">qmail-lspawn(8)</a>, <a href="qmail-queue.8.html">qmail-queue(8)</a>, <a href="qmail-rspawn.8.html">qmail-rspawn(8)</a></div>
+<table class="foot">
+  <tr>
+    <td class="foot-date"></td>
+    <td class="foot-os"></td>
+  </tr>
+</table>
+</body>
+</html>

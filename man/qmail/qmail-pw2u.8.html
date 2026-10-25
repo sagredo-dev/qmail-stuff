@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <link rel="stylesheet" href="style.css" type="text/css" media="all"/>
+  <title><a href="qmail-pw2u.8.html">qmail-pw2u(8)</a></title>
+</head>
+<body>
+<nav class="qmail-nav"><a href="index.html">&larr; Qmail man</a></nav>
+<table class="head">
+  <tr>
+    <td class="head-ltitle"><a href="qmail-pw2u.8.html">qmail-pw2u(8)</a></td>
+    <td class="head-vol">System Manager's Manual</td>
+    <td class="head-rtitle"><a href="qmail-pw2u.8.html">qmail-pw2u(8)</a></td>
+  </tr>
+</table>
+<div class="manual-text">
+<h1 class="Sh" title="Sh" id="NAME"><a class="permalink" href="#NAME">NAME</a></h1>
+qmail-pw2u - build address assignments from a passwd file
+<h1 class="Sh" title="Sh" id="SYNOPSIS"><a class="permalink" href="#SYNOPSIS">SYNOPSIS</a></h1>
+<b>qmail-pw2u</b> [ <b>-/ohHuUC</b> ] [ <b>-c<i>char</i></b> <i>]</i>
+<h1 class="Sh" title="Sh" id="DESCRIPTION"><a class="permalink" href="#DESCRIPTION">DESCRIPTION</a></h1>
+<b>qmail-pw2u</b> reads a V7-format passwd file from standard input and prints a
+  <b>qmail-users</b>-format assignment file.
+<div class="Pp"></div>
+A V7-format passwd file is a series of lines. Each line has the format
+<div class="Pp"></div>
+<pre>
+   user:password:uid:gid:gecos:home:shell
+</pre>
+<div class="Pp"></div>
+where <i>user</i> is an account name, <i>uid</i> and <i>gid</i> are the user id
+  and group id of that account, and <i>home</i> is the account's home directory.
+  <i>password</i>, <i>gecos</i>, and <i>shell</i> are ignored by
+  <b>qmail-pw2u</b>.
+<div class="Pp"></div>
+If you put the output of <b>qmail-pw2u</b> into <b>/var/qmail/users/assign</b>,
+  and then run <b>qmail-newu</b>, <b>qmail-lspawn</b> will obey the assignments
+  printed by <b>qmail-pw2u</b>. <b>WARNING:</b> After changing any users, uids,
+  gids, or home directories in your passwd file, you must run <b>qmail-pw2u</b>
+  and <b>qmail-newu</b> again if you want <b>qmail-lspawn</b> to see the
+  changes.
+<h1 class="Sh" title="Sh" id="RULES"><a class="permalink" href="#RULES">RULES</a></h1>
+By default, <b>qmail-pw2u</b> follows the same rules as <b>qmail-getpw</b>. It
+  skips <i>user</i> if (1) <i>uid</i> is zero, (2) <i>home</i> does not exist,
+  (3) <i>user</i> does not own <i>home</i>, or (4) <i>user</i> contains
+  uppercase letters. It then gives each remaining <i>user</i> control over the
+  basic <i>user</i> address and all addresses of the form
+  <i>user<b>-</b><i>anything</i></i><i>.</i> <i>A catch-all user,</i>
+  <b>alias</b>, controls all other addresses.
+<div class="Pp"></div>
+You may change these rules by setting up files in <b>/var/qmail/users</b>:
+<dl class="Bl-tag">
+  <dt><b>include</b></dt>
+  <dd>Allowed users, one per line. If <b>include</b> exists, and <i>user</i> is
+      not listed in <b>include</b>, <i>user</i> is ignored.</dd>
+</dl>
+<dl class="Bl-tag">
+  <dt><b>exclude</b></dt>
+  <dd>Ignored users, one per line. If <b>exclude</b> exists, and <i>user</i> is
+      listed in <b>exclude</b>, <i>user</i> is ignored.</dd>
+</dl>
+<dl class="Bl-tag">
+  <dt><b>mailnames</b></dt>
+  <dd>Replacement names for users. Each line has the form
+    <div class="Pp"></div>
+    <pre>
+   user:mailname1:mailname2:...
+    </pre>
+    <div class="Pp"></div>
+    The addresses <i>mailname1</i> and <i>mailname1<b>-</b><i>ext</i></i>
+      <i>and</i> <i>mailname2</i> and so on will be delivered to <i>user</i>.
+    <div class="Pp"></div>
+    <b>WARNING:</b> The addresses <i>user</i> and <i>user<b>-</b><i>ext</i></i>
+      <i>will not be delivered to</i> <i>user</i> unless <i>user</i> is listed
+      as one of the <i>mailname</i>s.
+    <div class="Pp"></div>
+    A line in <b>mailnames</b> is silently ignored if the user does not
+    exist.</dd>
+</dl>
+<dl class="Bl-tag">
+  <dt><b>subusers</b></dt>
+  <dd>Extra addresses. Each line has the form
+    <div class="Pp"></div>
+    <pre>
+   sub:user:pre:
+    </pre>
+    <div class="Pp"></div>
+    <i>sub</i> will be handled by <i>home<b>/.qmail-</b><i>pre</i></i><i>,</i>
+      <i>where</i> <i>home</i> is <i>user</i>'s home directory;
+      <i>sub<b>-</b><i>ext</i></i> <i>will be handled by</i>
+      <i>home<b>/.qmail-</b> <i>pre</i><b>-</b><i>ext</i></i><i>.</i></dd>
+</dl>
+<dl class="Bl-tag">
+  <dt><b>append</b></dt>
+  <dd>Extra assignments, printed at the end of <b>qmail-pw2u</b>'s output.</dd>
+</dl>
+<h1 class="Sh" title="Sh" id="OPTIONS"><a class="permalink" href="#OPTIONS">OPTIONS</a></h1>
+<dl class="Bl-tag">
+  <dt><b>-o</b></dt>
+  <dd>(Default.) Skip <i>user</i> if <i>home</i> does not exist (or is not
+      visible to <b>qmail-pw2u</b>). Skip <i>user</i> if <i>home</i> is not
+      owned by <i>user</i>.</dd>
+</dl>
+<dl class="Bl-tag">
+  <dt><b>-h</b></dt>
+  <dd>Stop if <i>home</i> does not exist. This is appropriate if every user is
+      supposed to have a home directory. Skip <i>user</i> if <i>home</i> is not
+      owned by <i>user</i>.</dd>
+</dl>
+<dl class="Bl-tag">
+  <dt><b>-H</b></dt>
+  <dd>Do not check the existence or ownership of <i>home</i>.</dd>
+</dl>
+<dl class="Bl-tag">
+  <dt><b>-U</b></dt>
+  <dd>(Default.) Skip <i>user</i> if there are any uppercase letters in
+      <i>user</i>.</dd>
+</dl>
+<dl class="Bl-tag">
+  <dt><b>-u</b></dt>
+  <dd>Allow uppercase letters in <i>user</i>.</dd>
+</dl>
+<dl class="Bl-tag">
+  <dt><b>-c<i>char</i></b></dt>
+  <dd>Use <i>char</i> as the user-extension delimiter in place of <b>-</b>.</dd>
+</dl>
+<dl class="Bl-tag">
+  <dt><b>-C</b></dt>
+  <dd>Disable the user-extension mechanism.</dd>
+</dl>
+<dl class="Bl-tag">
+  <dt><b>-/</b></dt>
+  <dd>Use <i>home<b>/.qmail-/</b></i><b>...</b> <b>instead of</b>
+      <i>home<b>/.qmail-</b></i><b>...</b></dd>
+</dl>
+<h1 class="Sh" title="Sh" id="SEE_ALSO"><a class="permalink" href="#SEE_ALSO">SEE
+  ALSO</a></h1>
+<a href="qmail-users.5.html">qmail-users(5)</a>, <a href="qmail-lspawn.8.html">qmail-lspawn(8)</a>, <a href="qmail-newu.8.html">qmail-newu(8)</a>, <a href="qmail-getpw.8.html">qmail-getpw(8)</a></div>
+<table class="foot">
+  <tr>
+    <td class="foot-date"></td>
+    <td class="foot-os"></td>
+  </tr>
+</table>
+</body>
+</html>

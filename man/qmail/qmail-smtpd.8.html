@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <link rel="stylesheet" href="style.css" type="text/css" media="all"/>
+  <title><a href="qmail-smtpd.8.html">qmail-smtpd(8)</a></title>
+</head>
+<body>
+<nav class="qmail-nav"><a href="index.html">&larr; Qmail man</a></nav>
+<table class="head">
+  <tr>
+    <td class="head-ltitle"><a href="qmail-smtpd.8.html">qmail-smtpd(8)</a></td>
+    <td class="head-vol">System Manager's Manual</td>
+    <td class="head-rtitle"><a href="qmail-smtpd.8.html">qmail-smtpd(8)</a></td>
+  </tr>
+</table>
+<div class="manual-text">
+<h1 class="Sh" title="Sh" id="NAME"><a class="permalink" href="#NAME">NAME</a></h1>
+qmail-smtpd - receive mail via SMTP
+<h1 class="Sh" title="Sh" id="SYNOPSIS"><a class="permalink" href="#SYNOPSIS">SYNOPSIS</a></h1>
+<b>qmail-smtpd</b>
+<h1 class="Sh" title="Sh" id="DESCRIPTION"><a class="permalink" href="#DESCRIPTION">DESCRIPTION</a></h1>
+<b>qmail-smtpd</b> receives mail messages via the Simple Mail Transfer Protocol
+  (SMTP) and invokes <b>qmail-queue</b> to deposit them into the outgoing queue.
+  <b>qmail-smtpd</b> must be supplied several environment variables; see
+  <b><a href="tcp-environ.5.html">tcp-environ(5)</a></b>.
+<div class="Pp"></div>
+If the environment variable <b>SMTPS</b> is non-empty, <b>qmail-smtpd</b> starts
+  a TLS session (to support the deprecated SMTPS protocol, normally on port
+  465). Otherwise, <b>qmail-smtpd</b> offers the STARTTLS extension to ESMTP.
+<div class="Pp"></div>
+<b>qmail-smtpd</b> offers RFC 5336 SMTP Email Address Internationalization
+  support and will advertize the capability in the EHLO greeting. Since
+  qmail-smtpd is 8 bit clean, setting of SMTPUTF8 has no real consequences
+  except for displaying this setting in the received headers as <b>UTF8SMTP</b>.
+<div class="Pp"></div>
+<b>qmail-smtpd</b> is responsible for counting hops. It rejects any message with
+  100 or more <b>Received</b> or <b>Delivered-To</b> header fields.
+<div class="Pp"></div>
+<b>qmail-smtpd</b> supports ESMTP, including the 8BITMIME, DATA, PIPELINING,
+  SIZE, SMTPUTF8 and AUTH options.
+<div class="Pp"></div>
+<b>qmail-smtpd</b> includes a &#x00B4;MAIL FROM:&#x00B4; parameter parser and
+  obeys &#x00B4;Auth&#x00B4; and &#x00B4;Size&#x00B4; advertisements.
+<div class="Pp"></div>
+<b>qmail-smtpd</b> can accept LOGIN, PLAIN, and CRAM-MD5 AUTH types. It invokes
+  <i>checkprogram</i>, which reads on file descriptor 3 the username, a 0 byte,
+  the password or CRAM-MD5 digest/response derived from the SMTP client, another
+  0 byte, a CRAM-MD5 challenge (if applicable to the AUTH type), and a final 0
+  byte. <i>checkprogram</i> invokes <i>subprogram</i> upon successful
+  authentication, which should in turn return 0 to <b>qmail-smtpd</b>,
+  effectively setting the environment variables $RELAYCLIENT and $TCPREMOTEINFO
+  (any supplied value replaced with the authenticated username).
+  <b>qmail-smtpd</b> will reject the authentication attempt if it receives a
+  nonzero return value from <i>checkprogram</i> or <i>subprogram</i>.
+<div class="Pp"></div>
+<h1 class="Sh" title="Sh" id="TRANSPARENCY"><a class="permalink" href="#TRANSPARENCY">TRANSPARENCY</a></h1>
+<b>qmail-smtpd</b> converts the SMTP newline convention into the UNIX newline
+  convention by converting CR LF into LF. It returns a temporary error and drops
+  the connection on bare LFs; see <b>https://cr.yp.to/docs/smtplf.html</b>.
+<div class="Pp"></div>
+<b>qmail-smtpd</b> accepts messages that contain long lines or non-ASCII
+  characters, even though such messages violate the SMTP protocol.
+<h1 class="Sh" title="Sh" id="CONTROL_FILES"><a class="permalink" href="#CONTROL_FILES">CONTROL
+  FILES</a></h1>
+<dl class="Bl-tag">
+  <dt><i>badhelo</i></dt>
+  <dd>Unacceptable HELO/EHLO host names. <b>qmail-smtpd</b> will reject every
+      recipient address for a message if the host name is listed in, or matches
+      a POSIX regular expression pattern listed in, <i>badhelo</i>. If the
+      <b>NOBADHELO</b> environment variable is set, then the contents of
+      <i>badhelo</i> will be ignored. For more information, please have a look
+      at doc/README.qregex.</dd>
+</dl>
+<dl class="Bl-tag">
+  <dt><i>badhelonorelay</i></dt>
+  <dd>Functions the same as the <i>badhelo</i> control file but is read only if
+      the <b>RELAYCLIENT</b> environment variable is not set. For more
+      information, please have a look at doc/README.qregex.</dd>
+</dl>
+<dl class="Bl-tag">
+  <dt><i>badmailfrom</i></dt>
+  <dd>Unacceptable envelope sender addresses. <b>qmail-smtpd</b> will reject
+      every recipient address for a message if the envelope sender address is
+      listed in, , or matches a POSIX regular expression pattern listed in,
+      <i>badmailfrom</i>. A line in <i>badmailfrom</i> may be of the form
+      <b>@<i>host</i></b><i>,</i> <i>meaning every address at</i> <i>host</i>.
+      For more information, please have a look at doc/README.qregex.</dd>
+</dl>
+<dl class="Bl-tag">
+  <dt><i>badmailfromnorelay</i></dt>
+  <dd>Functions the same as the <i>badmailfrom</i> control file but is read only
+      if the <b>RELAYCLIENT</b> environment variable is not set. For more
+      information, please have a look at doc/README.qregex.</dd>
+</dl>
+<dl class="Bl-tag">
+  <dt><i>badrcpttonorelay</i></dt>
+  <dd>Functions the same as the <i>badrcptto</i> control file but is read only
+      if the <b>RELAYCLIENT</b> environment variable is not set. For more
+      information, please have a look at doc/README.qregex.</dd>
+</dl>
+<dl class="Bl-tag">
+  <dt><i>badrcptto</i></dt>
+  <dd>Unacceptable envelope recipient addresses. <b>qmail-smtpd</b> will reject
+      every recipient address for a message if the recipient address is listed
+      in, or matches a POSIX regular expression pattern listed in,
+      <i>badrcptto</i>. For more information, please have a look at
+      doc/README.qregex.
+    <div class="Pp"></div>
+  </dd>
+</dl>
+<dl class="Bl-tag">
+  <dt><i>brtlimit</i></dt>
+  <dd>Number of bad recipients before closing the transmission channel.
+      <b>qmail-smtpd</b> will close the transmission channel after reaching the
+      number of bad recipients in <i>brtlimit</i>. Both badrcptto, chkuser and
+      validrcptto failures are counted.
+    <div class="Pp"></div>
+    If the environment variable <b>BRTLIMIT</b> is set, it overrides
+      <i>brtlimit</i>.
+    <div class="Pp"></div>
+    Default and minimum: 0.
+    <div class="Pp"></div>
+  </dd>
+</dl>
+<dl class="Bl-tag">
+  <dt><i>clientca.pem</i></dt>
+  <dd>A list of Certifying Authority (CA) certificates that are used to verify
+      the client-presented certificates during a TLS-encrypted session.
+    <div class="Pp"></div>
+  </dd>
+</dl>
+<dl class="Bl-tag">
+  <dt><i>clientcrl.pem</i></dt>
+  <dd>A list of Certificate Revocation Lists (CRLs). If present it should
+      contain the CRLs of the CAs in <i>clientca.pem</i> and client certs will
+      be checked for revocation.
+    <div class="Pp"></div>
+  </dd>
+</dl>
+<dl class="Bl-tag">
+  <dt><i>databytes</i></dt>
+  <dd>Maximum number of bytes allowed in a message, or 0 for no limit. Default:
+      0. If a message exceeds this limit, <b>qmail-smtpd</b> returns a permanent
+      error code to the client; in contrast, if the disk is full or
+      <b>qmail-smtpd</b> hits a resource limit, <b>qmail-smtpd</b> returns a
+      temporary error code.
+    <div class="Pp"></div>
+    <i>databytes</i> counts bytes as stored on disk, not as transmitted through
+      the network. It does not count the <b>qmail-smtpd</b> Received line, the
+      <b>qmail-queue</b> Received line, or the envelope.
+    <div class="Pp"></div>
+    If the environment variable <b>DATABYTES</b> is set, it overrides
+      <i>databytes</i>.
+    <div class="Pp"></div>
+  </dd>
+</dl>
+<dl class="Bl-tag">
+  <dt><i>dh4096.pem</i></dt>
+  <dd>If these 4096 bit DH parameters are provided, <b>qmail-smtpd</b> will use
+      them for TLS sessions instead of generating one on-the-fly (which is very
+      timeconsuming).
+    <div class="Pp"></div>
+  </dd>
+</dl>
+<dl class="Bl-tag">
+  <dt><i>dnsbllist</i></dt>
+  <dd>A list of dnsbl providers that <b>qmail-smtpd</b> checks to identify
+      blacklisted ip addresses.
+    <div class="Pp"></div>
+    Exception: If the environment variable <b>DNSBLSKIP</b> is set,
+      <b>qmail-smtpd</b> ignores <i>dnsbllist</i>, and the dnsbl check is not
+      performed. The check is skipped even if some other authentication method
+      succedeed and authorized the client to relay (smtp-auth or tls client
+      certificate), or if <b>RELAYCLIENT</b> enviromnent variable is set.
+    <div class="Pp"></div>
+  </dd>
+</dl>
+<dl class="Bl-tag">
+  <dt><i>localiphost</i></dt>
+  <dd>Replacement host name for local IP addresses. Default: <i>me</i>, if that
+      is supplied. <b>qmail-smtpd</b> is responsible for recognizing
+      dotted-decimal addresses for the current host. When it sees a recipient
+      address of the form <i>box@[d.d.d.d]</i>, where <i>d.d.d.d</i> is a local
+      IP address, it replaces <i>[d.d.d.d]</i> with <i>localiphost</i>. This is
+      done before <i>rcpthosts</i>.</dd>
+</dl>
+<dl class="Bl-tag">
+  <dt><i>morercpthosts</i></dt>
+  <dd>Extra allowed RCPT domains. If <i>rcpthosts</i> and <i>morercpthosts</i>
+      both exist, <i>morercpthosts</i> is effectively appended to
+      <i>rcpthosts</i>.
+    <div class="Pp"></div>
+    You must run <b>qmail-newmrh</b> whenever <i>morercpthosts</i> changes.
+    <div class="Pp"></div>
+    Rule of thumb for large sites: Put your 50 most commonly used domains into
+      <i>rcpthosts</i>, and the rest into <i>morercpthosts</i>.</dd>
+</dl>
+<dl class="Bl-tag">
+  <dt><i>rcpthosts</i></dt>
+  <dd>Allowed RCPT domains. If <i>rcpthosts</i> is supplied, <b>qmail-smtpd</b>
+      will reject any envelope recipient address with a domain not listed in
+      <i>rcpthosts</i>.
+    <div class="Pp"></div>
+    Exception: If the environment variable <b>RELAYCLIENT</b> is set,
+      <b>qmail-smtpd</b> will ignore <i>rcpthosts</i>, and will append the value
+      of <b>RELAYCLIENT</b> to each incoming recipient address.
+    <div class="Pp"></div>
+    <i>rcpthosts</i> may include wildcards:
+    <div class="Pp"></div>
+    <pre>
+   heaven.af.mil
+   .heaven.af.mil
+    </pre>
+    <div class="Pp"></div>
+    Envelope recipient addresses without @ signs are always allowed through.
+    <div class="Pp"></div>
+  </dd>
+</dl>
+<dl class="Bl-tag">
+  <dt><i>rsa4096.pem</i></dt>
+  <dd>If this 4096 bit RSA key is provided, <b>qmail-smtpd</b> will use it for
+      TLS sessions instead of generating one on-the-fly.
+    <div class="Pp"></div>
+  </dd>
+</dl>
+<dl class="Bl-tag">
+  <dt><i>servercert.pem</i></dt>
+  <dd>SSL certificate to be presented to clients in TLS-encrypted sessions.
+      Should contain both the certificate and the private key. Certifying
+      Authority (CA) and intermediate certificates can be added at the end of
+      the file.
+    <div class="Pp"></div>
+  </dd>
+</dl>
+<dl class="Bl-tag">
+  <dt><i>servercerts/&lt;FQDN&gt;/servercert.pem</i></dt>
+  <dd>Domain-specific SSL certificates for servers that are reachable under
+      different names when the client supports server name indication (SNI).
+      &lt;FQDN&gt; is the fully-qualified domain name given by SNI. If SNI is
+      not provided or no domain-specific certificate exists, the default
+      <i>servercert.pem</i> will be used. Should contain both the certificate
+      and the private key. Certifying Authority (CA) and intermediate
+      certificates can be added at the end of the file.
+    <div class="Pp"></div>
+  </dd>
+</dl>
+<dl class="Bl-tag">
+  <dt><i>smtpgreeting</i></dt>
+  <dd>SMTP greeting message. Default: <i>me</i>, if that is supplied; otherwise
+      <b>qmail-smtpd</b> will refuse to run. The first word of
+      <i>smtpgreeting</i> should be the current host's name.</dd>
+</dl>
+<dl class="Bl-tag">
+  <dt><i>timeoutsmtpd</i></dt>
+  <dd>Number of seconds <b>qmail-smtpd</b> will wait for each new buffer of data
+      from the remote SMTP client. Default: 1200.
+    <div class="Pp"></div>
+  </dd>
+</dl>
+<h1 class="Sh" title="Sh" id="ENVIRONMENT_VARIABLES_READ"><a class="permalink" href="#ENVIRONMENT_VARIABLES_READ">ENVIRONMENT
+  VARIABLES READ</a></h1>
+Environment variables may be defined globally in the <b>qmail-smtpd</b> startup
+  script and/or individually as part of the <b>tcpserver's</b> cdb database. The
+  environment variables may be quoted (&quot;variable&quot;, or 'variable') and
+  in case of global use, have to be exported. <b>qmail-smtpd</b> supports the
+  following legacy environment variables, typically provided by <b>tcpserver</b>
+  or <b>sslserver</b> or <b>tcp-env</b>: <i>TCPREMOTEIP</i>,
+  <i>TCPREMOTEHOST</i> <i>TCPREMOTEINFO</i> and <i>TCPLOCALPORT</i> as well as
+  <i>RELAYCLIENT</i>.
+<div class="Pp"></div>
+<b>qmail-smtpd</b> may use the following environment variables for SMTP
+  authentication:
+<dl class="Bl-tag">
+  <dt><i>SMTPAUTH</i></dt>
+  <dd>is used to enable SMTP Authentication for the AUTH types LOGIN and PLAIN.
+      In case</dd>
+</dl>
+<dl class="Bl-tag">
+  <dt><i>SMTPAUTH='+cram'</i></dt>
+  <dd>is defined, <b>qmail-smtpd</b> honors LOGIN, PLAIN, and additionally
+      CRAM-MD5 authentication. Simply</dd>
+</dl>
+<dl class="Bl-tag">
+  <dt><i>SMTPAUTH='cram'</i></dt>
+  <dd>restricts authentication just to CRAM-MD5. If however</dd>
+</dl>
+<dl class="Bl-tag">
+  <dt><i>SMTPAUTH='!'</i></dt>
+  <dd>starts with an exclamation mark, AUTH is required. You can enforce
+      'Submission' using this option and binding <b>qmail-smtpd</b> to the
+      SUBMISSION port &#x00B4;587'. In particular,</dd>
+</dl>
+<dl class="Bl-tag">
+  <dt><i>SMTPAUTH='!cram'</i></dt>
+  <dd>may be useful. In opposite, if</dd>
+</dl>
+<dl class="Bl-tag">
+  <dt><i>SMTPAUTH='-'</i></dt>
+  <dd>starts with a dash, AUTH is disabled for particular connections.
+    <div class="Pp"></div>
+    Note: The use of 'cram' requires a CRAM-MD5 enabled PAM.
+    <div class="Pp"></div>
+  </dd>
+</dl>
+<dl class="Bl-tag">
+  <dt><i>tlsclients</i></dt>
+  <dd>A list of email addresses. When relay rules would reject an incoming
+      message, <b>qmail-smtpd</b> can allow it if the client presents a
+      certificate that can be verified against the CA list in
+      <i>clientca.pem</i> and the certificate email address is in
+      <i>tlsclients</i>.
+    <div class="Pp"></div>
+  </dd>
+</dl>
+<dl class="Bl-tag">
+  <dt><i>tlsserverciphers</i></dt>
+  <dd>A set of OpenSSL cipher strings. Multiple ciphers contained in a string
+      should be separated by a colon. If the environment variable
+      <b>TLSCIPHERS</b> is set to such a string, it takes precedence.
+    <div class="Pp"></div>
+  </dd>
+</dl>
+<dl class="Bl-tag">
+  <dt><i>spfbehavior</i></dt>
+  <dd>Set to a value between 1 and 6 to enable SPF checks; 0 to disable. 1
+      selects 'annotate-only' mode, where <b>qmail-smtpd</b> will annotate
+      incoming email with <b>Received-SPF</b> fields, but will not reject any
+      messages. 2 will produce temporary failures on DNS lookup problems so you
+      can make sure you always have meaningful Received-SPF headers. 3 selects
+      'reject' mode, where incoming mail will be rejected if the SPF record says
+      'fail'. 4 selects a more stricter rejection mode, which is like 'reject'
+      mode, except that incoming mail will also be rejected when the SPF record
+      says 'softfail'. 5 will also reject when the SPF record says 'neutral',
+      and 6 if no SPF records are available at all (or a syntax error was
+      encountered). The contents of this file are overridden by the value of the
+      <b>SPFBEHAVIOR</b> environment variable, if set. Default: 0.</dd>
+</dl>
+<dl class="Bl-tag">
+  <dt><i>spfexp</i></dt>
+  <dd>You can add a line with a an SPF explanation that will be shown to the
+      sender in case of a reject. It will override the default one. You can use
+      SPF macro expansion.</dd>
+</dl>
+<dl class="Bl-tag">
+  <dt><i>spfguess</i></dt>
+  <dd>You can add a line with SPF rules that will be checked if a sender domain
+      doesn't have a SPF record. The local rules will also be used in this
+    case.</dd>
+</dl>
+<dl class="Bl-tag">
+  <dt><i>spfrules</i></dt>
+  <dd>You can add a line with SPF rules that will be checked before other SPF
+      rules would fail. This can be used to always allow certain machines to
+      send certain mails.</dd>
+</dl>
+<h1 class="Sh" title="Sh" id="SEE_ALSO"><a class="permalink" href="#SEE_ALSO">SEE
+  ALSO</a></h1>
+<a href="tcp-env.1.html">tcp-env(1)</a>, <a href="tcp-environ.5.html">tcp-environ(5)</a>, <a href="qmail-control.5.html">qmail-control(5)</a>, <a href="qmail-inject.8.html">qmail-inject(8)</a>, <a href="qmail-newmrh.8.html">qmail-newmrh(8)</a>,
+  <a href="qmail-queue.8.html">qmail-queue(8)</a>, <a href="qmail-remote.8.html">qmail-remote(8)</a></div>
+<table class="foot">
+  <tr>
+    <td class="foot-date"></td>
+    <td class="foot-os"></td>
+  </tr>
+</table>
+</body>
+</html>

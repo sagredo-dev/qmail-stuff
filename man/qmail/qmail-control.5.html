@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <link rel="stylesheet" href="style.css" type="text/css" media="all"/>
+  <title><a href="qmail-control.5.html">qmail-control(5)</a></title>
+</head>
+<body>
+<nav class="qmail-nav"><a href="index.html">&larr; Qmail man</a></nav>
+<table class="head">
+  <tr>
+    <td class="head-ltitle"><a href="qmail-control.5.html">qmail-control(5)</a></td>
+    <td class="head-vol">File Formats Manual</td>
+    <td class="head-rtitle"><a href="qmail-control.5.html">qmail-control(5)</a></td>
+  </tr>
+</table>
+<div class="manual-text">
+<h1 class="Sh" title="Sh" id="NAME"><a class="permalink" href="#NAME">NAME</a></h1>
+qmail-control - qmail configuration files
+<h1 class="Sh" title="Sh" id="INTRODUCTION"><a class="permalink" href="#INTRODUCTION">INTRODUCTION</a></h1>
+You can change the behavior of the <b>qmail</b> system by modifying
+  <b>qmail</b>'s <i>control files</i> in <b>/var/qmail/control</b>.
+<div class="Pp"></div>
+<b>qmail</b> can survive with just one control file, <i>me</i>, containing the
+  fully-qualified name of the current host. This file is used as the default for
+  other hostname-related control files.
+<div class="Pp"></div>
+Comments are allowed in <i>badhelo</i>, <i>badmailfrom</i>,
+  <i>badmailfromnorelay</i>, <i>badrcptto</i>, <i>badrcpttonorelay</i>,
+  <i>locals</i>, <i>percenthack</i>, <i>qmqpservers</i>, <i>rcpthosts</i>,
+  <i>smtproutes</i>, and <i>virtualdomains</i>. Trailing spaces and tabs are
+  allowed in any control file.
+<div class="Pp"></div>
+The following table lists all control files other than <i>me</i>. See the
+  corresponding man pages for further details.
+<div class="Pp"></div>
+<div class="Bd-indent">
+<pre>
+control	default	used by
+<div class="Pp"></div>
+<i>authsender	(none)	qmail-remote</i>
+<i>badhelo	(none)	qmail-smtpd</i>
+<i>badhelonorelay	(none)	qmail-smtpd</i>
+<i>badmailfrom	(none)	qmail-smtpd</i>
+<i>badmailfromnorelay	(none)	qmail-smtpd</i>
+<i>badrcptto	(none)	qmail-smtpd</i>
+<i>badrcpttonorelay	(none)	qmail-smtpd</i>
+<i>bouncefrom	MAILER-DAEMON	qmail-send</i>
+<i>bouncehost	<i>me	</i>qmail-send</i>
+<i>brtlimit	0	qmail-smtpd</i>
+<i>clientca.pem	(none)	qmail-smtpd</i>
+<i>clientcert.pem	(none)	qmail-remote</i>
+<i>concurrencylocal	10	qmail-send</i>
+<i>concurrencyremote	20	qmail-send</i>
+<i>defaultdomain	<i>me	</i>qmail-inject</i>
+<i>defaulthost	<i>me	</i>qmail-inject</i>
+<i>databytes	0	qmail-smtpd</i>
+<i>dnsbllist	(none)	qmail-smtpd</i>
+<i>dh4096.pem	(none)	qmail-smtpd</i>
+<i>doublebouncehost	<i>me	</i>qmail-send</i>
+<i>doublebounceto	postmaster	qmail-send</i>
+<i>envnoathost	<i>me	</i>qmail-send</i>
+<i>helohost	<i>me	</i>qmail-remote</i>
+<i>idhost	<i>me	</i>qmail-inject</i>
+<i>localiphost	<i>me	</i>qmail-smtpd</i>
+<i>locals	<i>me	</i>qmail-send</i>
+<i>morercpthosts	(none)	qmail-smtpd</i>
+<i>notlshosts_auto	(none)	qmail-remote</i>
+<i>notlshosts/FQDN	(none)	qmail-remote</i>
+<i>outgoingip	0.0.0.0	qmail-remote</i>
+<i>percenthack	(none)	qmail-send</i>
+<i>plusdomain	<i>me	</i>qmail-inject</i>
+<i>qfilters	(none)	qmail-qfilter</i>
+<i>qmqpservers	(none)	qmail-qmqpc</i>
+<i>queuelifetime	604800	qmail-send</i>
+<i>rcpthosts	(none)	qmail-smtpd</i>
+<i>rsa4096.pem	(none)	qmail-smtpd</i>
+<i>servercert.pem	(none)	qmail-smtpd</i>
+<i>servercerts/	(none)	qmail-smtpd</i>
+<i>smtpgreeting	<i>me	</i>qmail-smtpd</i>
+<i>smtproutes	(none)	qmail-remote</i>
+<i>spfbehavior	0	qmail-smtpd</i>
+<i>spfexp	(default)	qmail-smtpd</i>
+<i>spfguess	(none)	qmail-smtpd</i>
+<i>spfrules	(none)	qmail-smtpd</i>
+<i>taps	(none)	qmail-queue</i>
+<i>timeoutconnect	60	qmail-remote</i>
+<i>timeoutremote	1200	qmail-remote</i>
+<i>timeoutsmtpd	1200	qmail-smtpd</i>
+<i>tlsclients 	(none)	qmail-smtpd</i>
+<i>tlsclientciphers	(none)	qmail-remote</i>
+<i>tlshosts/FQDN.pem	(none)	qmail-remote</i>
+<i>tlsserverciphers	(none)	qmail-smtpd</i>
+<i>virtualdomains	(none)	qmail-send</i>
+</pre>
+</div>
+<h1 class="Sh" title="Sh" id="SEE_ALSO"><a class="permalink" href="#SEE_ALSO">SEE
+  ALSO</a></h1>
+<a href="qmail-inject.8.html">qmail-inject(8)</a>, <a href="qmail-qmqpc.8.html">qmail-qmqpc(8)</a>, <a href="qmail-queue.8.html">qmail-queue(8)</a>, <a href="qmail-remote.8.html">qmail-remote(8)</a>, <a href="qmail-send.8.html">qmail-send(8)</a>,
+  <a href="qmail-showctl.8.html">qmail-showctl(8)</a>, <a href="qmail-smtpd.8.html">qmail-smtpd(8)</a></div>
+<table class="foot">
+  <tr>
+    <td class="foot-date"></td>
+    <td class="foot-os"></td>
+  </tr>
+</table>
+</body>
+</html>

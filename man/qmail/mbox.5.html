@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <link rel="stylesheet" href="style.css" type="text/css" media="all"/>
+  <title><a href="mbox.5.html">mbox(5)</a></title>
+</head>
+<body>
+<nav class="qmail-nav"><a href="index.html">&larr; Qmail man</a></nav>
+<table class="head">
+  <tr>
+    <td class="head-ltitle"><a href="mbox.5.html">mbox(5)</a></td>
+    <td class="head-vol">File Formats Manual</td>
+    <td class="head-rtitle"><a href="mbox.5.html">mbox(5)</a></td>
+  </tr>
+</table>
+<div class="manual-text">
+<h1 class="Sh" title="Sh" id="NAME"><a class="permalink" href="#NAME">NAME</a></h1>
+mbox - file containing mail messages
+<h1 class="Sh" title="Sh" id="INTRODUCTION"><a class="permalink" href="#INTRODUCTION">INTRODUCTION</a></h1>
+The most common format for storage of mail messages is <i>mbox</i> format. An
+  <i>mbox</i> is a single file containing zero or more mail messages.
+<h1 class="Sh" title="Sh" id="MESSAGE_FORMAT"><a class="permalink" href="#MESSAGE_FORMAT">MESSAGE
+  FORMAT</a></h1>
+A message encoded in <i>mbox</i> format begins with a <b>From_</b> line,
+  continues with a series of <b>non-<b>From_</b></b> <b>lines,</b> <b>and ends
+  with a blank line.</b> <b>A</b> <b>From_</b> line means any line that begins
+  with the characters F, r, o, m, space:
+<div class="Pp"></div>
+<pre>
+     From god@heaven.af.mil Sat Jan  3 01:05:34 1996
+<div>&#x00A0;</div>
+     Return-Path: &lt;god@heaven.af.mil&gt;
+<div>&#x00A0;</div>
+     Delivered-To: djb@silverton.berkeley.edu
+<div>&#x00A0;</div>
+     Date: 3 Jan 1996 01:05:34 -0000
+<div>&#x00A0;</div>
+     From: God &lt;god@heaven.af.mil&gt;
+<div>&#x00A0;</div>
+     To: djb@silverton.berkeley.edu (D. J. Bernstein)
+<div>&#x00A0;</div>
+<div class="Pp"></div>
+<div>&#x00A0;</div>
+     How's that mail system project coming along?
+<div>&#x00A0;</div>
+<div class="Pp"></div>
+</pre>
+<div class="Pp"></div>
+The final line is a completely blank line (no spaces or tabs). Notice that blank
+  lines may also appear elsewhere in the message.
+<div class="Pp"></div>
+The <b>From_</b> line always looks like <b>From</b> <i>envsender</i> <i>date</i>
+  <i>moreinfo</i>. <i>envsender</i> is one word, without spaces or tabs; it is
+  usually the envelope sender of the message. <i>date</i> is the delivery date
+  of the message. It always contains exactly 24 characters in <b>asctime</b>
+  format. <i>moreinfo</i> is optional; it may contain arbitrary information.
+<div class="Pp"></div>
+Between the <b>From_</b> line and the blank line is a message in RFC 822 format,
+  as described in <b><a href="qmail-header.5.html">qmail-header(5)</a></b>, subject to <b>&gt;From quoting</b> as
+  described below.
+<h1 class="Sh" title="Sh" id="HOW_A_MESSAGE_IS_DELIVERED"><a class="permalink" href="#HOW_A_MESSAGE_IS_DELIVERED">HOW
+  A MESSAGE IS DELIVERED</a></h1>
+Here is how a program appends a message to an <i>mbox</i> file.
+<div class="Pp"></div>
+It first creates a <b>From_</b> line given the message's envelope sender and the
+  current date. If the envelope sender is empty (i.e., if this is a bounce
+  message), the program uses <b>MAILER-DAEMON</b> instead. If the envelope
+  sender contains spaces, tabs, or newlines, the program replaces them with
+  hyphens.
+<div class="Pp"></div>
+The program then copies the message, applying <b>&gt;From quoting</b> to each
+  line. <b>&gt;From quoting</b> ensures that the resulting lines are not
+  <b>From_</b> lines: the program prepends a <b>&gt;</b> to any <b>From_</b>
+  line, <b>&gt;From_</b> line, <b>&gt;&gt;From_</b> line,
+  <b>&gt;&gt;&gt;From_</b> line, etc.
+<div class="Pp"></div>
+Finally the program appends a blank line to the message. If the last line of the
+  message was a partial line, it writes two newlines; otherwise it writes one.
+<h1 class="Sh" title="Sh" id="HOW_A_MESSAGE_IS_READ"><a class="permalink" href="#HOW_A_MESSAGE_IS_READ">HOW
+  A MESSAGE IS READ</a></h1>
+A reader scans through an <i>mbox</i> file looking for <b>From_</b> lines. Any
+  <b>From_</b> line marks the beginning of a message. The reader should not
+  attempt to take advantage of the fact that every <b>From_</b> line (past the
+  beginning of the file) is preceded by a blank line.
+<div class="Pp"></div>
+Once the reader finds a message, it extracts a (possibly corrupted) envelope
+  sender and delivery date out of the <b>From_</b> line. It then reads until the
+  next <b>From_</b> line or end of file, whichever comes first. It strips off
+  the final blank line and deletes the quoting of <b>&gt;From_</b> lines and
+  <b>&gt;&gt;From_</b> lines and so on. The result is an RFC 822 message.
+<h1 class="Sh" title="Sh" id="COMMON_MBOX_VARIANTS"><a class="permalink" href="#COMMON_MBOX_VARIANTS">COMMON
+  MBOX VARIANTS</a></h1>
+There are many variants of <i>mbox</i> format. The variant described above is
+  <i>mboxrd</i> format, popularized by Rahul Dhesi in June 1995.
+<div class="Pp"></div>
+The original <i>mboxo</i> format quotes only <b>From_</b> lines, not
+  <b>&gt;From_</b> lines. As a result it is impossible to tell whether
+<div class="Pp"></div>
+<pre>
+     From: djb@silverton.berkeley.edu (D. J. Bernstein)
+<div>&#x00A0;</div>
+     To: god@heaven.af.mil
+<div>&#x00A0;</div>
+<div class="Pp"></div>
+<div>&#x00A0;</div>
+     &gt;From now through August I'll be doing beta testing.
+<div>&#x00A0;</div>
+     Thanks for your interest.
+</pre>
+<div class="Pp"></div>
+was quoted in the original message. An <i>mboxrd</i> reader will always strip
+  off the quoting.
+<div class="Pp"></div>
+<i>mboxcl</i> format is like <i>mboxo</i> format, but includes a Content-Length
+  field with the number of bytes in the message. <i>mboxcl2</i> format is like
+  <i>mboxcl</i> but has no <b>&gt;From</b> quoting. These formats are used by
+  SVR4 mailers. <i>mboxcl2</i> cannot be read safely by <i>mboxrd</i> readers.
+<h1 class="Sh" title="Sh" id="UNSPECIFIED_DETAILS"><a class="permalink" href="#UNSPECIFIED_DETAILS">UNSPECIFIED
+  DETAILS</a></h1>
+There are many locking mechanisms for <i>mbox</i> files. <b>qmail-local</b>
+  always uses <b>flock</b> on systems that have it, otherwise <b>lockf</b>.
+<div class="Pp"></div>
+The delivery date in a <b>From_</b> line does not specify a time zone.
+  <b>qmail-local</b> always creates the delivery date in GMT so that <i>mbox</i>
+  files can be safely transported from one time zone to another.
+<div class="Pp"></div>
+If the mtime on a nonempty <i>mbox</i> file is greater than the atime, the file
+  has new mail. If the mtime is smaller than the atime, the new mail has been
+  read. If the atime equals the mtime, there is no way to tell whether the file
+  has new mail, since <b>qmail-local</b> takes much less than a second to run.
+  One solution is for a mail reader to artificially set the atime to the mtime
+  plus 1. Then the file has new mail if and only if the atime is less than or
+  equal to the mtime.
+<div class="Pp"></div>
+Some mail readers place <b>Status</b> fields in each message to indicate which
+  messages have been read.
+<h1 class="Sh" title="Sh" id="SEE_ALSO"><a class="permalink" href="#SEE_ALSO">SEE
+  ALSO</a></h1>
+<a href="maildir.5.html">maildir(5)</a>, <a href="qmail-header.5.html">qmail-header(5)</a>, <a href="qmail-local.8.html">qmail-local(8)</a></div>
+<table class="foot">
+  <tr>
+    <td class="foot-date"></td>
+    <td class="foot-os"></td>
+  </tr>
+</table>
+</body>
+</html>

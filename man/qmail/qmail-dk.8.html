@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <link rel="stylesheet" href="style.css" type="text/css" media="all"/>
+  <title><a href="qmail-dk.8.html">qmail-dk(8)</a></title>
+</head>
+<body>
+<nav class="qmail-nav"><a href="index.html">&larr; Qmail man</a></nav>
+<table class="head">
+  <tr>
+    <td class="head-ltitle"><a href="qmail-dk.8.html">qmail-dk(8)</a></td>
+    <td class="head-vol">System Manager's Manual</td>
+    <td class="head-rtitle"><a href="qmail-dk.8.html">qmail-dk(8)</a></td>
+  </tr>
+</table>
+<div class="manual-text">
+<h1 class="Sh" title="Sh" id="NAME"><a class="permalink" href="#NAME">NAME</a></h1>
+qmail-dk - sign/verify and queue a mail message for delivery
+<h1 class="Sh" title="Sh" id="SYNOPSIS"><a class="permalink" href="#SYNOPSIS">SYNOPSIS</a></h1>
+<b>qmail-dk</b>
+<h1 class="Sh" title="Sh" id="DESCRIPTION"><a class="permalink" href="#DESCRIPTION">DESCRIPTION</a></h1>
+<b>qmail-dk</b> has the same interface as <b>qmail-queue</b> except that it
+  inserts an appropriate DomainKeys header before it queues the message. To
+  invoke <b>qmail-dk</b>, set QMAILQUEUE to point to qmail-dk in the environment
+  when you send or receive email. qmail-dk will call <b>qmail-multi</b>. To
+  invoke an executable other than <b>qmail-multi</b> set DKQUEUE=bin/qmail-queue
+  for example.
+<div class="Pp"></div>
+<b>qmail-dk</b> supports DomainKey signing and verification. It uses the
+  libdomainkey and OpenSSL libraries. To sign a message, set the <b>DKSIGN</b>
+  environment variable to the pathname to the private key that will be used to
+  sign the message. If there is a % character in the environment variable, it is
+  removed and replaced by the domain name in the From: header. If, after
+  substituting the %, that file does not exist, the % will be removed. If the
+  private key file does not exist and does not have a % character, the message
+  will be rejected with error 32. The selector will be taken from the basename
+  of the file. The private key should be created by <b><a href="dknewkey.8.html">dknewkey(8)</a></b>.
+<div class="Pp"></div>
+In the absense of DKSIGN and DKVERIFY environment variable, qmail-dk will sign
+  the message if RELAYCLIENT environment variable is set and verify the message
+  if RELAYCLIENT environment variable is not set. If DKVERIFY is set, you can
+  disable dk verification, if RELAYCLIENT is set by setting
+  RELAYCLIENT_NODKVERIFY environment variable.
+<div class="Pp"></div>
+You can set various DK options in getopt style, by setting the environment
+  variable DKSIGNOPTIONS
+<br/>
+ b &lt;advice_length&gt; Length of Advice
+<br/>
+ c &lt;canonicalization&gt; simple, nofws
+<br/>
+ s &lt;privkeyfile&gt;
+<br/>
+ h include h= tag
+<br/>
+ r Skip Duplicate Headers
+<pre>
+ DKSIGNOPTIONS=&quot;-h -r -c nofws&quot;
+ sets the h= tag, skips duplicate headers and sets nofws canonicalization
+</pre>
+<div class="Pp"></div>
+To verify a message, set the <b>DKVERIFY</b> environment variable to a desired
+  set of letters. Precisely, if you want a libdomainkey return status to
+  generate an error, include that letter, where A is the first return status
+  (DK_STAT_OK), B is the second (DK_STAT_BADSIG), etc. The letter should be
+  uppercase if you want a permanent error to be returned and lowercase if you
+  want a temporary error to be returned.
+<div class="Pp"></div>
+The complete set of letters with the corresponding return status is given below
+<div class="Pp"></div>
+<br/>
+ A - DK_STAT_OK - Function completed successfully
+<br/>
+ B - DK_STAT_BADSIG - Signature was available but failed to verify against
+<br/>
+ domain specified key
+<br/>
+ C - DK_STAT_NOSIG - No signature available in message
+<br/>
+ D - DK_STAT_NOKEY - No public key available (permanent failure)
+<br/>
+ E - DK_STAT_BADKEY - Unusable key, public if verifying, private if signing
+<br/>
+ F - DK_STAT_CANTVRFY - Cannot get domain key to verify signature
+<br/>
+ (temporary failure)
+<br/>
+ G - DK_STAT_SYNTAX - Message is not valid syntax. Signature could not be
+<br/>
+ created/checked
+<br/>
+ H - DK_STAT_NORESOURCE - Could not get critical resource (temporary failure)
+<br/>
+ I - DK_STAT_ARGS - Arguments are not usable.
+<br/>
+ J - DK_STAT_REVOKED - Key has been revoked.
+<br/>
+ K - DK_STAT_INTERNAL - cannot call this routine in this context. Internal
+  error.
+<br/>
+ L - DK_STAT_GRANULARITY - Granularity mismatch: sender doesn't match g= option.
+<br/>
+ M - DK_STAT_DUPLICATE - duplicate Domainkey-Signature in message.
+<div class="Pp"></div>
+For example, if you want to permanently reject messages that have a signature
+  that has been revoked, include the letter 'K' in the <b>DKVERIFY</b>
+  environment variable. A conservative set of letters is <b>DEGIJKfh</b>. Reject
+  permanently BADSIG, NOKEY, BADKEY, SYNTAX, ARGS, REVOKED, and INTERNAL errors,
+  and temporarily CANTVRFY and NORESOURCE. Add in <b>B</b> if you want to reject
+  messages that have a signature that doesn't verify (presumably because the
+  message is a forgery or has been damaged in transit. Note that <b>qmail-dk</b>
+  always inserts the <b>DomainKey-Status</b> header, so that messages can be
+  rejected at delivery time, or in the mail reader.
+<div class="Pp"></div>
+Typically, you would sign messages generated on-host by setting <b>DKSIGN</b> in
+  the environment before running an email program. DKSIGN will be carried
+  through qmail's sendmail emulation through <b>qmail-inject</b> to
+  <b>qmail-dk</b>. You would also set it for <b>qmail-smtpd</b> at the same time
+  <b>RELAYCLIENT</b> is set, most often in the tcpserver cdb file. If a host is
+  authorized to relay, you probably want to sign messages sent by that host.
+  <b>DKVERIFY</b> should be set for all other hosts.
+<div class="Pp"></div>
+If neither <b>DKSIGN</b> nor <b>DKVERIFY</b> are set, then <b>DKSIGN</b> will be
+  set to /var/qmail/control/domainkeys/%/default. The % will be replaced by the
+  domain in the From: header. If such a file does not exist, then it will be set
+  to /var/qmail/control/domainkeys/default. If such a private key exists, it
+  will be used to sign the domain. You can also set <b>DKKEY</b> to chose a key
+  different from /var/qmail/control/domainkeys/%/default. <b>DKKEY</b> can also
+  have % character that will be replaced by the domain in the From: header.
+<div class="Pp"></div>
+By default <b>qmail-dk</b> will use all of the headers when signing a message.
+  The environment variable <b>DKEXCLUDEHEADERS</b> may be set to a
+  colon-separated list of headers that are to be excluded from signing.
+<div class="Pp"></div>
+<b>qmail-dk</b> will ordinarily spawn <b>qmail-multi</b>, but if DKQUEUE is set
+  in the environment, the program that it points to will be executed instead.
+<div class="Pp"></div>
+<h1 class="Sh" title="Sh" id="EXIT_CODES"><a class="permalink" href="#EXIT_CODES">EXIT
+  CODES</a></h1>
+<b>qmail-dk</b> returns the same exit codes as qmail-queue with these additions:
+<dl class="Bl-tag">
+  <dt><b>35</b></dt>
+  <dd>The private key file does not exist.</dd>
+</dl>
+<dl class="Bl-tag">
+  <dt><b>57</b></dt>
+  <dd>Trouble waiting for qmail-queue to exit.</dd>
+</dl>
+<dl class="Bl-tag">
+  <dt><b>58</b></dt>
+  <dd>Unable to vfork.</dd>
+</dl>
+<dl class="Bl-tag">
+  <dt><b>59</b></dt>
+  <dd>Unable to create a pipe to qmail-queue.</dd>
+</dl>
+<h1 class="Sh" title="Sh" id="SEE_ALSO"><a class="permalink" href="#SEE_ALSO">SEE
+  ALSO</a></h1>
+<a href="addresses.5.html">addresses(5)</a>, <a href="envelopes.5.html">envelopes(5)</a>, <a href="qmail-header.5.html">qmail-header(5)</a>, <a href="dknewkey.8.html">dknewkey(8)</a>, <a href="dktest.8.html">dktest(8)</a>,
+  <a href="qmail-inject.8.html">qmail-inject(8)</a>, <a href="qmail-qmqpc.8.html">qmail-qmqpc(8)</a>, <a href="qmail-queue.8.html">qmail-queue(8)</a>, <a href="qmail-send.8.html">qmail-send(8)</a>,
+  <a href="qmail-smtpd.8.html">qmail-smtpd(8)</a>, <a href="qmail-dkim.8.html">qmail-dkim(8)</a>, domain-keys(5)
+<div class="Pp"></div>
+</div>
+<table class="foot">
+  <tr>
+    <td class="foot-date"></td>
+    <td class="foot-os"></td>
+  </tr>
+</table>
+</body>
+</html>

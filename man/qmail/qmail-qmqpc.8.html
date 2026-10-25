@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <link rel="stylesheet" href="style.css" type="text/css" media="all"/>
+  <title><a href="qmail-qmqpc.8.html">qmail-qmqpc(8)</a></title>
+</head>
+<body>
+<nav class="qmail-nav"><a href="index.html">&larr; Qmail man</a></nav>
+<table class="head">
+  <tr>
+    <td class="head-ltitle"><a href="qmail-qmqpc.8.html">qmail-qmqpc(8)</a></td>
+    <td class="head-vol">System Manager's Manual</td>
+    <td class="head-rtitle"><a href="qmail-qmqpc.8.html">qmail-qmqpc(8)</a></td>
+  </tr>
+</table>
+<div class="manual-text">
+<h1 class="Sh" title="Sh" id="NAME"><a class="permalink" href="#NAME">NAME</a></h1>
+qmail-qmqpc - queue a mail message via QMQP
+<h1 class="Sh" title="Sh" id="SYNOPSIS"><a class="permalink" href="#SYNOPSIS">SYNOPSIS</a></h1>
+<b>qmail-qmqpc</b>
+<h1 class="Sh" title="Sh" id="DESCRIPTION"><a class="permalink" href="#DESCRIPTION">DESCRIPTION</a></h1>
+<b>qmail-qmqpc</b> offers the same interface as <b>qmail-queue</b>, but it gives
+  the message to a QMQP server instead of storing it locally.
+<div class="Pp"></div>
+In a <b>mini-qmail</b> installation, <b>qmail-queue</b> is replaced with a
+  symbolic link to <b>qmail-qmqpc</b>.
+<h1 class="Sh" title="Sh" id="CONTROL_FILES"><a class="permalink" href="#CONTROL_FILES">CONTROL
+  FILES</a></h1>
+<dl class="Bl-tag">
+  <dt><i>qmqpservers</i></dt>
+  <dd>IP addresses of QMQP servers, one address per line. <b>qmail-qmqpc</b>
+      will try each address in turn until it establishes a QMQP connection or
+      runs out of addresses.</dd>
+</dl>
+<h1 class="Sh" title="Sh" id="SEE_ALSO"><a class="permalink" href="#SEE_ALSO">SEE
+  ALSO</a></h1>
+<a href="qmail-control.5.html">qmail-control(5)</a>, <a href="qmail-queue.8.html">qmail-queue(8)</a>, <a href="qmail-qmqpd.8.html">qmail-qmqpd(8)</a></div>
+<table class="foot">
+  <tr>
+    <td class="foot-date"></td>
+    <td class="foot-os"></td>
+  </tr>
+</table>
+</body>
+</html>

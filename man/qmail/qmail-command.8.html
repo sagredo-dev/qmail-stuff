@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <link rel="stylesheet" href="style.css" type="text/css" media="all"/>
+  <title><a href="qmail-command.8.html">qmail-command(8)</a></title>
+</head>
+<body>
+<nav class="qmail-nav"><a href="index.html">&larr; Qmail man</a></nav>
+<table class="head">
+  <tr>
+    <td class="head-ltitle"><a href="qmail-command.8.html">qmail-command(8)</a></td>
+    <td class="head-vol">System Manager's Manual</td>
+    <td class="head-rtitle"><a href="qmail-command.8.html">qmail-command(8)</a></td>
+  </tr>
+</table>
+<div class="manual-text">
+<h1 class="Sh" title="Sh" id="NAME"><a class="permalink" href="#NAME">NAME</a></h1>
+qmail-command - user-specified mail delivery program
+<h1 class="Sh" title="Sh" id="SYNOPSIS"><a class="permalink" href="#SYNOPSIS">SYNOPSIS</a></h1>
+in <b>.qmail<i>ext</i></b><i>:</i> <b>|<i>command</i></b>
+<h1 class="Sh" title="Sh" id="DESCRIPTION"><a class="permalink" href="#DESCRIPTION">DESCRIPTION</a></h1>
+<b>qmail-local</b> will, upon your request, feed each incoming mail message
+  through a program of your choice.
+<div class="Pp"></div>
+When a mail message arrives, <b>qmail-local</b> runs <b>sh -c <i>command</i></b>
+  <i>in your home directory.</i> <i>It makes the message available on</i>
+  <i>command</i>'s standard input.
+<div class="Pp"></div>
+<b>WARNING:</b> The mail message does not begin with <b>qmail-local</b>'s usual
+  <b>Return-Path</b> and <b>Delivered-To</b> lines.
+<div class="Pp"></div>
+Note that <b>qmail-local</b> uses the same file descriptor for every delivery in
+  your <b>.qmail</b> file, so it is not safe for <i>command</i> to fork a child
+  that reads the message in the background while the parent exits.
+<h1 class="Sh" title="Sh" id="EXIT_CODES"><a class="permalink" href="#EXIT_CODES">EXIT
+  CODES</a></h1>
+<i>command</i>'s exit codes are interpreted as follows: 0 means that the
+  delivery was successful; 99 means that the delivery was successful, but that
+  <b>qmail-local</b> should ignore all further delivery instructions; 100 means
+  that the delivery failed permanently (hard error); 111 means that the delivery
+  failed but should be tried again in a little while (soft error).
+<div class="Pp"></div>
+Currently 64, 65, 70, 76, 77, 78, and 112 are considered hard errors, and all
+  other codes are considered soft errors, but <i>command</i> should avoid
+  relying on this.
+<h1 class="Sh" title="Sh" id="ENVIRONMENT_VARIABLES"><a class="permalink" href="#ENVIRONMENT_VARIABLES">ENVIRONMENT
+  VARIABLES</a></h1>
+<b>qmail-local</b> supplies several useful environment variables to
+  <i>command</i>. <b>WARNING:</b> These environment variables are not quoted.
+  They may contain special characters. They are under the control of a possibly
+  malicious remote user.
+<div class="Pp"></div>
+<b>SENDER</b> is the envelope sender address. <b>NEWSENDER</b> is the forwarding
+  envelope sender address, as described in <b><a href="dot-qmail.5.html">dot-qmail(5)</a></b>. <b>RECIPIENT</b>
+  is the envelope recipient address, <i>local@domain</i>. <b>USER</b> is
+  <i>user</i>. <b>HOME</b> is your home directory, <i>homedir</i>. <b>HOST</b>
+  is the <i>domain</i> part of the recipient address. <b>LOCAL</b> is the
+  <i>local</i> part. <b>EXT</b> is the address extension, <i>ext</i>.
+<div class="Pp"></div>
+<b>HOST2</b> is the portion of <b>HOST</b> preceding the last dot; <b>HOST3</b>
+  is the portion of <b>HOST</b> preceding the second-to-last dot; <b>HOST4</b>
+  is the portion of <b>HOST</b> preceding the third-to-last dot.
+<div class="Pp"></div>
+<b>EXT2</b> is the portion of <b>EXT</b> following the first dash; <b>EXT3</b>
+  is the portion following the second dash; <b>EXT4</b> is the portion following
+  the third dash. <b>DEFAULT</b> is the portion corresponding to the
+  <b>default</b> part of the <b>.qmail-</b>... file name; <b>DEFAULT</b> is not
+  set if the file name does not end with <b>default</b>.
+<div class="Pp"></div>
+<b>DTLINE</b> and <b>RPLINE</b> are the usual <b>Delivered-To</b> and
+  <b>Return-Path</b> lines, including newlines. <b>UFLINE</b> is the UUCP-style
+  <b>From_</b> line that <b>qmail-local</b> adds to <i>mbox</i>-format files.
+<h1 class="Sh" title="Sh" id="SEE_ALSO"><a class="permalink" href="#SEE_ALSO">SEE
+  ALSO</a></h1>
+<a href="dot-qmail.5.html">dot-qmail(5)</a>, <a href="envelopes.5.html">envelopes(5)</a>, <a href="qmail-local.8.html">qmail-local(8)</a></div>
+<table class="foot">
+  <tr>
+    <td class="foot-date"></td>
+    <td class="foot-os"></td>
+  </tr>
+</table>
+</body>
+</html>

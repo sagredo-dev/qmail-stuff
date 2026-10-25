@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <link rel="stylesheet" href="style.css" type="text/css" media="all"/>
+  <title><a href="qmail-queue.8.html">qmail-queue(8)</a></title>
+</head>
+<body>
+<nav class="qmail-nav"><a href="index.html">&larr; Qmail man</a></nav>
+<table class="head">
+  <tr>
+    <td class="head-ltitle"><a href="qmail-queue.8.html">qmail-queue(8)</a></td>
+    <td class="head-vol">System Manager's Manual</td>
+    <td class="head-rtitle"><a href="qmail-queue.8.html">qmail-queue(8)</a></td>
+  </tr>
+</table>
+<div class="manual-text">
+<h1 class="Sh" title="Sh" id="NAME"><a class="permalink" href="#NAME">NAME</a></h1>
+qmail-queue - queue a mail message for delivery
+<h1 class="Sh" title="Sh" id="SYNOPSIS"><a class="permalink" href="#SYNOPSIS">SYNOPSIS</a></h1>
+<b>qmail-queue</b>
+<h1 class="Sh" title="Sh" id="DESCRIPTION"><a class="permalink" href="#DESCRIPTION">DESCRIPTION</a></h1>
+<b>qmail-queue</b> reads a mail message from descriptor 0. It then reads
+  envelope information from descriptor 1. It places the message into the
+  outgoing queue for future delivery by <b>qmail-send</b>.
+<div class="Pp"></div>
+The envelope information is an envelope sender address followed by a list of
+  envelope recipient addresses. The sender address is preceded by the letter F
+  and terminated by a 0 byte. Each recipient address is preceded by the letter T
+  and terminated by a 0 byte. The list of recipient addresses is terminated by
+  an extra 0 byte. If <b>qmail-queue</b> sees end-of-file before the extra 0
+  byte, it aborts without placing the message into the queue.
+<div class="Pp"></div>
+Every envelope recipient address should contain a username, an @ sign, and a
+  fully qualified domain name.
+<div class="Pp"></div>
+<b>qmail-queue</b> always adds a <b>Received</b> line to the top of the message.
+  Other than this, <b>qmail-queue</b> does not inspect the message and does not
+  enforce any restrictions on its contents. However, the recipients probably
+  expect to see a proper header, as described in <b><a href="qmail-header.5.html">qmail-header(5)</a></b>.
+<div class="Pp"></div>
+Programs included with qmail which invoke <b>qmail-queue</b> will invoke the
+  contents of <b>$QMAILQUEUE</b> instead, if that environment variable is set.
+<h1 class="Sh" title="Sh" id="CONTROL_FILES"><a class="permalink" href="#CONTROL_FILES">CONTROL
+  FILES</a></h1>
+<dl class="Bl-tag">
+  <dt><i>taps</i></dt>
+  <dd>Should contain source address (T for To,F for From, A for Any), regex
+      syntax of email addresses to tap and the associated email address to send
+      the copy to. The fields should be separated by colon.</dd>
+</dl>
+<h1 class="Sh" title="Sh" id="FILESYSTEM_RESTRICTIONS"><a class="permalink" href="#FILESYSTEM_RESTRICTIONS">FILESYSTEM
+  RESTRICTIONS</a></h1>
+<b>qmail-queue</b> imposes two constraints on the queue structure: each
+  <b>mess</b> subdirectory must be in the same filesystem as the <b>pid</b>
+  directory; and each <b>todo</b> subdirectory must be in the same filesystem as
+  the <b>intd</b> directory.
+<h1 class="Sh" title="Sh" id="EXIT_CODES"><a class="permalink" href="#EXIT_CODES">EXIT
+  CODES</a></h1>
+<b>qmail-queue</b> does not print diagnostics. It exits 0 if it has successfully
+  queued the message. It exits between 1 and 99 if it has failed to queue the
+  message.
+<div class="Pp"></div>
+All <b>qmail-queue</b> error codes between 11 and 40 indicate permanent errors:
+<dl class="Bl-tag">
+  <dt><b>11</b></dt>
+  <dd>Address too long.</dd>
+</dl>
+<dl class="Bl-tag">
+  <dt><b>31</b></dt>
+  <dd>Mail server permanently refuses to send the message to any recipients.
+      (Not used by <b>qmail-queue</b>, but can be used by programs offering the
+      same interface.)</dd>
+</dl>
+<div class="Pp"></div>
+All other <b>qmail-queue</b> error codes indicate temporary errors:
+<dl class="Bl-tag">
+  <dt><b>51</b></dt>
+  <dd>Out of memory.</dd>
+</dl>
+<dl class="Bl-tag">
+  <dt><b>52</b></dt>
+  <dd>Timeout.</dd>
+</dl>
+<dl class="Bl-tag">
+  <dt><b>53</b></dt>
+  <dd>Write error; e.g., disk full.</dd>
+</dl>
+<dl class="Bl-tag">
+  <dt><b>54</b></dt>
+  <dd>Unable to read the message or envelope.</dd>
+</dl>
+<dl class="Bl-tag">
+  <dt><b>55</b></dt>
+  <dd>Unable to read a configuration file. (Not used by
+    <b>qmail-queue</b>.)</dd>
+</dl>
+<dl class="Bl-tag">
+  <dt><b>56</b></dt>
+  <dd>Problem making a network connection from this host. (Not used by
+      <b>qmail-queue</b>.)</dd>
+</dl>
+<dl class="Bl-tag">
+  <dt><b>61</b></dt>
+  <dd>Problem with the qmail home directory.</dd>
+</dl>
+<dl class="Bl-tag">
+  <dt><b>62</b></dt>
+  <dd>Problem with the queue directory.</dd>
+</dl>
+<dl class="Bl-tag">
+  <dt><b>63</b></dt>
+  <dd>Problem with queue/pid.</dd>
+</dl>
+<dl class="Bl-tag">
+  <dt><b>64</b></dt>
+  <dd>Problem with queue/mess.</dd>
+</dl>
+<dl class="Bl-tag">
+  <dt><b>65</b></dt>
+  <dd>Problem with queue/intd.</dd>
+</dl>
+<dl class="Bl-tag">
+  <dt><b>66</b></dt>
+  <dd>Problem with queue/todo.</dd>
+</dl>
+<dl class="Bl-tag">
+  <dt><b>71</b></dt>
+  <dd>Mail server temporarily refuses to send the message to any recipients.
+      (Not used by <b>qmail-queue</b>.)</dd>
+</dl>
+<dl class="Bl-tag">
+  <dt><b>72</b></dt>
+  <dd>Connection to mail server timed out. (Not used by
+    <b>qmail-queue</b>.)</dd>
+</dl>
+<dl class="Bl-tag">
+  <dt><b>73</b></dt>
+  <dd>Connection to mail server rejected. (Not used by <b>qmail-queue</b>.)</dd>
+</dl>
+<dl class="Bl-tag">
+  <dt><b>74</b></dt>
+  <dd>Connection to mail server succeeded, but communication failed. (Not used
+      by <b>qmail-queue</b>.)</dd>
+</dl>
+<dl class="Bl-tag">
+  <dt><b>81</b></dt>
+  <dd>Internal bug; e.g., segmentation fault.</dd>
+</dl>
+<dl class="Bl-tag">
+  <dt><b>91</b></dt>
+  <dd>Envelope format error.</dd>
+</dl>
+<h1 class="Sh" title="Sh" id="SEE_ALSO"><a class="permalink" href="#SEE_ALSO">SEE
+  ALSO</a></h1>
+<a href="addresses.5.html">addresses(5)</a>, <a href="envelopes.5.html">envelopes(5)</a>, <a href="qmail-header.5.html">qmail-header(5)</a>, <a href="qmail-inject.8.html">qmail-inject(8)</a>, <a href="qmail-qmqpc.8.html">qmail-qmqpc(8)</a>,
+  <a href="qmail-send.8.html">qmail-send(8)</a>, <a href="qmail-smtpd.8.html">qmail-smtpd(8)</a></div>
+<table class="foot">
+  <tr>
+    <td class="foot-date"></td>
+    <td class="foot-os"></td>
+  </tr>
+</table>
+</body>
+</html>

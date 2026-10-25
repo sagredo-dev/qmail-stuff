@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html>
+<!-- This is an automatically generated file.  Do not edit.
+   vim: tw=75
+ -->
+<head>
+  <meta charset="utf-8"/>
+  <link rel="stylesheet" href="style.css" type="text/css" media="all"/>
+  <title><a href="dkim.8.html">dkim(8)</a></title>
+</head>
+<body>
+<nav class="qmail-nav"><a href="index.html">&larr; Qmail man</a></nav>
+<table class="head">
+  <tr>
+    <td class="head-ltitle"><a href="dkim.8.html">dkim(8)</a></td>
+    <td class="head-vol">System Manager's Manual</td>
+    <td class="head-rtitle"><a href="dkim.8.html">dkim(8)</a></td>
+  </tr>
+</table>
+<div class="manual-text">
+<h1 class="Sh" title="Sh" id="NAME"><a class="permalink" href="#NAME">NAME</a></h1>
+dkim - exercise the domainkeys library
+<h1 class="Sh" title="Sh" id="SYNOPSIS"><a class="permalink" href="#SYNOPSIS">SYNOPSIS</a></h1>
+<b>dkim</b> <i>opts</i>
+<div class="Pp"></div>
+<i>opts</i> is a series of getopt-style options.
+<div class="Pp"></div>
+<h1 class="Sh" title="Sh" id="DESCRIPTION"><a class="permalink" href="#DESCRIPTION">DESCRIPTION</a></h1>
+<b>dkim</b> exercises the dkim library. Both signing and verification merely
+  print out the DKIM header. They do not keep a copy of the input file. You will
+  need to do something like this:
+<div class="Pp"></div>
+<pre>
+This example verifies using DNS
+<div class="Pp"></div>
+ (./dkim -s /var/qmail/control/domainkeys/dog &lt;/tmp/testmsg; cat /tmp/testmsg)\
+ | ./dkim -v
+<div class="Pp"></div>
+This example does not use DNS. Useful for testing
+<div class="Pp"></div>
+ (./dkim -z 4 -s /tmp/domainkeys/efgh &lt;/tmp/mail.txt;cat /tmp/mail.txt) \
+ | ./dkim -v -T \
+ &quot;v=DKIM1; k=ed25519; t=y; p=okZUL1G6RmS4IWfCpCX3xjGKhVssoM4KfKpkmW8IERg=&quot;
+</pre>
+<div class="Pp"></div>
+<h1 class="Sh" title="Sh" id="OPTIONS"><a class="permalink" href="#OPTIONS">OPTIONS</a></h1>
+<dl class="Bl-tag">
+  <dt>-s <i>privkey</i></dt>
+  <dd><i>privkey</i> is a path to a file containing a PEM-format private key.
+      Without the 'y' option, the base name of the file is used as the selector.
+      Reads the email message on stdin. Prints the <b>DKIM-Signature</b> header.
+      You can pass multiple <i>key</i> to generate multiple signatures. For each
+      <b>-s</b> option, you can pass <b>-y</b>, <b>-z</b> option before the
+      <b>-s</b> option.
+    <div class="Pp"></div>
+  </dd>
+</dl>
+<dl class="Bl-tag">
+  <dt>-z <i>hash</i></dt>
+  <dd>1 - sha1, 2 - sha256, 3 - sha1+sha256, 4 - ed25519
+    <div class="Pp"></div>
+  </dd>
+</dl>
+<dl class="Bl-tag">
+  <dt>-y <i>selector</i></dt>
+  <dd>the selector tag DEFAULT=private
+    <div class="Pp"></div>
+  </dd>
+</dl>
+<dl class="Bl-tag">
+  <dt>-v</dt>
+  <dd>Verifies the email on stdin. Exits with a non-zero exit code and a message
+      to stderr if there was a problem with the signature. Always prints a
+      <b>DKIM-Status:</b> header to stdout. This option requires the
+      <b>s</b>._domainkey. <b>d</b> txt record in dns (public key). Here
+      <b>s</b> is the selector and <b>d</b> is the domain
+    <div class="Pp"></div>
+    <pre>
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed;
+d=gmail.com; s=gamma; h=DomainKey-Status:
+To:Subject:Message-Id:Date:From; bh=IarZI4AMTl/vy1jTbPphDcOl4YNS
+POk7Vn0tDdgkbV4=; b=VpIS6XNOLU2WWWlsYGeLB3wMbyFQwkg7F0hr7blu1W8f
+0RRtuyw9igFwY7q7FNaPVlfZ0cfLPh0mRrlExu4V7uQaTP8nnnHO2cAokYbncGS5
+ADU9NbAcpDh+E2YQwzCX
+    </pre>
+    <div class="Pp"></div>
+  </dd>
+</dl>
+<dl class="Bl-tag">
+  <dt>-l</dt>
+  <dd>include body length tag when signing. Honor body length tag when verifying
+    <div class="Pp"></div>
+  </dd>
+</dl>
+<dl class="Bl-tag">
+  <dt>-q</dt>
+  <dd>include query method tag
+    <div class="Pp"></div>
+  </dd>
+</dl>
+<dl class="Bl-tag">
+  <dt>-t</dt>
+  <dd>include a timestamp tag
+    <div class="Pp"></div>
+  </dd>
+</dl>
+<dl class="Bl-tag">
+  <dt>-f</dt>
+  <dd>issue error if not all message's From headers are in signature
+    <div class="Pp"></div>
+  </dd>
+</dl>
+<dl class="Bl-tag">
+  <dt>-S</dt>
+  <dd>Allow unsigned subject in signature
+    <div class="Pp"></div>
+  </dd>
+</dl>
+<dl class="Bl-tag">
+  <dt>-h</dt>
+  <dd>include Copied Headers. This adds the z= tag with a list of the message's
+      original headers and may differ from the headers listed in the h= tag.
+      This tag may be used by some mailbox providers in the process of
+      diagnosing a verification error. Its value is not well defined.
+    <div class="Pp"></div>
+  </dd>
+</dl>
+<dl class="Bl-tag">
+  <dt>-p <i>ssp</i> | <i>adsp</i></dt>
+  <dd>0 - disable practice (default), 1- SSP, or 2 - ADSP verification
+    <div class="Pp"></div>
+  </dd>
+</dl>
+<dl class="Bl-tag">
+  <dt>-c <i>canonicalization</i></dt>
+  <dd>r for relaxed [DEFAULT], s - simple, t relaxed/simple, u - simple/relaxed
+    <div class="Pp"></div>
+  </dd>
+</dl>
+<dl class="Bl-tag">
+  <dt>-d <i>domain</i></dt>
+  <dd>the domain tag, if not provided, determined from the
+      return-path/sender/from header
+    <div class="Pp"></div>
+  </dd>
+</dl>
+<dl class="Bl-tag">
+  <dt>-i <i>identity</i></dt>
+  <dd>the identity, if not provided it will not be included
+    <div class="Pp"></div>
+  </dd>
+</dl>
+<dl class="Bl-tag">
+  <dt>-x <i>expire_time</i></dt>
+  <dd>the expire time in seconds since epoch ( DEFAULT = current time + 604800).
+      If set to - then it will not be included
+    <div class="Pp"></div>
+  </dd>
+</dl>
+<dl class="Bl-tag">
+  <dt>-T <i>selectorRecord</i></dt>
+  <dd>Bypass DNS and use <i>selectorRecord</i> instead of fetching the record
+      using DNS.
+    <div class="Pp"></div>
+  </dd>
+</dl>
+<dl class="Bl-tag">
+  <dt>-X <i>exclude_headers</i></dt>
+  <dd><i>exclude_headers</i> is a colon separated list of headers to be excluded
+      from DKIM signing.
+    <div class="Pp"></div>
+  </dd>
+</dl>
+<dl class="Bl-tag">
+  <dt>-V</dt>
+  <dd>Sets verbose output
+    <div class="Pp"></div>
+  </dd>
+</dl>
+<dl class="Bl-tag">
+  <dt>-H</dt>
+  <dd>this help
+    <div class="Pp"></div>
+  </dd>
+</dl>
+<h1 class="Sh" title="Sh" id="Return_Value"><a class="permalink" href="#Return_Value">Return
+  Value</a></h1>
+When signing, <b>dkim</b> returns 0 on success and non-zero on any failure.
+<div class="Pp"></div>
+When verifying, you can set the environment variable <b>DKIMVERIFY</b> to set
+  the exit code corresponding to the DKIM verifcation status by setting
+  <b>DKIMVERIFY</b> environment variable to a desired set of letters. Precisely,
+  if you want a dkim return status to generate an error, include that letter,
+  where A is the first return status (DKIM_SUCCESS), B is the second
+  (DKIM_FINISHED_BODY), etc. The letter should be uppercase if you want a
+  permanent error (exit code 14) to be returned, and lowercase if you want a
+  temporary error to be returned (exit code 88). If you omit the letter,
+  <b>dkim</b> will not issue any error inspite of DKIM verification failure. It
+  will return success.
+<div class="Pp"></div>
+The complete set of letters with the corresponding return status is given below
+<pre>
+A - DKIM_SUCCESS                        - Function executed successfully
+B - DKIM_FINISHED_BODY                  - process result: no more message
+                                          body is needed
+C - DKIM_PARTIAL_SUCCESS                - verify result: at least one
+                                          but not all signatures verified
+D - DKIM_NEUTRAL                        - verify result: no signatures
+                                          verified but message is
+                                          not suspicious
+E - DKIM_SUCCESS_BUT_EXTRA              - signature result: signature
+                                          verified but it did not
+                                          include all of the body
+F - DKIM_3PS_SIGNATURE                  - 3rd-party signature
+G - DKIM_FAIL                           - Function failed to execute
+H - DKIM_BAD_SYNTAX                     - signature error: DKIM-Signature
+                                          could not parse or has bad
+                                          tags/values
+I - DKIM_SIGNATURE_BAD                  - signature error: RSA verify
+                                          failed
+J - DKIM_SIGNATURE_BAD_BUT_TESTING      - signature error: RSA verify
+                                          failed but testing
+K - DKIM_SIGNATURE_EXPIRED              - signature error: x= is old
+L - DKIM_SELECTOR_INVALID               - signature error: selector doesn't
+                                          parse or contains invalid values
+M - DKIM_SELECTOR_GRANULARITY_MISMATCH  - signature error: selector
+                                          g= doesn't match i=
+N - DKIM_SELECTOR_KEY_REVOKED           - signature error: selector
+                                          p= empty
+O - DKIM_SELECTOR_DOMAIN_NAME_TOO_LONG  - signature error: selector domain
+                                          name too long to request
+P - DKIM_SELECTOR_DNS_TEMP_FAILURE      - signature error: temporary dns
+                                          failure requesting selector
+Q - DKIM_SELECTOR_DNS_PERM_FAILURE      - signature error: permanent dns
+                                          failure requesting selector
+R - DKIM_SELECTOR_PUBLIC_KEY_INVALID    - signature error: selector
+                                          p= value invalid or wrong format
+S - DKIM_NO_SIGNATURES                  - no signatures
+T - DKIM_NO_VALID_SIGNATURES            - no valid signatures
+U - DKIM_BODY_HASH_MISMATCH             - sigature verify error: message
+                                          body does not hash to bh value
+V - DKIM_SELECTOR_ALGORITHM_MISMATCH    - signature error: selector
+                                          h= doesn't match signature a=
+W - DKIM_STAT_INCOMPAT                  - signature error: incompatible v=
+X - DKIM_UNSIGNED_FROM                  - signature error: not all message's
+                                          From headers in signature
+</pre>
+<div class="Pp"></div>
+For example, if you want to permanently reject messages that have a signature
+  that is expired, include the letter 'K' in the <b>DKIMVERIFY</b> environment
+  variable. If you want to accept all mails and just have the DKIM-Status
+  header, set <b>DKIMVERIFY</b> to &quot;p&quot;. A conservative set of letters
+  is <b>FGHIKLMNOQRTUVWjp</b>. Reject permanently 3PS, FAILURE, SYNTAX,
+  SIGNATURE_BAD, SIGNATURE_EXPIRED, SELECTOR_INVALID, GRANULARITY_MISMATCH,
+  SELECTOR_KEY_REVOKED, DOMAIN_NAME_TOO_LONG, SELECTOR_PUBLIC_KEY_INVALID,
+  NO_VALID_SIGNATURES and BODY_HASH_MISMATCH errors, and temporarily
+  SIGNATURE_BAD_BUT_TESTING and DNS_TEMP_FAILURE. Add in <b>S</b> if you want to
+  reject messages that do not have a DKIM signature. Note that <b>dkim</b>
+  always inserts the <b>DKIM-Status</b> header, so that messages can be rejected
+  later at delivery time, or in the mail reader. In that case you need not set
+  <b>DKIMVERIFY</b>.
+<div class="Pp"></div>
+<h1 class="Sh" title="Sh" id="SEE_ALSO"><a class="permalink" href="#SEE_ALSO">SEE
+  ALSO</a></h1>
+<a href="qmail-dkim.8.html">qmail-dkim(8)</a>, <a href="dknewkey.8.html">dknewkey(8)</a>, rfc-4870(5), rfc-4871(5)</div>
+<table class="foot">
+  <tr>
+    <td class="foot-date"></td>
+    <td class="foot-os"></td>
+  </tr>
+</table>
+</body>
+</html>

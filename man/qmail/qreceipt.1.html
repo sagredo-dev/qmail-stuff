@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <link rel="stylesheet" href="style.css" type="text/css" media="all"/>
+  <title><a href="qreceipt.1.html">qreceipt(1)</a></title>
+</head>
+<body>
+<nav class="qmail-nav"><a href="index.html">&larr; Qmail man</a></nav>
+<table class="head">
+  <tr>
+    <td class="head-ltitle"><a href="qreceipt.1.html">qreceipt(1)</a></td>
+    <td class="head-vol">General Commands Manual</td>
+    <td class="head-rtitle"><a href="qreceipt.1.html">qreceipt(1)</a></td>
+  </tr>
+</table>
+<div class="manual-text">
+<h1 class="Sh" title="Sh" id="NAME"><a class="permalink" href="#NAME">NAME</a></h1>
+qreceipt - respond to delivery notice requests
+<h1 class="Sh" title="Sh" id="SYNOPSIS"><a class="permalink" href="#SYNOPSIS">SYNOPSIS</a></h1>
+in <b>.qmail</b>: <b>|qreceipt</b> <i>youraddress</i>
+<h1 class="Sh" title="Sh" id="DESCRIPTION"><a class="permalink" href="#DESCRIPTION">DESCRIPTION</a></h1>
+When a mail message arrives with <i>youraddress</i> listed in a
+  <b>Notice-Requested-Upon-Delivery-To</b> header field, <b>qreceipt</b> sends a
+  success notice back to the envelope sender.
+<div class="Pp"></div>
+<b>WARNING:</b> If you create a <b>.qmail</b> file to enable <b>qreceipt</b>,
+  make sure to also add a line specifying delivery to your normal mailbox. For
+  example:
+<div class="Pp"></div>
+<pre>
+     /home/joe/Mailbox
+<div>&#x00A0;</div>
+     |qreceipt joe@nowhere.mil
+</pre>
+<h1 class="Sh" title="Sh" id="SEE_ALSO"><a class="permalink" href="#SEE_ALSO">SEE
+  ALSO</a></h1>
+<a href="dot-qmail.5.html">dot-qmail(5)</a>, <a href="envelopes.5.html">envelopes(5)</a></div>
+<table class="foot">
+  <tr>
+    <td class="foot-date"></td>
+    <td class="foot-os"></td>
+  </tr>
+</table>
+</body>
+</html>

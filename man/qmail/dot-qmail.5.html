@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <link rel="stylesheet" href="style.css" type="text/css" media="all"/>
+  <title><a href="dot-qmail.5.html">dot-qmail(5)</a></title>
+</head>
+<body>
+<nav class="qmail-nav"><a href="index.html">&larr; Qmail man</a></nav>
+<table class="head">
+  <tr>
+    <td class="head-ltitle"><a href="dot-qmail.5.html">dot-qmail(5)</a></td>
+    <td class="head-vol">File Formats Manual</td>
+    <td class="head-rtitle"><a href="dot-qmail.5.html">dot-qmail(5)</a></td>
+  </tr>
+</table>
+<div class="manual-text">
+<h1 class="Sh" title="Sh" id="NAME"><a class="permalink" href="#NAME">NAME</a></h1>
+dot-qmail - control the delivery of mail messages
+<h1 class="Sh" title="Sh" id="DESCRIPTION"><a class="permalink" href="#DESCRIPTION">DESCRIPTION</a></h1>
+Normally the <b>qmail-local</b> program delivers each incoming message to your
+  system mailbox, <i>homedir<b>/Mailbox</b></i><b>,</b> <b>where</b>
+  <i>homedir</i> is your home directory.
+<div class="Pp"></div>
+It can instead write the mail to a different file or directory, forward it to
+  another address, distribute it to a mailing list, or even execute programs,
+  all under your control.
+<h1 class="Sh" title="Sh" id="THE_QMAIL_FILE"><a class="permalink" href="#THE_QMAIL_FILE">THE
+  QMAIL FILE</a></h1>
+To change <b>qmail-local</b>'s behavior, set up a <b>.qmail</b> file in your
+  home directory.
+<div class="Pp"></div>
+<b>.qmail</b> contains one or more lines. Each line is a delivery instruction.
+  <b>qmail-local</b> follows each instruction in turn. There are five types of
+  delivery instructions: (1) comment; (2) program; (3) forward; (4) mbox; (5)
+  maildir.
+<dl class="Bl-tag">
+  <dt>(1)</dt>
+  <dd>A comment line begins with a number sign:
+    <div class="Pp"></div>
+    <pre>
+     # this is a comment
+    </pre>
+    <div class="Pp"></div>
+    <b>qmail-local</b> ignores the line.</dd>
+</dl>
+<dl class="Bl-tag">
+  <dt>(2)</dt>
+  <dd>A program line begins with a vertical bar:
+    <div class="Pp"></div>
+    <pre>
+     |preline /usr/ucb/vacation djb
+    </pre>
+    <div class="Pp"></div>
+    <b>qmail-local</b> takes the rest of the line as a command to supply to
+      <b>sh</b>. See <b><a href="qmail-command.8.html">qmail-command(8)</a></b> for further information.</dd>
+</dl>
+<dl class="Bl-tag">
+  <dt>(3)</dt>
+  <dd>A forward line begins with an ampersand:
+    <div class="Pp"></div>
+    <pre>
+     &amp;me@new.job.com
+    </pre>
+    <div class="Pp"></div>
+    <b>qmail-local</b> takes the rest of the line as a mail address; it uses
+      <b>qmail-queue</b> to forward the message to that address. The address
+      must contain a fully qualified domain name; it must not contain extra
+      spaces, angle brackets, or comments:
+    <div class="Pp"></div>
+    <pre>
+     # the following examples are WRONG
+<div>&#x00A0;</div>
+     &amp;me@new
+<div>&#x00A0;</div>
+     &amp;&lt;me@new.job.com&gt;
+<div>&#x00A0;</div>
+     &amp; me@new.job.com
+<div>&#x00A0;</div>
+     &amp;me@new.job.com (New Address)
+    </pre>
+    <div class="Pp"></div>
+    If the address begins with a letter or number, you may leave out the
+      ampersand:
+    <div class="Pp"></div>
+    <pre>
+     me@new.job.com
+    </pre>
+    <div class="Pp"></div>
+    Note that <b>qmail-local</b> omits its new <b>Return-Path</b> line when
+      forwarding messages.</dd>
+</dl>
+<dl class="Bl-tag">
+  <dt>(4)</dt>
+  <dd>An <i>mbox</i> line begins with a slash or dot, and does not end with a
+      slash:
+    <div class="Pp"></div>
+    <pre>
+     /home/djb/Mailbox.sos
+    </pre>
+    <div class="Pp"></div>
+    <b>qmail-local</b> takes the entire line as a filename. It appends the mail
+      message to that file, using <b>flock</b>-style file locking if possible.
+      <b>qmail-local</b> stores the mail message in <i>mbox</i> format, as
+      described in <b><a href="mbox.5.html">mbox(5)</a></b>.
+    <div class="Pp"></div>
+    <b>WARNING:</b> On many systems, anyone who can read a file can <b>flock</b>
+      it, and thus hold up <b>qmail-local</b>'s delivery forever. Do not deliver
+      mail to a publicly accessible file!
+    <div class="Pp"></div>
+    If <b>qmail-local</b> is able to lock the file, but has trouble writing to
+      it (because, for example, the disk is full), it will truncate the file
+      back to its original length. However, it cannot prevent mailbox corruption
+      if the system crashes during delivery.</dd>
+</dl>
+<dl class="Bl-tag">
+  <dt>(5)</dt>
+  <dd>A <i>maildir</i> line begins with a slash or dot, and ends with a slash:
+    <div class="Pp"></div>
+    <pre>
+     /home/djb/Maildir/
+    </pre>
+    <div class="Pp"></div>
+    <b>qmail-local</b> takes the entire line as the name of a directory in
+      <i>maildir</i> format. It reliably stores the incoming message in that
+      directory. See <b><a href="maildir.5.html">maildir(5)</a></b> for more details.</dd>
+</dl>
+<div class="Pp"></div>
+If <b>.qmail</b> has the execute bit set, it must not contain any program lines,
+  <i>mbox</i> lines, or <i>maildir</i> lines. If <b>qmail-local</b> sees any
+  such lines, it will stop and indicate a temporary failure.
+<div class="Pp"></div>
+If <b>.qmail</b> is completely empty (0 bytes long), or does not exist,
+  <b>qmail-local</b> follows the <i>defaultdelivery</i> instructions set by your
+  system administrator; normally <i>defaultdelivery</i> is <b>./Mailbox</b>, so
+  <b>qmail-local</b> appends the mail message to <b>Mailbox</b> in <i>mbox</i>
+  format.
+<div class="Pp"></div>
+<b>.qmail</b> may contain extra spaces and tabs at the end of a line. Blank
+  lines are allowed, but not for the first line of <b>.qmail</b>.
+<div class="Pp"></div>
+If <b>.qmail</b> is world-writable, <b>qmail-local</b> stops and indicates a
+  temporary failure.
+<h1 class="Sh" title="Sh" id="SAFE_QMAIL_EDITING"><a class="permalink" href="#SAFE_QMAIL_EDITING">SAFE
+  QMAIL EDITING</a></h1>
+Incoming messages can arrive at any moment. If you want to safely edit your
+  <b>.qmail</b> file, first set the sticky bit on your home directory:
+<div class="Pp"></div>
+<pre>
+     chmod +t $HOME
+</pre>
+<div class="Pp"></div>
+<b>qmail-local</b> will temporarily defer delivery of any message to you if your
+  home directory is sticky (or group-writable or other-writable, which should
+  never happen). Make sure to
+<div class="Pp"></div>
+<pre>
+     chmod -t $HOME
+</pre>
+<div class="Pp"></div>
+when you are done! It's a good idea to test your new <b>.qmail</b> file as
+  follows:
+<div class="Pp"></div>
+<pre>
+     qmail-local -n $USER ~ $USER '' '' '' '' ./Mailbox
+</pre>
+<h1 class="Sh" title="Sh" id="EXTENSION_ADDRESSES"><a class="permalink" href="#EXTENSION_ADDRESSES">EXTENSION
+  ADDRESSES</a></h1>
+In the <b>qmail</b> system, you control all local addresses of the form
+  <i>user<b>-</b><i>anything</i></i><i>,</i> <i>as well as the address</i>
+  <i>user</i> itself, where <i>user</i> is your account name. Delivery to
+  <i>user <b>-</b><i>anything</i></i> <i>is controlled by the file</i>
+  <i>homedir/ <b>.qmail-</b><i>anything</i></i><i>.</i> <i>(These rules may be
+  changed by the system administrator;</i> <i>see</i> <b>qmail-users</b>(5).)
+<div class="Pp"></div>
+The <b>alias</b> user controls all other addresses. Delivery to <i>local</i> is
+  controlled by the file <i>homedir/<b>.qmail-</b><i>local</i></i><i>,</i>
+  <i>where</i> <i>homedir</i> is <b>alias</b>'s home directory.
+<div class="Pp"></div>
+In the following description, <b>qmail-local</b> is handling a message addressed
+  to <i>local@domain</i>, where <i>local</i> is controlled by
+  <b>.qmail-<i>ext</i></b><i>.</i> <i>Here is what it does.</i>
+<div class="Pp"></div>
+If <b>.qmail-<i>ext</i></b> <i>is completely empty,</i> <b>qmail-local</b>
+  follows the <i>defaultdelivery</i> instructions set by your system
+  administrator.
+<div class="Pp"></div>
+If <b>.qmail-<i>ext</i></b> <i>doesn't exist,</i> <b>qmail-local</b> will try
+  some default <b>.qmail</b> files. For example, if <i>ext</i> is
+  <b>foo-bar</b>, <b>qmail-local</b> will try first <b>.qmail-foo-bar</b>, then
+  <b>.qmail-foo-default</b>, and finally <b>.qmail-default</b>. If none of these
+  exist, <b>qmail-local</b> will bounce the message. (Exception: for the basic
+  <i>user</i> address, <b>qmail-local</b> treats a nonexistent <b>.qmail</b> the
+  same as an empty <b>.qmail</b>.)
+<div class="Pp"></div>
+<b>WARNING:</b> For security, <b>qmail-local</b> replaces any dots in <i>ext</i>
+  with colons before checking <b>.qmail-<i>ext</i></b><i>.</i> <i>For
+  convenience,</i> <b>qmail-local</b> converts any uppercase letters in
+  <i>ext</i> to lowercase.
+<div class="Pp"></div>
+When <b>qmail-local</b> forwards a message as instructed in
+  <b>.qmail-<i>ext</i></b> <i>(or</i> <b>.qmail-default</b>), it checks whether
+  <b>.qmail-<i>ext</i><b>-owner</b><i></i></b> <i>exists.</i> <i>If so,</i>
+  <i>it uses</i> <i>local<b>-owner@</b><i>domain</i></i> <i>as the envelope
+  sender for the forwarded message.</i> <i>Otherwise it retains the envelope
+  sender of the original message.</i> <i>Exception:</i> <b>qmail-local</b>
+  always retains the original envelope sender if it is the empty address or
+  <b>#@[]</b>, i.e., if this is a bounce message.
+<div class="Pp"></div>
+<b>qmail-local</b> also supports <b>variable envelope return paths</b> (VERPs):
+  if <b>.qmail-<i>ext</i><b>-owner</b><i></i></b> <i>and</i>
+  <b>.qmail-<i>ext</i> <b>-owner-default</b><i></i></b> <i>both exist, it
+  uses</i> <i>local<b>-owner-@</b><i>domain</i><b>-@[]</b></i> <b>as the
+  envelope sender.</b> <b>This will cause a recipient</b>
+  <i>recip<b>@</b><i>reciphost</i></i> <i>to see an envelope sender of</i>
+  <i>local
+  <b>-owner-</b><i>recip</i><b>=</b><i>reciphost</i><b>@</b><i>domain</i></i><i>.</i>
+<h1 class="Sh" title="Sh" id="ERROR_HANDLING"><a class="permalink" href="#ERROR_HANDLING">ERROR
+  HANDLING</a></h1>
+If a delivery instruction fails, <b>qmail-local</b> stops immediately and
+  reports failure. <b>qmail-local</b> handles forwarding after all other
+  instructions, so any error in another type of delivery will prevent all
+  forwarding.
+<div class="Pp"></div>
+If a program returns exit code 99, <b>qmail-local</b> ignores all succeeding
+  lines in <b>.qmail</b>, but it still pays attention to previous forward lines.
+<div class="Pp"></div>
+To set up independent instructions, where a temporary or permanent failure in
+  one instruction does not affect the others, move each instruction into a
+  separate <b>.qmail-<i>ext</i></b> <i>file, and set up a central</i>
+  <b>.qmail</b> file that forwards to all of the
+  <b>.qmail-<i>ext</i></b><i>s.</i> <i>Note that</i> <b>qmail-local</b> can
+  handle any number of forward lines simultaneously.
+<h1 class="Sh" title="Sh" id="SEE_ALSO"><a class="permalink" href="#SEE_ALSO">SEE
+  ALSO</a></h1>
+<a href="envelopes.5.html">envelopes(5)</a>, <a href="maildir.5.html">maildir(5)</a>, <a href="mbox.5.html">mbox(5)</a>, <a href="qmail-users.5.html">qmail-users(5)</a>, <a href="qmail-local.8.html">qmail-local(8)</a>,
+  <a href="qmail-command.8.html">qmail-command(8)</a>, <a href="qmail-queue.8.html">qmail-queue(8)</a>, <a href="qmail-lspawn.8.html">qmail-lspawn(8)</a></div>
+<table class="foot">
+  <tr>
+    <td class="foot-date"></td>
+    <td class="foot-os"></td>
+  </tr>
+</table>
+</body>
+</html>

@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html>
+<!-- This is an automatically generated file.  Do not edit.
+   vim: tw=75
+ -->
+<head>
+  <meta charset="utf-8"/>
+  <link rel="stylesheet" href="style.css" type="text/css" media="all"/>
+  <title><a href="qmail-qfilter.8.html">qmail-qfilter(8)</a></title>
+</head>
+<body>
+<nav class="qmail-nav"><a href="index.html">&larr; Qmail man</a></nav>
+<table class="head">
+  <tr>
+    <td class="head-ltitle"><a href="qmail-qfilter.8.html">qmail-qfilter(8)</a></td>
+    <td class="head-vol">System Manager's Manual</td>
+    <td class="head-rtitle"><a href="qmail-qfilter.8.html">qmail-qfilter(8)</a></td>
+  </tr>
+</table>
+<div class="manual-text">
+<h1 class="Sh" title="Sh" id="NAME"><a class="permalink" href="#NAME">NAME</a></h1>
+qmail-qfilter - front end for qmail-queue that does filtering
+<h1 class="Sh" title="Sh" id="SYNOPSIS"><a class="permalink" href="#SYNOPSIS">SYNOPSIS</a></h1>
+<b>qmail-qfilter</b> <i>filter</i> [ <i>-- filter ...</i> ]
+<h1 class="Sh" title="Sh" id="DESCRIPTION"><a class="permalink" href="#DESCRIPTION">DESCRIPTION</a></h1>
+<b>qmail-qfilter</b> acts as a <b>qmail-queue</b> frontend to execute message
+  filters. It is invoked by setting the <b>QMAILQUEUE</b> environment variable
+  <b>qmail-qfilter</b> sends the message text through each of the filter
+  commands named on the command line and in the <i>qfilters</i> control file
+  (allowing finer control, see below). Each filter is run separately, with
+  standard input opened to the input email, and standard output opened to a new
+  temporary file that will become the input to either the next filter, or
+  <b>qmail-queue</b>. If the filter does not modify the message it passes
+  unchanged to the next step. It also makes the envelope available to each
+  filter as file descriptor 3. File descriptor 4 is opened to a new temporary
+  file for the modified envelope, allowing the filter to modify the envelope or
+  the message. If the filter does not modify the envelope, the envelope remains
+  unchanged for either the next filter or <b>qmail-queue</b>. This provides
+  compatibility for existing filters that do not know about the envelope.
+  <b>qmail-qfilter</b> also opens up file descriptor 5 to a temporary file. If
+  this file is empty after all the filters have executed, its contents are read
+  and used to specify a program to execute in place of <b>qmail-queue</b>. Each
+  filter on the command line is separated by <b>--</b>.
+<div class="Pp"></div>
+<h1 class="Sh" title="Sh" id="RETURN_VALUES"><a class="permalink" href="#RETURN_VALUES">RETURN
+  VALUES</a></h1>
+Returns 51 (out of memory), 53 (write error), or 81 (internal error) if it can't
+  create the temporary files or has problems executing the filters.
+<div class="Pp"></div>
+Returns 79 (bad envelope data) if it can't read or parse the envelope data.
+<div class="Pp"></div>
+<b>qmail-qfilter</b> returns exit code of filter, if the filter returns anything
+  other than 0 or 99. If your filter exits 88, you can put your custom error
+  string on standard error. This enables client like <b>qmail-smtpd</b> to
+  report the error. The custom error string can be prefixed with <b>D</b> for
+  permanent error and <b>Z</b> to indicate temporary error. If a filter returns
+  99, <b>qmail-qfilter</b> returns 0 immediately without running any other
+  filters. If your filter returns 31, the mail will be permanently rejected. If
+  your filter returns 71, the mail will be temporarily rejected.
+<div class="Pp"></div>
+<h1 class="Sh" title="Sh" id="CONTROL_FILES"><a class="permalink" href="#CONTROL_FILES">CONTROL
+  FILES</a></h1>
+<dl class="Bl-tag">
+  <dt><i>qfilters</i></dt>
+  <dd>This control file can be used to setup additional filters. Lines in this
+      file have the following format:
+    <div class="Pp"></div>
+    <pre>
+<b>domain:filter</b>
+  or
+<b>domain:filter:envstr</b>
+    </pre>
+    <div class="Pp"></div>
+     <i>domain</i> refers to the envelope sender domain. It can be an exact
+      match, wildcard or a regular expression (if QREGEX environment variable is
+      defined). If there are multiple lines that match <i>domain</i>, all
+      matching filters will be applied.
+    <div class="Pp"></div>
+     <i>filter</i> is the filter command to run (passed through /bin/sh).
+    <div class="Pp"></div>
+     <i>envstr</i> mentioned above is a string of comma-separated environment
+      variable additions or removals.
+    <div class="Pp"></div>
+    Example entry:
+    <div class="Pp"></div>
+    <pre>
+*:/var/qmail/bin/surbfilter:CACHELIFTIME=,SURBL_DEBUG_FN=/dev/null
+    </pre>
+    <div class="Pp"></div>
+  </dd>
+</dl>
+<h1 class="Sh" title="Sh" id="ENVIRONMENT"><a class="permalink" href="#ENVIRONMENT">ENVIRONMENT</a></h1>
+For compatibility with previous versions, <b>qmail-qfilter</b> sets
+  <b>QMAILUSER</b> and <b>QMAILHOST</b> to the user and host portions of the
+  envelope sender address, and unsets <b>QMAILNAME</b>. It also sets
+  <b>QMAILRCPTS</b> to the list of envelope recipients, each followed by a
+  newline.
+<div class="Pp"></div>
+It also sets <b>ENVSIZE</b> to the size of the envelope, <b>MSGSIZE</b> to the
+  length of the message, and <b>NUMRCPTS</b> to the number of recipients. These
+  values are updated before each filter is run.
+<div class="Pp"></div>
+If <b>QQF_QMAILQUEUE</b> is set, that value is used in place of
+  <b>qmail-queue</b>.
+<div class="Pp"></div>
+<h1 class="Sh" title="Sh" id="SEE_ALSO"><a class="permalink" href="#SEE_ALSO">SEE
+  ALSO</a></h1>
+<a href="qmail-queue.8.html">qmail-queue(8)</a>, <a href="spawn-filter.8.html">spawn-filter(8)</a>
+<div class="Pp"></div>
+<h1 class="Sh" title="Sh" id="NOTES"><a class="permalink" href="#NOTES">NOTES</a></h1>
+<b>$QMAILQUEUE</b> is deliberately not used to override <b>qmail-queue</b> in
+  order to avoid recursive loops with configurations that set
+  <b>$QMAILQUEUE</b>.
+<div class="Pp"></div>
+<h1 class="Sh" title="Sh" id="WARNINGS"><a class="permalink" href="#WARNINGS">WARNINGS</a></h1>
+If you are using <b>qmail-inject</b> -n as one of the filters, you may want to
+  unset <b>MAILUSER</b>, <b>USER</b>, and <b>LOGNAME</b> by using
+<div class="Pp"></div>
+<pre>
+<b>env -u QMAILNAME -u MAILNAME -u NAME qmail-inject -n</b>
+</pre>
+<div class="Pp"></div>
+as the command to invoke qmail-inject. Note that some the <b>env</b> command
+  with some OS's doesn't support the <b>-u</b> option.
+<div class="Pp"></div>
+A message with an excessive number of recipients (more than 64K bytes of
+  recipient data on Linux) will cause execution of the filter programs to fail,
+  and for the message to be rejected.
+<div class="Pp"></div>
+The same temporary file is reused for file descriptor 5 for each filter. Make
+  sure each filter writes a trailing ASCII NUL byte following the program name,
+  as multiple filters could otherwise overwrite the value in undesireable
+  ways.</div>
+<table class="foot">
+  <tr>
+    <td class="foot-date"></td>
+    <td class="foot-os"></td>
+  </tr>
+</table>
+</body>
+</html>

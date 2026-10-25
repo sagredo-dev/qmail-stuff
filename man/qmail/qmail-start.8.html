@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <link rel="stylesheet" href="style.css" type="text/css" media="all"/>
+  <title><a href="qmail-start.8.html">qmail-start(8)</a></title>
+</head>
+<body>
+<nav class="qmail-nav"><a href="index.html">&larr; Qmail man</a></nav>
+<table class="head">
+  <tr>
+    <td class="head-ltitle"><a href="qmail-start.8.html">qmail-start(8)</a></td>
+    <td class="head-vol">System Manager's Manual</td>
+    <td class="head-rtitle"><a href="qmail-start.8.html">qmail-start(8)</a></td>
+  </tr>
+</table>
+<div class="manual-text">
+<h1 class="Sh" title="Sh" id="NAME"><a class="permalink" href="#NAME">NAME</a></h1>
+qmail-start - turn on mail delivery
+<h1 class="Sh" title="Sh" id="SYNOPSIS"><a class="permalink" href="#SYNOPSIS">SYNOPSIS</a></h1>
+<b>qmail-start</b> [ <i>defaultdelivery</i> [ <i>logger arg ...</i> ] ]
+<h1 class="Sh" title="Sh" id="DESCRIPTION"><a class="permalink" href="#DESCRIPTION">DESCRIPTION</a></h1>
+<b>qmail-start</b> invokes <b>qmail-send</b>, <b>qmail-lspawn</b>,
+  <b>qmail-rspawn</b>, and <b>qmail-clean</b>, under the proper uids and gids.
+  These four daemons cooperate to deliver messages from the queue.
+<div class="Pp"></div>
+<b>qmail-start</b> arranges for <b>qmail-send</b>'s activity record to be sent
+  to <b>qmail-start</b>'s output. See <b><a href="qmail-log.5.html">qmail-log(5)</a></b> for the format of the
+  activity record. Other than this, <b>qmail-start</b> does not print anything,
+  even on failure.
+<div class="Pp"></div>
+If <i>defaultdelivery</i> is supplied, <b>qmail-start</b> passes it to
+  <b>qmail-lspawn</b>.
+<div class="Pp"></div>
+If <i>logger</i> is supplied, <b>qmail-start</b> invokes <i>logger</i> with the
+  given arguments, and feeds <b>qmail-send</b>'s activity record through
+  <i>logger</i>.
+<div class="Pp"></div>
+Environment variables given to <b>qmail-start</b> will eventually be passed on
+  to <b>qmail-local</b>, so make sure to clean up the environment if you run
+  <b>qmail-start</b> manually:
+<div class="Pp"></div>
+<pre>
+   # env - PATH=&quot;/var/qmail/bin:$PATH&quot;
+<div>&#x00A0;</div>
+   qmail-start ./Mailbox splogger qmail &amp;
+<div>&#x00A0;</div>
+   (all on one line)
+</pre>
+<div class="Pp"></div>
+Resource limits, controlling ttys, et al. are also passed from
+  <b>qmail-start</b> to <b>qmail-local</b>.
+<div class="Pp"></div>
+Note that <b>qmail-send</b> normally juggles several simultaneous deliveries. To
+  reduce <b>qmail-send</b>'s impact on other programs, you can run
+  <b>qmail-start</b> with a low priority.
+<h1 class="Sh" title="Sh" id="SEE_ALSO"><a class="permalink" href="#SEE_ALSO">SEE
+  ALSO</a></h1>
+logger(1), splogger(1), nice(1), <a href="qmail-log.5.html">qmail-log(5)</a>, <a href="qmail-local.8.html">qmail-local(8)</a>, <a href="qmail-clean.8.html">qmail-clean(8)</a>,
+  <a href="qmail-lspawn.8.html">qmail-lspawn(8)</a>, <a href="qmail-rspawn.8.html">qmail-rspawn(8)</a>, <a href="qmail-send.8.html">qmail-send(8)</a></div>
+<table class="foot">
+  <tr>
+    <td class="foot-date"></td>
+    <td class="foot-os"></td>
+  </tr>
+</table>
+</body>
+</html>

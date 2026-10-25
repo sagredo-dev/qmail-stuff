@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <link rel="stylesheet" href="style.css" type="text/css" media="all"/>
+  <title><a href="qmail-pop3d.8.html">qmail-pop3d(8)</a></title>
+</head>
+<body>
+<nav class="qmail-nav"><a href="index.html">&larr; Qmail man</a></nav>
+<table class="head">
+  <tr>
+    <td class="head-ltitle"><a href="qmail-pop3d.8.html">qmail-pop3d(8)</a></td>
+    <td class="head-vol">System Manager's Manual</td>
+    <td class="head-rtitle"><a href="qmail-pop3d.8.html">qmail-pop3d(8)</a></td>
+  </tr>
+</table>
+<div class="manual-text">
+<h1 class="Sh" title="Sh" id="NAME"><a class="permalink" href="#NAME">NAME</a></h1>
+qmail-pop3d - distribute mail via POP
+<h1 class="Sh" title="Sh" id="SYNOPSIS"><a class="permalink" href="#SYNOPSIS">SYNOPSIS</a></h1>
+<b>qmail-pop3d</b> <i>maildirname</i>
+<h1 class="Sh" title="Sh" id="DESCRIPTION"><a class="permalink" href="#DESCRIPTION">DESCRIPTION</a></h1>
+<b>qmail-pop3d</b> lets a user read and delete his mail through the network.
+<div class="Pp"></div>
+Mail is stored in a <b>maildir</b> called <i>maildirname</i>, normally
+  <b>Maildir</b>, in the user's home directory.
+<div class="Pp"></div>
+<b>qmail-pop3d</b> is normally invoked under <b>qmail-popup</b>, which reads a
+  username and password, and <b>/bin/checkpassword</b>, which checks the
+  password and sets up environment variables.
+<div class="Pp"></div>
+<b>qmail-pop3d</b> has a 20-minute idle timeout.
+<div class="Pp"></div>
+<b>qmail-pop3d</b> supports UIDL, TOP, and LAST.
+<div class="Pp"></div>
+<b>qmail-pop3d</b> appends an extra blank line to every message to work around
+  serious bugs in certain clients.
+<div class="Pp"></div>
+<b>qmail-pop3d</b> is based on a program contributed by Russ Nelson.
+<h1 class="Sh" title="Sh" id="SEE_ALSO"><a class="permalink" href="#SEE_ALSO">SEE
+  ALSO</a></h1>
+<a href="maildir.5.html">maildir(5)</a>, <a href="qmail-local.8.html">qmail-local(8)</a>, <a href="qmail-popup.8.html">qmail-popup(8)</a></div>
+<table class="foot">
+  <tr>
+    <td class="foot-date"></td>
+    <td class="foot-os"></td>
+  </tr>
+</table>
+</body>
+</html>

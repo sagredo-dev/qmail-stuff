@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html>
+<!-- This is an automatically generated file.  Do not edit.
+   vim: tw=75
+ -->
+<head>
+  <meta charset="utf-8"/>
+  <link rel="stylesheet" href="style.css" type="text/css" media="all"/>
+  <title><a href="spawn-filter.8.html">spawn-filter(8)</a></title>
+</head>
+<body>
+<nav class="qmail-nav"><a href="index.html">&larr; Qmail man</a></nav>
+<table class="head">
+  <tr>
+    <td class="head-ltitle"><a href="spawn-filter.8.html">spawn-filter(8)</a></td>
+    <td class="head-vol">System Manager's Manual</td>
+    <td class="head-rtitle"><a href="spawn-filter.8.html">spawn-filter(8)</a></td>
+  </tr>
+</table>
+<div class="manual-text">
+<h1 class="Sh" title="Sh" id="NAME"><a class="permalink" href="#NAME">NAME</a></h1>
+spawn-filter - qmail-local / qmail-remote interceptor
+<div class="Pp"></div>
+<h1 class="Sh" title="Sh" id="SYNOPSIS"><a class="permalink" href="#SYNOPSIS">SYNOPSIS</a></h1>
+<b>spawn-filter</b> <i>args</i>
+<div class="Pp"></div>
+<h1 class="Sh" title="Sh" id="DESCRIPTION"><a class="permalink" href="#DESCRIPTION">DESCRIPTION</a></h1>
+<b>spawn-filter</b> is a <b>qmail-local</b> / <b>qmail-remote</b> interceptor to
+  help qmail run custom filters for email being sent by <b>qmail-local</b> or
+  <b>qmail-remote</b>. It can run any script which reads messages on fd 0 and
+  writes the output on fd 1. Whatever is output on fd 1, will be the input on
+  descriptor 0 for <b>qmail-local</b> and <b>qmail-remote</b>. Thus the output
+  of the filter program becomes the message that will be delivered to the
+  destination. The filter can be turned on individually for local and remote
+  mails by defining, <b>QMAILLOCAL</b> and <b>QMAILREMOTE</b> environment
+  variables, to the path of <b>spawn-filter</b> respectively in
+  <b>qmail-send</b>'s supervise or rc script. If <b>spawn-filter</b> is invoked
+  as <b>qmail-local</b> or <b>qmail-remote, it executes </b><b>qmail-local</b>
+  or <b>qmail-remote</b> after running the custom filter. The filter script or
+  program is run as a child of <b>spawn-filter</b>.
+<div class="Pp"></div>
+<b>spawn-filter</b> is run by <b>qmail-lspawn</b> or <b>qmail-rspawn</b> with
+  the same <i>args</i> that is passed to <b>qmail-local</b> or
+  <b>qmail-remote</b>. If <b>QMAILLOCAL</b> is set as
+  <i>/var/qmail/bin/spawn-filter</i>, <b>qmail-lspawn</b> runs
+  <b>spawn-filter</b> with the same <i>args</i> that is passed to
+  <b>qmail-local</b>. If <b>QMAILREMOTE</b> is set as
+  <i>/var/qmail/bin/spawn-filter</i>, <b>qmail-rspawn</b> runs
+  <b>spawn-filter</b> with the same <i>args</i> that is passed to
+  <b>qmail-remote</b>.
+<div class="Pp"></div>
+<b>spawn-filter</b> unsets <b>QMAILREMOTE</b> when it runs as
+  <b>qmail-local</b>. Similarly, it unsets <b>QMAILLOCAL</b> when it runs as
+  <b>qmail-remote</b>. This is useful in scripts to figure out whether
+  <b>spawn-filter</b> is running as <b>qmail-local</b> or <b>qmail-remote</b>.
+  You can set <b>QLOCAL</b>, <b>QREMOTE</b> environment variable to make
+  spawn-filter run an alternate <b>qmail-local</b>, <b>qmail-remote</b>
+  programs. The alternate programs are expected to support the same interface as
+  the original <b>qmail-local</b> and <b>qmail-remote</b>.
+<div class="Pp"></div>
+Filters can be run by defining the environment variable <b>FILTERARGS</b> or by
+  using the control file <i>filterargs</i> (see below). <b>spawn-filter</b> uses
+  /bin/sh to run the filter (with arguments) specified by the <b>FILTERARGS</b>
+  environment variable (or the control file <i>filterargs</i>). The environment
+  variable <b>FILTERARGS</b> apply to both local and remote mails. For
+  individual domain level control, it is best to set using the control file
+  <i>filterargs</i> (see below the section on control files). The environment
+  variable <b>FILTERARGS</b> takes precedence over the control file.
+<div class="Pp"></div>
+<b>spawn-filter</b> sets multiple environment variables which can be
+  conveniently used in programs/scripts which get invoked by setting
+  <b>FILTERARGS</b> environment variable or by rules in the <b>filterargs</b>
+  control file. See the section on <b>Environment Variables</b> below.
+<div class="Pp"></div>
+<b>spawn-filter</b> unsets FILTERARGS, QMAILLOCAL, QMAILREMOTE before running
+  <b>qmail-local</b> or <b>qmail-remote</b>. <b>spawn-filter</b> unsets
+  FILTERARGS before running filter.
+<div class="Pp"></div>
+<h1 class="Sh" title="Sh" id="Control_Files"><a class="permalink" href="#Control_Files">Control
+  Files</a></h1>
+<dl class="Bl-tag">
+  <dt><i>filterargs</i></dt>
+  <dd>This control file can be used to setup additional filters. This file has
+      the following format.
+    <div class="Pp"></div>
+    <pre>
+<b>domain:args</b>
+  or
+<b>domain:args:envstr</b>
+    </pre>
+    <div class="Pp"></div>
+    for both local and remote deliveries
+    <div class="Pp"></div>
+    <pre>
+<b>domain:remote:args</b>
+  or
+<b>domain:remote:args:envstr</b>
+    </pre>
+    <div class="Pp"></div>
+    for remote deliveries and
+    <div class="Pp"></div>
+    <pre>
+<b>domain:local:args</b>
+  or
+<b>domain:local:args:envstr</b>
+    </pre>
+    <div class="Pp"></div>
+    for local deliveries.
+    <div class="Pp"></div>
+     <i>domain</i> can be an exact match, wildcard or a regular expression (if
+      QREGEX environment variable is defined). If there are multiple lines which
+      match <i>domain</i>, the first line that matches <i>domain</i> will be
+      used.
+    <div class="Pp"></div>
+    For local deliveries, <i>domain</i> refers to the recipient domain. You can
+      have the match done on sender domain by setting
+      <b>MATCH_SENDER_DOMAIN</b>.
+    <div class="Pp"></div>
+    For remote deliveries, <i>domain</i> refers to the sender domain. You can
+      have the match done on recipient domain by setting
+      <b>MATCH_RECIPIENT_DOMAIN</b>.
+    <div class="Pp"></div>
+    <pre>
+*:remote:/var/qmail/bin/qmail-dkim:DKIMQUEUE=/bin/cat
+    </pre>
+    <div class="Pp"></div>
+     <i>envstr</i> mentioned above is a string of environment variable additions
+      or removals. e.g.
+    <div class="Pp"></div>
+    <pre>
+QREGEX=1,DKIMSIGNOPTIONS=-z 4,HOME=
+    </pre>
+    <div class="Pp"></div>
+    sets QREGEX to 1, DKIMSIGNOPTIONS to &quot;-z 4&quot; and unsets HOME
+      envrionment variable.
+    <div class="Pp"></div>
+  </dd>
+</dl>
+<dl class="Bl-tag">
+  <dt><i>databytes</i></dt>
+  <dd>Maximum size of mail that will be accepted before passing it to
+      <b>qmail-remote</b> or <b>qmail-local</b>
+    <div class="Pp"></div>
+    If the environment variable <b>DATABYTES</b> is set, it overrides
+      <i>databytes</i>. The value of databytes determines the maximum size of a
+      message that <b>spawn-filter</b> will accept.
+    <div class="Pp"></div>
+  </dd>
+</dl>
+<h1 class="Sh" title="Sh" id="Environment_Variables"><a class="permalink" href="#Environment_Variables">Environment
+  Variables</a></h1>
+<b>spawn-filter</b> sets few environment variables. The following environment
+  variables are set for both local and remote deliveries
+<div class="Pp"></div>
+<table class="tbl">
+  <tr>
+    <td>Environment variable | Description</td>
+    <td></td>
+  </tr>
+  <tr>
+    <td>------------------------------------------------------------</td>
+    <td></td>
+  </tr>
+  <tr>
+    <td>DOMAIN | domain part of recipient address</td>
+    <td></td>
+  </tr>
+  <tr>
+    <td>_EXT | the address extension</td>
+    <td></td>
+  </tr>
+  <tr>
+    <td>_SENDER | envelope sender address</td>
+    <td></td>
+  </tr>
+  <tr>
+    <td>_RECIPIENT | envelope recipient address</td>
+    <td></td>
+  </tr>
+  <tr>
+    <td>QMAILREMOTE | set for remote deliveries</td>
+    <td></td>
+  </tr>
+  <tr>
+    <td>QMAILLOCAL | set for local deliveries</td>
+    <td></td>
+  </tr>
+  <tr>
+    <td></td>
+    <td></td>
+  </tr>
+</table>
+<div class="Pp"></div>
+<h1 class="Sh" title="Sh" id="EXIT_CODES"><a class="permalink" href="#EXIT_CODES">EXIT
+  CODES</a></h1>
+<b>spawn-filter</b> exits 111 for any error (non-zero exit status by called
+  program) or if it is not able to exec /var/qmail/bin/qmail-local (for local
+  mails) or /var/qmail/bin/qmail-remote (for remote mails). It exits 100 if the
+  program/script defined by <b>FILTERARGS</b> (or defined in the control file
+  <b>filterargs</b>) returns 100. If the program/script defined by
+  <b>FILTERARGS</b> returns 2, then the mail gets blackholed. If the
+  program/script defined by <b>FILTERARGS</b> exits non-zero status (other than
+  2), temporary error is issued and the mail stays in the queue. For all other
+  cases where no errors occur, it exits 0.
+<div class="Pp"></div>
+<h1 class="Sh" title="Sh" id="SEE_ALSO"><a class="permalink" href="#SEE_ALSO">SEE
+  ALSO</a></h1>
+<a href="qmail-lspawn.8.html">qmail-lspawn(8)</a>, <a href="qmail-rspawn.8.html">qmail-rspawn(8)</a>, <a href="qmail-local.8.html">qmail-local(8)</a>, <a href="qmail-remote.8.html">qmail-remote(8)</a>,
+  <a href="qmail-smtpd.8.html">qmail-smtpd(8)</a>, <a href="qmail-control.5.html">qmail-control(5)</a>, <a href="qmail-queue.8.html">qmail-queue(8)</a>, <a href="qmail-command.8.html">qmail-command(8)</a>
+<div class="Pp"></div>
+<h1 class="Sh" title="Sh" id="AUTHORS"><a class="permalink" href="#AUTHORS">AUTHORS</a></h1>
+&quot;Manvendra Bhangui&quot; &lt;mbhangui@gmail.com&gt;.</div>
+<table class="foot">
+  <tr>
+    <td class="foot-date"></td>
+    <td class="foot-os"></td>
+  </tr>
+</table>
+</body>
+</html>

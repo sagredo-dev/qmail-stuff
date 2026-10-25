@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <link rel="stylesheet" href="style.css" type="text/css" media="all"/>
+  <title><a href="envelopes.5.html">envelopes(5)</a></title>
+</head>
+<body>
+<nav class="qmail-nav"><a href="index.html">&larr; Qmail man</a></nav>
+<table class="head">
+  <tr>
+    <td class="head-ltitle"><a href="envelopes.5.html">envelopes(5)</a></td>
+    <td class="head-vol">File Formats Manual</td>
+    <td class="head-rtitle"><a href="envelopes.5.html">envelopes(5)</a></td>
+  </tr>
+</table>
+<div class="manual-text">
+<h1 class="Sh" title="Sh" id="NAME"><a class="permalink" href="#NAME">NAME</a></h1>
+envelopes - sender/recipient lists attached to messages
+<h1 class="Sh" title="Sh" id="INTRODUCTION"><a class="permalink" href="#INTRODUCTION">INTRODUCTION</a></h1>
+Electronic mail messages are delivered in <i>envelopes</i>.
+<div class="Pp"></div>
+An envelope lists a <i>sender</i> and one or more <i>recipients</i>. Usually
+  these envelope addresses are the same as the addresses listed in the message
+  header:
+<div class="Pp"></div>
+<pre>
+   (envelope) from djb to root
+<div>&#x00A0;</div>
+   From: djb
+<div>&#x00A0;</div>
+   To: root
+</pre>
+<div class="Pp"></div>
+In more complicated situations, though, the envelope addresses may differ from
+  the header addresses.
+<h1 class="Sh" title="Sh" id="ENVELOPE_EXAMPLES"><a class="permalink" href="#ENVELOPE_EXAMPLES">ENVELOPE
+  EXAMPLES</a></h1>
+When a message is delivered to several people at different locations, it is
+  first photocopied and placed into several envelopes:
+<div class="Pp"></div>
+<pre>
+   (envelope) from djb to root
+<div>&#x00A0;</div>
+   From: djb                          Copy #1 of message
+<div>&#x00A0;</div>
+   To: root, god@brl.mil
+</pre>
+<div class="Pp"></div>
+<pre>
+   (envelope) from djb to god@brl.mil
+<div>&#x00A0;</div>
+   From: djb                          Copy #2 of message
+<div>&#x00A0;</div>
+   To: root, god@brl.mil
+</pre>
+<div class="Pp"></div>
+When a message is delivered to several people at the same location, the sender
+  doesn't have to photocopy it. He can instead stuff it into one envelope with
+  several addresses; the recipients will make the photocopy:
+<div class="Pp"></div>
+<pre>
+   (envelope) from djb to god@brl.mil, angel@brl.mil
+<div>&#x00A0;</div>
+   From: djb
+<div>&#x00A0;</div>
+   To: god@brl.mil, angel@brl.mil, joe, frde
+</pre>
+<div class="Pp"></div>
+Bounced mail is sent back to the envelope sender address. The bounced mail
+  doesn't list an envelope sender, so bounce loops are impossible:
+<div class="Pp"></div>
+<pre>
+   (envelope) from &lt;&gt; to djb
+<div>&#x00A0;</div>
+   From: MAILER-DAEMON
+<div>&#x00A0;</div>
+   To: djb
+<div>&#x00A0;</div>
+   Subject: unknown user frde
+</pre>
+<div class="Pp"></div>
+The recipient of a message may make another copy and forward it in a new
+  envelope:
+<div class="Pp"></div>
+<pre>
+   (envelope) from djb to joe
+<div>&#x00A0;</div>
+   From: djb                          Original message
+<div>&#x00A0;</div>
+   To: joe
+</pre>
+<div class="Pp"></div>
+<pre>
+   (envelope) from joe to fred
+<div>&#x00A0;</div>
+   From: djb                          Forwarded message
+<div>&#x00A0;</div>
+   To: joe
+</pre>
+<div class="Pp"></div>
+A mailing list works almost the same way:
+<div class="Pp"></div>
+<pre>
+   (envelope) from djb to sos-list
+<div>&#x00A0;</div>
+   From: djb                          Original message
+<div>&#x00A0;</div>
+   To: sos-list
+</pre>
+<div class="Pp"></div>
+<pre>
+   (envelope) from sos-owner to god@brl.mil
+<div>&#x00A0;</div>
+   From: djb                          Forwarded message
+<div>&#x00A0;</div>
+   To: sos-list                       to recipient #1
+</pre>
+<div class="Pp"></div>
+<pre>
+   (envelope) from sos-owner to frde
+<div>&#x00A0;</div>
+   From: djb                          Forwarded message
+<div>&#x00A0;</div>
+   To: sos-list                       to recipient #2
+</pre>
+<div class="Pp"></div>
+Notice that the mailing list is set up to replace the envelope sender with
+  something new, <b>sos-owner</b>. So bounces will come back to
+  <b>sos-owner</b>:
+<div class="Pp"></div>
+<pre>
+   (envelope) from &lt;&gt; to sos-owner
+<div>&#x00A0;</div>
+   From: MAILER-DAEMON
+<div>&#x00A0;</div>
+   To: sos-owner
+<div>&#x00A0;</div>
+   Subject: unknown user frde
+</pre>
+<div class="Pp"></div>
+It's a good idea to set up an extra address, <b>sos-owner</b>, like this: the
+  original envelope sender ( <b>djb</b>) has no way to fix bad <b>sos-list</b>
+  addresses, and of course bounces must not be sent to <b>sos-list</b> itself.
+<h1 class="Sh" title="Sh" id="HOW_ENVELOPE_ADDRESSES_ARE_STORED"><a class="permalink" href="#HOW_ENVELOPE_ADDRESSES_ARE_STORED">HOW
+  ENVELOPE ADDRESSES ARE STORED</a></h1>
+Envelope sender and envelope recipient addresses are transmitted and recorded in
+  several ways.
+<div class="Pp"></div>
+When a user injects mail through <b>qmail-inject</b>, he can supply a
+  <b>Return-Path</b> line or a <b>-f</b> option for the envelope sender; by
+  default the envelope sender is his login name. The envelope recipient
+  addresses can be taken from the command line or from various header fields,
+  depending on the options to <b>qmail-inject</b>. Similar comments apply to
+  <b>sendmail</b>.
+<div class="Pp"></div>
+When a message is transferred from one machine to another through SMTP, the
+  envelope sender is given in a <b>MAIL FROM</b> command, the envelope
+  recipients are given in <b>RCPT TO</b> commands, and the message is supplied
+  separately by a <b>DATA</b> command.
+<div class="Pp"></div>
+When a message is delivered by <b>qmail</b> to a single local recipient,
+  <b>qmail-local</b> records the recipient in <b>Delivered-To</b> and the
+  envelope sender in <b>Return-Path</b>. It uses <b>Delivered-To</b> to detect
+  mail forwarding loops.
+<div class="Pp"></div>
+<b>sendmail</b> normally records the envelope sender in <b>Return-Path</b>. It
+  does not record envelope recipient addresses, on the theory that they are
+  redundant: you received the mail, so you must have been one of the envelope
+  recipients.
+<div class="Pp"></div>
+Note that, if the header doesn't have any recipient addresses, <b>sendmail</b>
+  will move envelope recipient addresses back into the header. This situation
+  occurs if all addresses were originally listed as <b>Bcc</b>, since <b>Bcc</b>
+  is automatically removed. When <b>sendmail</b> sees this, it creates a new
+  <b>Apparently-To</b> header field with the envelope recipient addresses. This
+  has the strange effect that each blind-carbon-copy recipient will see a list
+  of all recipients on the same machine.
+<div class="Pp"></div>
+When a message is stored in <b>mbox</b> format, the envelope sender is recorded
+  at the top of the message as a UUCP-style <b>From</b> (no colon) line. Note
+  that this line is less reliable than the <b>Return-Path</b> line added by
+  <b>qmail-local</b> or <b>sendmail<b>.</b></b>
+<h1 class="Sh" title="Sh" id="SEE_ALSO"><a class="permalink" href="#SEE_ALSO">SEE
+  ALSO</a></h1>
+<a href="qmail-header.5.html">qmail-header(5)</a>, <a href="qmail-local.8.html">qmail-local(8)</a>, <a href="qmail-inject.8.html">qmail-inject(8)</a></div>
+<table class="foot">
+  <tr>
+    <td class="foot-date"></td>
+    <td class="foot-os"></td>
+  </tr>
+</table>
+</body>
+</html>

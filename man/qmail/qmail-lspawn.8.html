@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <link rel="stylesheet" href="style.css" type="text/css" media="all"/>
+  <title><a href="qmail-lspawn.8.html">qmail-lspawn(8)</a></title>
+</head>
+<body>
+<nav class="qmail-nav"><a href="index.html">&larr; Qmail man</a></nav>
+<table class="head">
+  <tr>
+    <td class="head-ltitle"><a href="qmail-lspawn.8.html">qmail-lspawn(8)</a></td>
+    <td class="head-vol">System Manager's Manual</td>
+    <td class="head-rtitle"><a href="qmail-lspawn.8.html">qmail-lspawn(8)</a></td>
+  </tr>
+</table>
+<div class="manual-text">
+<h1 class="Sh" title="Sh" id="NAME"><a class="permalink" href="#NAME">NAME</a></h1>
+qmail-lspawn - schedule local deliveries
+<h1 class="Sh" title="Sh" id="SYNOPSIS"><a class="permalink" href="#SYNOPSIS">SYNOPSIS</a></h1>
+<b>qmail-lspawn</b> <i>defaultdelivery</i>
+<h1 class="Sh" title="Sh" id="DESCRIPTION"><a class="permalink" href="#DESCRIPTION">DESCRIPTION</a></h1>
+<b>qmail-lspawn</b> reads a series of local delivery commands from descriptor 0,
+  invokes <b>qmail-local</b> to perform the deliveries, and prints the results
+  to descriptor 1. It passes <i>defaultdelivery</i> to <b>qmail-local</b> as the
+  default delivery instruction.
+<div class="Pp"></div>
+<b>qmail-lspawn</b> invokes <b>qmail-local</b> asynchronously, so the results
+  may not be in the same order as the commands.
+<div class="Pp"></div>
+For each recipient address, <b>qmail-lspawn</b> finds out which local user
+  controls that address. It first checks the <b>qmail-users</b> mechanism; if
+  the address is not listed there, it invokes <b>qmail-getpw</b>.
+  <b>qmail-lspawn</b> then runs <b>qmail-local</b> under the user's uid and gid.
+  It does not set up any supplementary groups.
+<div class="Pp"></div>
+<b>qmail-lspawn</b> treats an empty mailbox name as a trash address.
+<h1 class="Sh" title="Sh" id="SEE_ALSO"><a class="permalink" href="#SEE_ALSO">SEE
+  ALSO</a></h1>
+<a href="envelopes.5.html">envelopes(5)</a>, <a href="qmail-users.5.html">qmail-users(5)</a>, <a href="qmail-getpw.8.html">qmail-getpw(8)</a>, <a href="qmail-send.8.html">qmail-send(8)</a>,
+  <a href="qmail-local.8.html">qmail-local(8)</a></div>
+<table class="foot">
+  <tr>
+    <td class="foot-date"></td>
+    <td class="foot-os"></td>
+  </tr>
+</table>
+</body>
+</html>

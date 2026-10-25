@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <link rel="stylesheet" href="style.css" type="text/css" media="all"/>
+  <title><a href="condredirect.1.html">condredirect(1)</a></title>
+</head>
+<body>
+<nav class="qmail-nav"><a href="index.html">&larr; Qmail man</a></nav>
+<table class="head">
+  <tr>
+    <td class="head-ltitle"><a href="condredirect.1.html">condredirect(1)</a></td>
+    <td class="head-vol">General Commands Manual</td>
+    <td class="head-rtitle"><a href="condredirect.1.html">condredirect(1)</a></td>
+  </tr>
+</table>
+<div class="manual-text">
+<h1 class="Sh" title="Sh" id="NAME"><a class="permalink" href="#NAME">NAME</a></h1>
+condredirect - perhaps redirect mail to another address
+<h1 class="Sh" title="Sh" id="SYNOPSIS"><a class="permalink" href="#SYNOPSIS">SYNOPSIS</a></h1>
+in <b>.qmail</b>: <b>|condredirect</b> <i>newaddress</i> <i>program</i> [ <i>arg
+  ...</i> ]
+<h1 class="Sh" title="Sh" id="DESCRIPTION"><a class="permalink" href="#DESCRIPTION">DESCRIPTION</a></h1>
+<b>condredirect</b> feeds each new mail message to <i>program</i> with the given
+  arguments. If <i>program</i> exits 0, <b>condredirect</b> forwards the mail
+  message to <i>newaddress</i>, and then exits 99, so further commands in
+  <b>.qmail</b> are ignored.
+<div class="Pp"></div>
+If <i>program</i> exits 111, <b>condredirect</b> exits 111, so delivery will be
+  retried later.
+<div class="Pp"></div>
+If <i>program</i> exits anything else (or does not exist), <b>condredirect</b>
+  exits 0, so the rest of <b>.qmail</b> will be processed as usual.
+<div class="Pp"></div>
+Note that it is not safe for <i>program</i> to fork a child that reads the
+  message in the background.
+<div class="Pp"></div>
+<b>WARNING:</b> If you create a <b>.qmail</b> file to enable
+  <b>condredirect</b>, make sure to also add a line specifying delivery to your
+  normal mailbox.
+<h1 class="Sh" title="Sh" id="SEE_ALSO"><a class="permalink" href="#SEE_ALSO">SEE
+  ALSO</a></h1>
+<a href="bouncesaying.1.html">bouncesaying(1)</a>, <a href="except.1.html">except(1)</a>, <a href="dot-qmail.5.html">dot-qmail(5)</a>, <a href="qmail-command.8.html">qmail-command(8)</a>, <a href="qmail-queue.8.html">qmail-queue(8)</a></div>
+<table class="foot">
+  <tr>
+    <td class="foot-date"></td>
+    <td class="foot-os"></td>
+  </tr>
+</table>
+</body>
+</html>

@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <link rel="stylesheet" href="style.css" type="text/css" media="all"/>
+  <title><a href="qmail-getpw.8.html">qmail-getpw(8)</a></title>
+</head>
+<body>
+<nav class="qmail-nav"><a href="index.html">&larr; Qmail man</a></nav>
+<table class="head">
+  <tr>
+    <td class="head-ltitle"><a href="qmail-getpw.8.html">qmail-getpw(8)</a></td>
+    <td class="head-vol">System Manager's Manual</td>
+    <td class="head-rtitle"><a href="qmail-getpw.8.html">qmail-getpw(8)</a></td>
+  </tr>
+</table>
+<div class="manual-text">
+<h1 class="Sh" title="Sh" id="NAME"><a class="permalink" href="#NAME">NAME</a></h1>
+qmail-getpw - give addresses to users
+<h1 class="Sh" title="Sh" id="SYNOPSIS"><a class="permalink" href="#SYNOPSIS">SYNOPSIS</a></h1>
+<b>qmail-getpw</b> <i>local</i>
+<h1 class="Sh" title="Sh" id="DESCRIPTION"><a class="permalink" href="#DESCRIPTION">DESCRIPTION</a></h1>
+In <b>qmail</b>, each user controls a vast array of local addresses.
+  <b>qmail-getpw</b> finds the user that controls a particular address,
+  <i>local</i>. It prints six pieces of information, each terminated by NUL:
+  <i>user</i>; <i>uid</i>; <i>gid</i>; <i>homedir</i>; <i>dash</i>; and
+  <i>ext</i>. The user's account name is <i>user</i>; the user's uid and gid in
+  decimal are <i>uid</i> and <i>gid</i>; the user's home directory is
+  <i>homedir</i>; and messages to <i>local</i> will be handled by
+  <i>homedir<b>/.qmail</b> <i>dashext</i></i><i>.</i>
+<div class="Pp"></div>
+In case of trouble, <b>qmail-getpw</b> exits nonzero without printing anything.
+<div class="Pp"></div>
+<b>WARNING:</b> The operating system's <b>getpwnam</b> function, which is at the
+  heart of <b>qmail-getpw</b>, is inherently unreliable: it fails to distinguish
+  between temporary errors and nonexistent users. Future versions of
+  <b>getpwnam</b> should return ETXTBSY to indicate temporary errors and ESRCH
+  to indicate nonexistent users.
+<h1 class="Sh" title="Sh" id="RULES"><a class="permalink" href="#RULES">RULES</a></h1>
+<b>qmail-getpw</b> considers an account in <b>/etc/passwd</b> to be a user if
+  (1) the account has a nonzero uid, (2) the account's home directory exists
+  (and is visible to <b>qmail-getpw</b>), and (3) the account owns its home
+  directory. <b>qmail-getpw</b> ignores account names containing uppercase
+  letters. <b>qmail-getpw</b> also assumes that all account names are shorter
+  than 32 characters.
+<div class="Pp"></div>
+<b>qmail-getpw</b> gives each user control over the basic <i>user</i> address
+  and all addresses of the form <i>user<b>-</b><i>anything</i></i><i>.</i>
+  <i>When</i> <i>local</i> is <i>user</i>, <i>dash</i> and <i>ext</i> are both
+  empty. When <i>local</i> is <i>user<b>-</b><i>anything</i></i><i>,</i>
+  <i>dash</i> is a hyphen and <i>ext</i> is <i>anything</i>. <i>user</i> may
+  appear in any combination of uppercase and lowercase letters at the front of
+  <i>local</i>.
+<div class="Pp"></div>
+A catch-all user, <b>alias</b>, controls all other addresses. In this case
+  <i>ext</i> is <i>local</i> and <i>dash</i> is a hyphen.
+<div class="Pp"></div>
+You can override all of <b>qmail-getpw</b>'s decisions with the
+  <b>qmail-users</b> mechanism, which is reliable, highly configurable, and much
+  faster than <b>qmail-getpw</b>.
+<h1 class="Sh" title="Sh" id="SEE_ALSO"><a class="permalink" href="#SEE_ALSO">SEE
+  ALSO</a></h1>
+<a href="qmail-users.5.html">qmail-users(5)</a>, <a href="qmail-lspawn.8.html">qmail-lspawn(8)</a></div>
+<table class="foot">
+  <tr>
+    <td class="foot-date"></td>
+    <td class="foot-os"></td>
+  </tr>
+</table>
+</body>
+</html>

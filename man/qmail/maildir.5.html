@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <link rel="stylesheet" href="style.css" type="text/css" media="all"/>
+  <title><a href="maildir.5.html">maildir(5)</a></title>
+</head>
+<body>
+<nav class="qmail-nav"><a href="index.html">&larr; Qmail man</a></nav>
+<table class="head">
+  <tr>
+    <td class="head-ltitle"><a href="maildir.5.html">maildir(5)</a></td>
+    <td class="head-vol">File Formats Manual</td>
+    <td class="head-rtitle"><a href="maildir.5.html">maildir(5)</a></td>
+  </tr>
+</table>
+<div class="manual-text">
+<h1 class="Sh" title="Sh" id="NAME"><a class="permalink" href="#NAME">NAME</a></h1>
+maildir - directory for incoming mail messages
+<h1 class="Sh" title="Sh" id="INTRODUCTION"><a class="permalink" href="#INTRODUCTION">INTRODUCTION</a></h1>
+<i>maildir</i> is a structure for directories of incoming mail messages. It
+  solves the reliability problems that plague <i>mbox</i> files and <i>mh</i>
+  folders.
+<h1 class="Sh" title="Sh" id="RELIABILITY_ISSUES"><a class="permalink" href="#RELIABILITY_ISSUES">RELIABILITY
+  ISSUES</a></h1>
+A machine may crash while it is delivering a message. For both <i>mbox</i> files
+  and <i>mh</i> folders this means that the message will be silently truncated.
+  Even worse: for <i>mbox</i> format, if the message is truncated in the middle
+  of a line, it will be silently joined to the next message. The mail transport
+  agent will try again later to deliver the message, but it is unacceptable that
+  a corrupted message should show up at all. In <i>maildir</i>, every message is
+  guaranteed complete upon delivery.
+<div class="Pp"></div>
+A machine may have two programs simultaneously delivering mail to the same user.
+  The <i>mbox</i> and <i>mh</i> formats require the programs to update a single
+  central file. If the programs do not use some locking mechanism, the central
+  file will be corrupted. There are several <i>mbox</i> and <i>mh</i> locking
+  mechanisms, none of which work portably and reliably. In contrast, in
+  <i>maildir</i>, no locks are ever necessary. Different delivery processes
+  never touch the same file.
+<div class="Pp"></div>
+A user may try to delete messages from his mailbox at the same moment that the
+  machine delivers a new message. For <i>mbox</i> and <i>mh</i> formats, the
+  user's mail-reading program must know what locking mechanism the mail-delivery
+  programs use. In contrast, in <i>maildir</i>, any delivered message can be
+  safely updated or deleted by a mail-reading program.
+<div class="Pp"></div>
+Many sites use Sun's <b>Network Fa<b>il</b>ur<b>e System</b></b> <b>(NFS),</b>
+  <b>presumably because the operating system vendor does not offer</b>
+  <b>anything else.</b> <b>NFS exacerbates all of the above problems.</b>
+  <b>Some NFS implementations don't provide</b> <b>any</b> reliable locking
+  mechanism. With <i>mbox</i> and <i>mh</i> formats, if two machines deliver
+  mail to the same user, or if a user reads mail anywhere except the delivery
+  machine, the user's mail is at risk. <i>maildir</i> works without trouble over
+  NFS.
+<h1 class="Sh" title="Sh" id="THE_MAILDIR_STRUCTURE"><a class="permalink" href="#THE_MAILDIR_STRUCTURE">THE
+  MAILDIR STRUCTURE</a></h1>
+A directory in <i>maildir</i> format has three subdirectories, all on the same
+  filesystem: <b>tmp</b>, <b>new</b>, and <b>cur</b>.
+<div class="Pp"></div>
+Each file in <b>new</b> is a newly delivered mail message. The modification time
+  of the file is the delivery date of the message. The message is delivered
+  <i>without</i> an extra UUCP-style <b>From_</b> line, <i>without</i> any
+  <b>&gt;From</b> quoting, and <i>without</i> an extra blank line at the end.
+  The message is normally in RFC 822 format, starting with a <b>Return-Path</b>
+  line and a <b>Delivered-To</b> line, but it could contain arbitrary binary
+  data. It might not even end with a newline.
+<div class="Pp"></div>
+Files in <b>cur</b> are just like files in <b>new</b>. The big difference is
+  that files in <b>cur</b> are no longer new mail: they have been seen by the
+  user's mail-reading program.
+<h1 class="Sh" title="Sh" id="HOW_A_MESSAGE_IS_DELIVERED"><a class="permalink" href="#HOW_A_MESSAGE_IS_DELIVERED">HOW
+  A MESSAGE IS DELIVERED</a></h1>
+The <b>tmp</b> directory is used to ensure reliable delivery, as discussed here.
+<div class="Pp"></div>
+A program delivers a mail message in six steps. First, it <b>chdir()<b>s</b></b>
+  <b>to the</b> <i>maildir</i> directory. Second, it <b>stat()s</b> the name
+  <b>tmp/ <i>time.pid.host</i></b><i>,</i> <i>where</i> <i>time</i> is the
+  number of seconds since the beginning of 1970 GMT, <i>pid</i> is the program's
+  process ID, and <i>host</i> is the host name. Third, if <b>stat()</b> returned
+  anything other than ENOENT, the program sleeps for two seconds, updates
+  <i>time</i>, and tries the <b>stat()</b> again, a limited number of times.
+  Fourth, the program creates <b>tmp/<i>time.pid.host</i></b><i>.</i> <i>Fifth,
+  the program</i> <i>NFS-writes</i> the message to the file. Sixth, the program
+  <b>link()</b>s the file to <b>new/<i>time.pid.host</i></b><i>.</i> <i>At that
+  instant the message has been successfully delivered.</i>
+<div class="Pp"></div>
+The delivery program is required to start a 24-hour timer before creating
+  <b>tmp/ <i>time.pid.host</i></b><i>,</i> <i>and to abort the delivery</i>
+  <i>if the timer expires.</i> <i>Upon error, timeout, or normal completion,</i>
+  <i>the delivery program may attempt to</i> <b>unlink()</b>
+  <b>tmp/<i>time.pid.host</i></b><i>.</i>
+<div class="Pp"></div>
+<i>NFS-writing</i> means (1) as usual, checking the number of bytes returned
+  from each <b>write()</b> call; (2) calling <b>fsync()</b> and checking its
+  return value; (3) calling <b>close()</b> and checking its return value.
+  (Standard NFS implementations handle <b>fsync()</b> incorrectly but make up
+  for it by abusing <b>close()</b>.)
+<h1 class="Sh" title="Sh" id="HOW_A_MESSAGE_IS_READ"><a class="permalink" href="#HOW_A_MESSAGE_IS_READ">HOW
+  A MESSAGE IS READ</a></h1>
+A mail reader operates as follows.
+<div class="Pp"></div>
+It looks through the <b>new</b> directory for new messages. Say there is a new
+  message, <b>new/<i>unique</i></b><i>.</i> <i>The reader may freely display the
+  contents of</i> <b>new/<i>unique</i></b><i>,</i> <i>delete</i>
+  <b>new/<i>unique</i></b><i>,</i> <i>or rename</i> <b>new/<i>unique</i></b>
+  <i>as</i> <b>cur/<i>unique:info</i></b><i>.</i> <i>See</i>
+  <b>https://cr.yp.to/docs/smtplf.html/proto/maildir.html</b> for the meaning of
+  <i>info</i>.
+<div class="Pp"></div>
+The reader is also expected to look through the <b>tmp</b> directory and to
+  clean up any old files found there. A file in <b>tmp</b> may be safely removed
+  if it has not been accessed in 36 hours.
+<div class="Pp"></div>
+It is a good idea for readers to skip all filenames in <b>new</b> and <b>cur</b>
+  starting with a dot. Other than this, readers should not attempt to parse
+  filenames.
+<h1 class="Sh" title="Sh" id="ENVIRONMENT_VARIABLES"><a class="permalink" href="#ENVIRONMENT_VARIABLES">ENVIRONMENT
+  VARIABLES</a></h1>
+Mail readers supporting <i>maildir</i> use the <b>MAILDIR</b> environment
+  variable as the name of the user's primary mail directory.
+<h1 class="Sh" title="Sh" id="SEE_ALSO"><a class="permalink" href="#SEE_ALSO">SEE
+  ALSO</a></h1>
+<a href="mbox.5.html">mbox(5)</a>, <a href="qmail-local.8.html">qmail-local(8)</a></div>
+<table class="foot">
+  <tr>
+    <td class="foot-date"></td>
+    <td class="foot-os"></td>
+  </tr>
+</table>
+</body>
+</html>

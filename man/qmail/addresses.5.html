@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <link rel="stylesheet" href="style.css" type="text/css" media="all"/>
+  <title><a href="addresses.5.html">addresses(5)</a></title>
+</head>
+<body>
+<nav class="qmail-nav"><a href="index.html">&larr; Qmail man</a></nav>
+<table class="head">
+  <tr>
+    <td class="head-ltitle"><a href="addresses.5.html">addresses(5)</a></td>
+    <td class="head-vol">File Formats Manual</td>
+    <td class="head-rtitle"><a href="addresses.5.html">addresses(5)</a></td>
+  </tr>
+</table>
+<div class="manual-text">
+<h1 class="Sh" title="Sh" id="NAME"><a class="permalink" href="#NAME">NAME</a></h1>
+addresses - formats for Internet mail addresses
+<h1 class="Sh" title="Sh" id="INTRODUCTION"><a class="permalink" href="#INTRODUCTION">INTRODUCTION</a></h1>
+A <b>mail address</b> is a string of characters containing @.
+<div class="Pp"></div>
+Every mail address has a <b>local part</b> and a <b>domain part.</b> The domain
+  part is everything after the final @. The local part is everything before.
+<div class="Pp"></div>
+For example, the mail addresses
+<div class="Pp"></div>
+<pre>
+   God@heaven.af.mil
+   @heaven.af.mil
+   @at@@heaven.af.mil
+</pre>
+<div class="Pp"></div>
+all have domain part <b>heaven.af.mil</b>. The local parts are <b>God</b>,
+  empty, and <b>@at@</b>.
+<div class="Pp"></div>
+Some domains have owners. It is up to the owner of <b>heaven.af.mil</b> to say
+  how mail messages will be delivered to addresses with domain part
+  <b>heaven.af.mil</b>.
+<div class="Pp"></div>
+The domain part of an address is interpreted without regard to case, so
+<div class="Pp"></div>
+<pre>
+   God@heaven.af.mil
+<div>&#x00A0;</div>
+   God@HEAVEN.AF.MIL
+<div>&#x00A0;</div>
+   God@Heaven.AF.Mil
+</pre>
+<div class="Pp"></div>
+all refer to the same domain.
+<div class="Pp"></div>
+There is one exceptional address that does not contain an @: namely, the empty
+  string. The empty string cannot be used as a recipient address. It can be used
+  as a sender address so that the real sender doesn't receive bounces.
+<h1 class="Sh" title="Sh" id="QMAIL_EXTENSIONS"><a class="permalink" href="#QMAIL_EXTENSIONS">QMAIL
+  EXTENSIONS</a></h1>
+The <b>qmail</b> system allows several further types of addresses in mail
+  envelopes.
+<div class="Pp"></div>
+First, an envelope recipient address without an @ is interpreted as being at
+  <i>envnoathost</i>. For example, if <i>envnoathost</i> is
+  <b>heaven.af.mil</b>, the address <b>God</b> will be rewritten as
+  <b>God@heaven.af.mil</b>.
+<div class="Pp"></div>
+Second, the address <b>#@[]</b> is used as an envelope sender address for double
+  bounces.
+<div class="Pp"></div>
+Third, envelope sender addresses of the form
+  <i>pre<b>@</b><i>host</i><b>-@[]</b></i> <b>are used to support variable
+  envelope return paths (VERPs).</b> <b>qmail-send</b> will rewrite
+  <i>pre<b>@</b> <i>host</i><b>-@[]</b></i> <b>as</b>
+  <i>prerecip<b>=</b><i>domain</i> <b>@</b><i>host</i></i> <i>for deliveries
+  to</i> <i>recip<b>@</b><i>domain</i></i><i>.</i> <i>Bounces directly from</i>
+  <b>qmail-send</b> will come back to <i>pre<b>@</b><i>host</i></i><i>.</i>
+<h1 class="Sh" title="Sh" id="CHOOSING_MAIL_ADDRESSES"><a class="permalink" href="#CHOOSING_MAIL_ADDRESSES">CHOOSING
+  MAIL ADDRESSES</a></h1>
+Here are some suggestions on choosing mail addresses for the Internet.
+<div class="Pp"></div>
+Do not use non-ASCII characters. Under RFC 822 and RFC 821, these characters
+  cannot be used in mail headers or in SMTP commands. In practice, they are
+  regularly corrupted.
+<div class="Pp"></div>
+Do not use ASCII control characters. NUL is regularly corrupted. CR and LF
+  cannot be used in some combinations and are corrupted in all. None of these
+  characters are usable on business cards.
+<div class="Pp"></div>
+Avoid spaces and the characters
+<div class="Pp"></div>
+<pre>
+   \&quot;&lt;&gt;()[],;:
+</pre>
+<div class="Pp"></div>
+These all require quoting in mail headers and in SMTP. Many existing mail
+  programs do not handle quoting properly.
+<div class="Pp"></div>
+Do not use @ in a local part. @ requires quoting in mail headers and in SMTP.
+  Many programs incorrectly look for the first @, rather than the last @, to
+  find the domain part of an address.
+<div class="Pp"></div>
+In a local part, do not use two consecutive dots, a dot at the beginning, or a
+  dot at the end. Any of these would require quoting in mail headers.
+<div class="Pp"></div>
+Do not use an empty local part; it cannot appear in SMTP commands.
+<div class="Pp"></div>
+Avoid local parts longer than 64 characters.
+<div class="Pp"></div>
+Be wary of uppercase letters in local parts. Some mail programs (and users!)
+  will incorrectly convert <b>God@heaven.af.mil</b> to <b>god@heaven.af.mil</b>.
+<div class="Pp"></div>
+Be wary of the following characters:
+<div class="Pp"></div>
+<pre>
+   $&amp;!#~`'^*|{}
+</pre>
+<div class="Pp"></div>
+Some users will not know how to feed these characters safely to their mail
+  programs.
+<div class="Pp"></div>
+In domain names, stick to letters, digits, dash, and dot. One popular DNS
+  resolver has, under the banner of security, recently begun destroying domain
+  names that contain certain other characters, including underscore. Exception:
+  A dotted-decimal IP address in brackets, such as <b>[127.0.0.1]</b>,
+  identifies a domain owned by whoever owns the host at that IP address, and can
+  be used safely.
+<div class="Pp"></div>
+In a domain name, do not use two consecutive dots, a dot at the beginning, or a
+  dot at the end. This means that, when a domain name is broken down into
+  components separated by dots, there are no empty components.
+<div class="Pp"></div>
+Always use at least one dot in a domain name. If you own the <b>mil</b> domain,
+  don't bother using the address <b>root@mil</b>; most users will be unable to
+  send messages to that address. Same for the root domain.
+<div class="Pp"></div>
+Avoid domain names longer than 64 characters.
+<h1 class="Sh" title="Sh" id="ENCODED_ADDRESSES_IN_SMTP_COMMANDS"><a class="permalink" href="#ENCODED_ADDRESSES_IN_SMTP_COMMANDS">ENCODED
+  ADDRESSES IN SMTP COMMANDS</a></h1>
+RFC 821 defines an encoding of mail addresses in SMTP. For example, the
+  addresses
+<div class="Pp"></div>
+<pre>
+   God@heaven.af.mil
+<div>&#x00A0;</div>
+   a&quot;quote@heaven.af.mil
+<div>&#x00A0;</div>
+   The Almighty.One@heaven.af.mil
+</pre>
+<div class="Pp"></div>
+could be encoded in RCPT commands as
+<div class="Pp"></div>
+<pre>
+   RCPT TO:&lt;God@heaven.af.mil&gt;
+<div>&#x00A0;</div>
+   RCPT TO:&lt;a\&quot;quote@heaven.af.mil&gt;
+<div>&#x00A0;</div>
+   RCPT TO:&lt;The\ Almighty.One@heaven.af.mil&gt;
+</pre>
+<div class="Pp"></div>
+There are several restrictions in RFC 821 on the mail addresses that can be used
+  over SMTP. Non-ASCII characters are prohibited. The local part must not be
+  empty. The domain part must be a sequence of elements separated by dots, where
+  each element is either a component, a sequence of digits preceded by #, or a
+  dotted-decimal IP address surrounded by brackets. The only allowable
+  characters in components are letters, digits, and dashes. Every component must
+  (believe it or not) have at least three characters; the first character must
+  be a letter; the last character must not be a hyphen.
+<h1 class="Sh" title="Sh" id="ENCODED_ADDRESSES_IN_MAIL_HEADERS"><a class="permalink" href="#ENCODED_ADDRESSES_IN_MAIL_HEADERS">ENCODED
+  ADDRESSES IN MAIL HEADERS</a></h1>
+RFC 822 defines an encoding of mail addresses in certain header fields in a mail
+  message. For example, the addresses
+<div class="Pp"></div>
+<pre>
+   God@heaven.af.mil
+<div>&#x00A0;</div>
+   a&quot;quote@heaven.af.mil
+<div>&#x00A0;</div>
+   The Almighty.One@heaven.af.mil
+</pre>
+<div class="Pp"></div>
+could be encoded in a <b>To</b> field as
+<div class="Pp"></div>
+<pre>
+   To: God@heaven.af.mil,
+<div>&#x00A0;</div>
+	&lt;@brl.mil:&quot;a\&quot;quote&quot;@heaven.af.mil&gt;,
+<div>&#x00A0;</div>
+	  &quot;The Almighty&quot;.One@heaven.af.mil
+</pre>
+<div class="Pp"></div>
+or perhaps
+<div class="Pp"></div>
+<pre>
+   To: &lt; &quot;God&quot;@heaven .af.mil&gt;,
+<div>&#x00A0;</div>
+     &quot;a\&quot;quote&quot; (Who?) @ heaven . af.  mil
+<div>&#x00A0;</div>
+     , God&lt;&quot;The Almighty.One&quot;@heaven.af.mil&gt;
+</pre>
+<div class="Pp"></div>
+There are several restrictions on the mail addresses that can be used in these
+  header fields. Non-ASCII characters are prohibited. The domain part must be a
+  sequence of elements separated by dots, where each element either (1) begins
+  with [ and ends with ] or (2) is a nonempty string of printable ASCII
+  characters not including any of
+<div class="Pp"></div>
+<pre>
+   \&quot;.&lt;&gt;()[],;:
+</pre>
+<div class="Pp"></div>
+and not including space.
+<h1 class="Sh" title="Sh" id="SEE_ALSO"><a class="permalink" href="#SEE_ALSO">SEE
+  ALSO</a></h1>
+<a href="envelopes.5.html">envelopes(5)</a>, <a href="qmail-header.5.html">qmail-header(5)</a>, <a href="qmail-inject.8.html">qmail-inject(8)</a>, <a href="qmail-remote.8.html">qmail-remote(8)</a>,
+  <a href="qmail-smtpd.8.html">qmail-smtpd(8)</a></div>
+<table class="foot">
+  <tr>
+    <td class="foot-date"></td>
+    <td class="foot-os"></td>
+  </tr>
+</table>
+</body>
+</html>

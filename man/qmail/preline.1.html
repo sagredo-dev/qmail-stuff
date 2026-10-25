@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <link rel="stylesheet" href="style.css" type="text/css" media="all"/>
+  <title><a href="preline.1.html">preline(1)</a></title>
+</head>
+<body>
+<nav class="qmail-nav"><a href="index.html">&larr; Qmail man</a></nav>
+<table class="head">
+  <tr>
+    <td class="head-ltitle"><a href="preline.1.html">preline(1)</a></td>
+    <td class="head-vol">General Commands Manual</td>
+    <td class="head-rtitle"><a href="preline.1.html">preline(1)</a></td>
+  </tr>
+</table>
+<div class="manual-text">
+<h1 class="Sh" title="Sh" id="NAME"><a class="permalink" href="#NAME">NAME</a></h1>
+preline - prepend lines to message
+<h1 class="Sh" title="Sh" id="SYNOPSIS"><a class="permalink" href="#SYNOPSIS">SYNOPSIS</a></h1>
+in <b>.qmail<i>ext</i></b><i>:</i> <b>| preline <i>command</i></b>
+<h1 class="Sh" title="Sh" id="DESCRIPTION"><a class="permalink" href="#DESCRIPTION">DESCRIPTION</a></h1>
+<b>preline</b> feeds each incoming mail message through <i>command</i>. At the
+  top of each message it inserts a UUCP-style <b>From_</b> line, a
+  <b>Return-Path</b> line, and a <b>Delivered-To</b> line.
+<div class="Pp"></div>
+<b>preline</b> is useful for <b>procmail</b> and ELM's <b>filter</b>, which do
+  not understand the <b>qmail-command</b> environment variables.
+<h1 class="Sh" title="Sh" id="OPTIONS"><a class="permalink" href="#OPTIONS">OPTIONS</a></h1>
+<dl class="Bl-tag">
+  <dt><b>-d</b></dt>
+  <dd>Do not include the <b>Delivered-To</b> line. You should use this option
+      when the recipient of the incoming mail message is actually under remote
+      control, but was sent here through <b>control/virtualdomains</b> for
+      manual routing.</dd>
+</dl>
+<dl class="Bl-tag">
+  <dt><b>-f</b></dt>
+  <dd>Do not include the <b>From_</b> line. You should use this option except
+      for <i>command</i>s that create <i>mbox</i> files.</dd>
+</dl>
+<dl class="Bl-tag">
+  <dt><b>-r</b></dt>
+  <dd>Do not include the <b>Return-Path</b> line.</dd>
+</dl>
+<h1 class="Sh" title="Sh" id="SEE_ALSO"><a class="permalink" href="#SEE_ALSO">SEE
+  ALSO</a></h1>
+<a href="mbox.5.html">mbox(5)</a>, <a href="qmail-command.8.html">qmail-command(8)</a></div>
+<table class="foot">
+  <tr>
+    <td class="foot-date"></td>
+    <td class="foot-os"></td>
+  </tr>
+</table>
+</body>
+</html>
